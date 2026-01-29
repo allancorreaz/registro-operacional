@@ -157,6 +157,170 @@ function controleFalhaAssumida() {
     document.getElementById("falhaAssumidaExtra").style.display = assumiu === "SIM" ? "block" : "none";
 }
 
+/* ===== PERSISTÊNCIA DE DADOS (SESSION STORAGE) ===== */
+const STORAGE_KEY = "registro_operacional_dados";
+
+// Lista de IDs dos campos do formulário para salvar
+const camposFormulario = [
+    "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
+    "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
+    "tipo_material", "destino", "patio_nome", "baliza", "tipo_divisao",
+    "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
+    "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
+    "hora_fim_bordo", "vagoes_patio2", "patio_partida2", "baliza_partida2",
+    "maquina_patio2", "hora_inicio_patio2", "hora_fim_patio2",
+    "prefixo", "oferta", "inicio", "termino", "peso",
+    "houve_mudanca_fluxo", "houve_passagem", "vagoes_meu_turno", "turno_assumiu",
+    "operador_assumiu", "vagoes_proximo_turno", "assumiu_em_falha", "descricao_falha_assumida",
+    "observacoes", "email"
+];
+
+function salvarDadosFormulario() {
+    const dados = {};
+    
+    // Salvar campos simples
+    camposFormulario.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            dados[id] = elemento.value;
+        }
+    });
+    
+    // Salvar impactos
+    dados.impactos = [];
+    document.querySelectorAll(".impacto-row").forEach(row => {
+        dados.impactos.push({
+            desc: row.querySelector(".impacto-desc")?.value || "",
+            tempo: row.querySelector(".impacto-tempo")?.value || "",
+            hora_inicio: row.querySelector(".impacto-hora-inicio")?.value || "",
+            hora_fim: row.querySelector(".impacto-hora-fim")?.value || "",
+            tipo_atendimento: row.querySelector(".impacto-tipo-atendimento")?.value || "",
+            acao: row.querySelector(".impacto-acao")?.value || ""
+        });
+    });
+    
+    // Salvar materiais carvão
+    dados.materiais_carvao = [];
+    document.querySelectorAll(".material-carvao-row").forEach(row => {
+        dados.materiais_carvao.push({
+            categoria: row.querySelector(".carvao-categoria")?.value || "",
+            tipo_material: row.querySelector(".carvao-tipo-material")?.value || "",
+            patio: row.querySelector(".carvao-patio")?.value || "",
+            baliza: row.querySelector(".carvao-baliza")?.value || "",
+            recuperadora: row.querySelector(".carvao-recuperadora")?.value || "",
+            acao: row.querySelector(".carvao-acao")?.value || "",
+            hora_inicio: row.querySelector(".carvao-hora-inicio")?.value || "",
+            hora_fim: row.querySelector(".carvao-hora-fim")?.value || "",
+            peso_ecv: row.querySelector(".carvao-peso-ecv")?.value || "",
+            peso_recup: row.querySelector(".carvao-peso-recup")?.value || "",
+            vagoes: row.querySelector(".carvao-vagoes")?.value || ""
+        });
+    });
+    
+    // Salvar mudanças de fluxo
+    dados.mudancas_fluxo = [];
+    document.querySelectorAll(".fluxo-row").forEach(row => {
+        dados.mudancas_fluxo.push({
+            hora: row.querySelector(".fluxo-hora")?.value || "",
+            anterior: row.querySelector(".fluxo-anterior")?.value || "",
+            novo: row.querySelector(".fluxo-novo")?.value || "",
+            cco: row.querySelector(".fluxo-cco")?.checked || false,
+            mecanica: row.querySelector(".fluxo-mecanica")?.checked || false,
+            eletrica: row.querySelector(".fluxo-eletrica")?.checked || false,
+            operacao: row.querySelector(".fluxo-operacao")?.checked || false,
+            motivo: row.querySelector(".fluxo-motivo")?.value || ""
+        });
+    });
+    
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+}
+
+function restaurarDadosFormulario() {
+    const dadosSalvos = sessionStorage.getItem(STORAGE_KEY);
+    if (!dadosSalvos) return;
+    
+    const dados = JSON.parse(dadosSalvos);
+    
+    // Restaurar campos simples
+    camposFormulario.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento && dados[id] !== undefined) {
+            elemento.value = dados[id];
+        }
+    });
+    
+    // Atualizar controles visuais
+    atualizarEquipamentos();
+    controleProduto();
+    controleDestino();
+    controleTipoDivisao();
+    controleMudancaFluxo();
+    controlePassagem();
+    controleFalhaAssumida();
+    
+    // Restaurar impactos
+    if (dados.impactos && dados.impactos.length > 0) {
+        dados.impactos.forEach(imp => {
+            adicionarImpacto();
+            const rows = document.querySelectorAll(".impacto-row");
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                if (lastRow.querySelector(".impacto-desc")) lastRow.querySelector(".impacto-desc").value = imp.desc;
+                if (lastRow.querySelector(".impacto-tempo")) lastRow.querySelector(".impacto-tempo").value = imp.tempo;
+                if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
+                if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
+                if (lastRow.querySelector(".impacto-tipo-atendimento")) lastRow.querySelector(".impacto-tipo-atendimento").value = imp.tipo_atendimento;
+                if (lastRow.querySelector(".impacto-acao")) lastRow.querySelector(".impacto-acao").value = imp.acao;
+            }
+        });
+    }
+    
+    // Restaurar materiais carvão
+    if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
+        dados.materiais_carvao.forEach(mat => {
+            adicionarMaterialCarvao();
+            const rows = document.querySelectorAll(".material-carvao-row");
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                if (lastRow.querySelector(".carvao-categoria")) lastRow.querySelector(".carvao-categoria").value = mat.categoria;
+                if (lastRow.querySelector(".carvao-tipo-material")) lastRow.querySelector(".carvao-tipo-material").value = mat.tipo_material;
+                if (lastRow.querySelector(".carvao-patio")) lastRow.querySelector(".carvao-patio").value = mat.patio;
+                if (lastRow.querySelector(".carvao-baliza")) lastRow.querySelector(".carvao-baliza").value = mat.baliza;
+                if (lastRow.querySelector(".carvao-recuperadora")) lastRow.querySelector(".carvao-recuperadora").value = mat.recuperadora;
+                if (lastRow.querySelector(".carvao-acao")) lastRow.querySelector(".carvao-acao").value = mat.acao;
+                if (lastRow.querySelector(".carvao-hora-inicio")) lastRow.querySelector(".carvao-hora-inicio").value = mat.hora_inicio;
+                if (lastRow.querySelector(".carvao-hora-fim")) lastRow.querySelector(".carvao-hora-fim").value = mat.hora_fim;
+                if (lastRow.querySelector(".carvao-peso-ecv")) lastRow.querySelector(".carvao-peso-ecv").value = mat.peso_ecv;
+                if (lastRow.querySelector(".carvao-peso-recup")) lastRow.querySelector(".carvao-peso-recup").value = mat.peso_recup;
+                if (lastRow.querySelector(".carvao-vagoes")) lastRow.querySelector(".carvao-vagoes").value = mat.vagoes;
+            }
+        });
+    }
+    
+    // Restaurar mudanças de fluxo
+    if (dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
+        dados.mudancas_fluxo.forEach(fluxo => {
+            adicionarMudancaFluxo();
+            const rows = document.querySelectorAll(".fluxo-row");
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                if (lastRow.querySelector(".fluxo-hora")) lastRow.querySelector(".fluxo-hora").value = fluxo.hora;
+                if (lastRow.querySelector(".fluxo-anterior")) lastRow.querySelector(".fluxo-anterior").value = fluxo.anterior;
+                if (lastRow.querySelector(".fluxo-novo")) lastRow.querySelector(".fluxo-novo").value = fluxo.novo;
+                if (lastRow.querySelector(".fluxo-cco")) lastRow.querySelector(".fluxo-cco").checked = fluxo.cco;
+                if (lastRow.querySelector(".fluxo-mecanica")) lastRow.querySelector(".fluxo-mecanica").checked = fluxo.mecanica;
+                if (lastRow.querySelector(".fluxo-eletrica")) lastRow.querySelector(".fluxo-eletrica").checked = fluxo.eletrica;
+                if (lastRow.querySelector(".fluxo-operacao")) lastRow.querySelector(".fluxo-operacao").checked = fluxo.operacao;
+                if (lastRow.querySelector(".fluxo-motivo")) lastRow.querySelector(".fluxo-motivo").value = fluxo.motivo;
+            }
+        });
+    }
+}
+
+function limparDadosSalvos() {
+    sessionStorage.removeItem(STORAGE_KEY);
+}
+
 // Adicionar listener após carregar a página
 document.addEventListener("DOMContentLoaded", function() {
     const assumiuFalha = document.getElementById("assumiu_em_falha");
@@ -167,6 +331,13 @@ document.addEventListener("DOMContentLoaded", function() {
     // Inicializar equipamentos e controles
     atualizarEquipamentos();
     controleProduto();
+    
+    // Restaurar dados salvos
+    restaurarDadosFormulario();
+    
+    // Salvar dados automaticamente quando qualquer campo mudar
+    document.addEventListener("input", salvarDadosFormulario);
+    document.addEventListener("change", salvarDadosFormulario);
 });
 
 /* ===== MUDANÇA DE FLUXO (DINÂMICO) ===== */
@@ -933,4 +1104,17 @@ function enviarEmail() {
 /* ===== DARK MODE ===== */
 function toggleDarkMode() {
     document.documentElement.classList.toggle("dark-mode");
+}
+
+/* ===== LIMPAR FORMULÁRIO ===== */
+function limparFormulario() {
+    if (!confirm("⚠️ Tem certeza que deseja limpar todos os dados?")) {
+        return;
+    }
+    
+    // Limpar dados salvos
+    limparDadosSalvos();
+    
+    // Recarregar página
+    window.location.reload();
 }
