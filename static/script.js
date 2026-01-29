@@ -20,6 +20,54 @@ function toUpperSafe(valor) {
     return valor ? valor.toUpperCase() : valor;
 }
 
+/* ===== EQUIPAMENTOS POR PRODUTO ===== */
+const equipamentosMinério = ["VV1", "VV2", "VV3", "E3", "E4", "ER1A", "ER2"];
+const equipamentosCarvao = ["ECV"];
+const recuperadorasCarvao = ["R5", "R1A"];
+
+function atualizarEquipamentos() {
+    const produto = document.getElementById("produto").value;
+    const selectEquip = document.getElementById("equipamento");
+    
+    selectEquip.innerHTML = "";
+    
+    const equipamentos = produto === "Carvão" ? equipamentosCarvao : equipamentosMinério;
+    
+    equipamentos.forEach(eq => {
+        const opt = document.createElement("option");
+        opt.value = eq;
+        opt.textContent = eq;
+        selectEquip.appendChild(opt);
+    });
+    
+    controleEquipamento();
+}
+
+function controleEquipamento() {
+    const equipamento = document.getElementById("equipamento").value;
+    const sinalContainer = document.getElementById("sinalContainer");
+    
+    // ECV não tem passagem pelo sinal
+    if (equipamento === "ECV") {
+        sinalContainer.style.display = "none";
+    } else {
+        sinalContainer.style.display = "block";
+    }
+}
+
+// Atualizar placeholder do tipo de material com base na categoria
+function atualizarTiposMaterial(selectCategoria) {
+    const row = selectCategoria.closest('.material-carvao-row');
+    const inputTipo = row.querySelector('.carvao-tipo-material');
+    const categoria = selectCategoria.value;
+    
+    if (categoria === "CARVAO") {
+        inputTipo.placeholder = "Ex: MU, OG";
+    } else {
+        inputTipo.placeholder = "Ex: CCM, KL, KIN";
+    }
+}
+
 /* ===== CONTROLES DE VISIBILIDADE ===== */
 
 function controleDestino() {
@@ -35,6 +83,8 @@ function controleProduto() {
     const produto = document.getElementById("produto").value;
     const minerioExtra = document.getElementById("minerioExtra");
     const carvaoExtra = document.getElementById("carvaoExtra");
+    
+    atualizarEquipamentos();
     
     if (produto === "Carvão") {
         minerioExtra.style.display = "none";
@@ -105,7 +155,8 @@ document.addEventListener("DOMContentLoaded", function() {
         assumiuFalha.addEventListener("change", controleFalhaAssumida);
     }
     
-    // Inicializar controle de produto
+    // Inicializar equipamentos e controles
+    atualizarEquipamentos();
     controleProduto();
 });
 
@@ -159,6 +210,15 @@ function adicionarMaterialCarvao() {
             <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">✕</button>
         </div>
         
+        <label>Categoria do Material</label>
+        <select class="carvao-categoria" onchange="atualizarTiposMaterial(this)">
+            <option value="CARVAO">Carvão</option>
+            <option value="COQUE">Coque</option>
+        </select>
+        
+        <label>Tipo de Material (sigla)</label>
+        <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvão) ou CCM, KL (coque)">
+        
         <label>Pátio de origem</label>
         <input type="text" class="carvao-patio" placeholder="Ex: Pátio 0">
         
@@ -169,11 +229,7 @@ function adicionarMaterialCarvao() {
         <select class="carvao-recuperadora">
             <option value="R5">R5</option>
             <option value="R1A">R1A</option>
-            <option value="E1">E1</option>
         </select>
-        
-        <label>Tipo de material</label>
-        <input type="text" class="carvao-tipo-material" placeholder="Ex: CCM, KIN, PC">
         
         <label>Ação (zerar/completar)</label>
         <select class="carvao-acao">
@@ -331,6 +387,7 @@ function calcular() {
     const materiaisCarvao = [];
     document.querySelectorAll(".material-carvao-row").forEach(row => {
         materiaisCarvao.push({
+            categoria: row.querySelector(".carvao-categoria")?.value || "CARVAO",
             patio: toUpperSafe(row.querySelector(".carvao-patio")?.value) || "",
             baliza: toUpperSafe(row.querySelector(".carvao-baliza")?.value) || "",
             recuperadora: row.querySelector(".carvao-recuperadora")?.value || "",
@@ -488,7 +545,7 @@ ${tabelaPartidaHTML}
 
 🕐 Início: ${dados.inicio || "—"}<br>
 🕚 Término: ${dados.termino || "—"}<br>
-⏱ TMD/C: ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
+⏱ ${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}: ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
 ⛔ Impactos Totais: ${formatarTempo(data.impactos_total)}<br>
 ✅ Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
 
@@ -520,12 +577,13 @@ function gerarResultadoCarvao(dados, data) {
     if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
         dados.materiais_carvao.forEach((mat, i) => {
             if (mat.tipo_material) {
+                const categoriaNome = mat.categoria === "COQUE" ? "Coque" : "Carvão";
                 materiaisHTML += `
-<div style="border-left: 3px solid #ffa500; padding-left: 10px; margin: 10px 0;">
+<div style="border-left: 3px solid #ffa500; padding-left: 10px; margin: 15px 0;">
 📍 ${mat.patio} - ${mat.baliza}<br>
 📍 ${mat.recuperadora}<br><br>
 
-📦 ${mat.tipo_material} (${mat.acao})<br><br>
+📦 ${categoriaNome}: ${mat.tipo_material} (${mat.acao})<br><br>
 
 ⚖️ <strong>Peso ECV:</strong> ${mat.peso_ecv || "—"} t<br>
 ⚖️ <strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "—"} t<br>
@@ -552,8 +610,7 @@ ${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br>` : 
 🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>
 📍 Passagem Ponto B: ${dados.ponto_b}<br>
-🚦 Passagem pelo Sinal: ${dados.sinal}<br>
-📋 Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
+ Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
 
 ${materiaisHTML}
 

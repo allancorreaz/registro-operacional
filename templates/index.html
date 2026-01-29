@@ -11,10 +11,26 @@
 
 <div class="container">
     <h1>🚆 Registro Operacional Geral</h1>
-        <!-- BOTÃO DARK MODE -->
+    
+    <!-- BOTÃO DARK MODE -->
     <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
 
     <!-- NOVOS CAMPOS -->
+    <div class="card">
+        <h2>Tipo de Operação</h2>
+        
+        <label>Produto <span class="obrigatorio">*</span></label>
+        <select id="produto" onchange="controleProduto()">
+            <option value="Minério">Minério</option>
+            <option value="Carvão">Carvão</option>
+        </select>
+
+        <label>Equipamento <span class="obrigatorio">*</span></label>
+        <select id="equipamento" onchange="controleEquipamento()">
+            <!-- Preenchido via JavaScript -->
+        </select>
+    </div>
+
     <div class="card">
         <h2>Dados do Maquinista</h2>
 
@@ -33,8 +49,10 @@
         <label>Passagem pelo Ponto B</label>
         <input type="time" id="ponto_b">
 
-        <label>Passagem pelo Sinal</label>
-        <input type="time" id="sinal">
+        <div id="sinalContainer">
+            <label>Passagem pelo Sinal</label>
+            <input type="time" id="sinal">
+        </div>
 
         <label>Tabela Posicionada</label>
         <input type="time" id="tabela_posicionada">
@@ -60,22 +78,8 @@
         <label>Matrícula <span class="obrigatorio">*</span></label>
         <input type="text" id="matricula" placeholder="Ex: MIP0048" required>
 
-        <label>Produto</label>
-        <select id="produto" onchange="controleProduto()">
-            {% for p in produtos %}
-            <option>{{ p }}</option>
-            {% endfor %}
-        </select>
-
         <!-- CAMPOS PARA MINÉRIO -->
         <div id="minerioExtra">
-            <label>Equipamento</label>
-            <select id="equipamento">
-                {% for e in equipamentos %}
-                <option>{{ e }}</option>
-                {% endfor %}
-            </select>
-
             <label>Tipo de material</label>
             <input type="text" id="tipo_material" placeholder="Ex: IOH4">
 
@@ -84,7 +88,7 @@
                 <option value="">Selecione</option>
                 <option value="PATIO">Pátio</option>
                 <option value="BORDO">Bordo</option>
-                <option value="PARTIDA">Tabela Partida (Pátio + Bordo)</option>
+                <option value="PARTIDA">Tabela Dividida/Fracionada</option>
             </select>
 
             <div id="patioExtra" style="display:none;">
@@ -95,9 +99,9 @@
                 <input type="text" id="baliza" placeholder="Ex: 31-39 E3">
             </div>
 
-            <!-- TABELA PARTIDA (PÁTIO + BORDO) -->
+            <!-- TABELA DIVIDIDA/FRACIONADA (PÁTIO + BORDO) -->
             <div id="tabelaPartidaExtra" style="display:none;">
-                <h3>📊 Tabela Partida</h3>
+                <h3>📊 Tabela Dividida/Fracionada</h3>
                 
                 <div class="partida-secao">
                     <label><strong>Vagões para Pátio</strong></label>
@@ -131,20 +135,7 @@
 
         <!-- CAMPOS ESPECÍFICOS PARA CARVÃO -->
         <div id="carvaoExtra" style="display:none;">
-            <h3>⚫ Carregamento de Carvão</h3>
-
-            <label>Equipamento Principal</label>
-            <select id="equipamento_carvao">
-                <option value="ECV">ECV</option>
-            </select>
-
-            <label>Recuperadora auxiliar</label>
-            <select id="recuperadora_carvao">
-                <option value="">Nenhuma</option>
-                <option value="R5">R5</option>
-                <option value="R1A">R1A</option>
-                <option value="E1">E1</option>
-            </select>
+            <h3>⚫ Carregamento de Carvão/Coque</h3>
 
             <!-- MATERIAIS DO CARVÃO (DINÂMICO) -->
             <div id="materiaisCarvaoContainer"></div>
