@@ -863,6 +863,47 @@ function copiarWhatsApp() {
     }
 }
 
+/* ===== ENVIAR EMAIL ===== */
+function enviarEmail() {
+    const resultado = document.getElementById("resultado");
+    
+    if (resultado.style.display === "none" || !resultado.innerText.trim()) {
+        alert("⚠️ Gere o resultado primeiro!");
+        return;
+    }
+    
+    const emailDestino = document.getElementById("email").value;
+    if (!emailDestino) {
+        alert("⚠️ Preencha o email de destino!");
+        document.getElementById("email").focus();
+        return;
+    }
+    
+    // Pegar dados para o assunto
+    const data = document.getElementById("data").value || "";
+    const turno = document.getElementById("turno").value || "";
+    const prefixo = document.getElementById("prefixo").value || "";
+    const produto = document.getElementById("produto").value || "";
+    
+    // Formatar data para o assunto
+    let dataFormatada = "";
+    if (data) {
+        const [ano, mes, dia] = data.split("-");
+        dataFormatada = `${dia}/${mes}/${ano}`;
+    }
+    
+    const assunto = `Relatório Operacional - ${prefixo} - ${produto} - ${turno} - ${dataFormatada}`;
+    
+    // Pegar texto sem emojis problemáticos para email
+    let corpo = resultado.innerText;
+    
+    // Codificar para URL
+    const mailtoLink = `mailto:${encodeURIComponent(emailDestino)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+    
+    // Abrir cliente de email
+    window.location.href = mailtoLink;
+}
+
 /* ===== DARK MODE ===== */
 function toggleDarkMode() {
     document.documentElement.classList.toggle("dark-mode");
