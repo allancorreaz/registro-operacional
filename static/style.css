@@ -38,6 +38,16 @@ label {
     font-size: 14px;
 }
 
+.obrigatorio {
+    color: #f44336;
+    font-weight: bold;
+}
+
+input[required],
+select[required] {
+    border-left: 3px solid #f44336;
+}
+
 input, select, textarea, button {
     width: 100%;
     padding: 12px;

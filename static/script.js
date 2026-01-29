@@ -297,6 +297,7 @@ function calcular() {
         data: document.getElementById("data").value,
         turno: document.getElementById("turno").value,
         operador: document.getElementById("operador").value,
+        matricula: document.getElementById("matricula").value,
         produto: produto,
         prefixo: document.getElementById("prefixo").value,
         oferta: document.getElementById("oferta").value,
@@ -418,7 +419,7 @@ ${dados.mudanca_maquina === "SIM" ? `<br>⚙️ <strong>Mudança de Máquina:</s
 <strong>🚆 ${dados.prefixo}</strong><br>
 ${dados.oferta}<br><br>
 
-👷 Operador: ${dados.operador}<br>
+👷 Operador: ${dados.operador} | Mat: ${dados.matricula}<br>
 👨‍✈️ Maquinista: ${dados.maquinista}<br>
 🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>
@@ -493,7 +494,7 @@ ${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br>` : 
 
 🚆 <strong>${dados.prefixo}</strong><br><br>
 
-👷 Operador: ${dados.operador}<br>
+👷 Operador: ${dados.operador} | Mat: ${dados.matricula}<br>
 👨‍✈️ Maquinista: ${dados.maquinista}<br>
 🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>

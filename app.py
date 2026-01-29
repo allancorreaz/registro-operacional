@@ -96,7 +96,7 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
         "-" * 40,
         "DADOS DO MAQUINISTA",
         "-" * 40,
-        f"OPERADOR: {d.get('operador', '')}",
+        f"OPERADOR: {d.get('operador', '')} | MATRICULA: {d.get('matricula', '')}",
         f"MAQUINISTA: {d.get('maquinista', '')}",
         f"LOCOMOTIVAS: {d.get('loc1', '')} / {d.get('loc2', '')}",
         f"CONTATO MAQUINISTA: {d.get('horas_maquinista', '')}",
@@ -244,4 +244,5 @@ def gerar_pdf(texto):
     return caminho
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)

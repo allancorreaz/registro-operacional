@@ -54,8 +54,11 @@
             {% endfor %}
         </select>
 
-        <label>Nome do Operador</label>
-        <input type="text" id="operador" placeholder="Ex: João Silva">
+        <label>Nome do Operador <span class="obrigatorio">*</span></label>
+        <input type="text" id="operador" placeholder="Ex: João Silva" required>
+
+        <label>Matrícula <span class="obrigatorio">*</span></label>
+        <input type="text" id="matricula" placeholder="Ex: MIP0048" required>
 
         <label>Produto</label>
         <select id="produto" onchange="controleProduto()">
