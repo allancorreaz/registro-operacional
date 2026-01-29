@@ -151,7 +151,11 @@
         <input type="text" id="prefixo" placeholder="Ex: NFL0150">
 
         <label>Oferta</label>
-        <input type="text" id="oferta" placeholder="Ex: 4º da oferta">
+        <select id="oferta">
+            {% for i in range(1, 100) %}
+            <option value="{{ i }}º DA OFERTA">{{ i }}º</option>
+            {% endfor %}
+        </select>
     </div>
 
     <div class="card">
