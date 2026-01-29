@@ -99,36 +99,41 @@
                 <input type="text" id="baliza" placeholder="Ex: 31-39 E3">
             </div>
 
-            <!-- TABELA DIVIDIDA/FRACIONADA (PÁTIO + BORDO) -->
+            <!-- TABELA DIVIDIDA/FRACIONADA -->
             <div id="tabelaPartidaExtra" style="display:none;">
                 <h3>📊 Tabela Dividida/Fracionada</h3>
                 
+                <label>Tipo de Divisão</label>
+                <select id="tipo_divisao" onchange="controleTipoDivisao()">
+                    <option value="PATIO_BORDO">Pátio + Bordo</option>
+                    <option value="PATIO_PATIO">Pátio + Pátio</option>
+                </select>
+                
                 <div class="partida-secao">
-                    <label><strong>Vagões para Pátio</strong></label>
-                    <input type="number" id="vagoes_patio" min="0" placeholder="Qtd vagões p/ pátio">
+                    <label><strong>1ª Parte - Pátio</strong></label>
+                    <input type="number" id="vagoes_patio" min="0" placeholder="Qtd vagões">
                     <input type="text" id="patio_partida" placeholder="Qual pátio? Ex: Pátio 5">
-                    <input type="text" id="baliza_partida" placeholder="Baliza Ex: 31-39 E3">
-                    <input type="time" id="hora_inicio_patio" title="Hora início empilhamento pátio">
-                    <input type="time" id="hora_fim_patio" title="Hora fim empilhamento pátio">
+                    <input type="text" id="baliza_partida" placeholder="Baliza Ex: 31-39">
+                    <input type="text" id="maquina_patio1" placeholder="Máquina (Ex: VV1)">
+                    <input type="time" id="hora_inicio_patio" title="Hora início">
+                    <input type="time" id="hora_fim_patio" title="Hora fim">
                 </div>
 
-                <div class="partida-secao">
-                    <label><strong>Vagões para Bordo</strong></label>
+                <div class="partida-secao" id="secaoBordo">
+                    <label><strong>2ª Parte - Bordo</strong></label>
                     <input type="number" id="vagoes_bordo" min="0" placeholder="Qtd vagões p/ bordo">
                     <input type="time" id="hora_inicio_bordo" title="Hora início bordo">
                     <input type="time" id="hora_fim_bordo" title="Hora fim bordo">
                 </div>
 
-                <label>Houve mudança de máquina?</label>
-                <select id="mudanca_maquina" onchange="controleMudancaMaquina()">
-                    <option value="NAO">Não</option>
-                    <option value="SIM">Sim</option>
-                </select>
-
-                <div id="mudancaMaquinaExtra" style="display:none;">
-                    <input type="text" id="maquina_inicial" placeholder="Máquina inicial (Ex: VV1)">
-                    <input type="text" id="maquina_final" placeholder="Máquina que assumiu (Ex: VV2)">
-                    <input type="time" id="hora_mudanca_maquina" title="Hora da mudança">
+                <div class="partida-secao" id="secaoPatio2" style="display:none;">
+                    <label><strong>2ª Parte - Pátio</strong></label>
+                    <input type="number" id="vagoes_patio2" min="0" placeholder="Qtd vagões">
+                    <input type="text" id="patio_partida2" placeholder="Qual pátio? Ex: Pátio 3">
+                    <input type="text" id="baliza_partida2" placeholder="Baliza Ex: 10-15">
+                    <input type="text" id="maquina_patio2" placeholder="Máquina (Ex: VV2)">
+                    <input type="time" id="hora_inicio_patio2" title="Hora início">
+                    <input type="time" id="hora_fim_patio2" title="Hora fim">
                 </div>
             </div>
         </div>

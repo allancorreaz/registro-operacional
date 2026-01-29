@@ -21,7 +21,7 @@ function toUpperSafe(valor) {
 }
 
 /* ===== EQUIPAMENTOS POR PRODUTO ===== */
-const equipamentosMinério = ["VV1", "VV2", "VV3", "E3", "E4", "ER1A", "ER2"];
+const equipamentosMinério = ["VV1", "VV2", "VV3"];
 const equipamentosCarvao = ["ECV"];
 const recuperadorasCarvao = ["R5", "R1A"];
 
@@ -95,9 +95,18 @@ function controleProduto() {
     }
 }
 
-function controleMudancaMaquina() {
-    const mudanca = document.getElementById("mudanca_maquina").value;
-    document.getElementById("mudancaMaquinaExtra").style.display = mudanca === "SIM" ? "block" : "none";
+function controleTipoDivisao() {
+    const tipo = document.getElementById("tipo_divisao").value;
+    const secaoBordo = document.getElementById("secaoBordo");
+    const secaoPatio2 = document.getElementById("secaoPatio2");
+    
+    if (tipo === "PATIO_PATIO") {
+        secaoBordo.style.display = "none";
+        secaoPatio2.style.display = "block";
+    } else {
+        secaoBordo.style.display = "block";
+        secaoPatio2.style.display = "none";
+    }
 }
 
 function controleMudancaFluxo() {
@@ -453,18 +462,24 @@ function calcular() {
         baliza: toUpperSafe(document.getElementById("baliza")?.value) || "",
 
         // tabela partida (minério)
+        tipo_divisao: document.getElementById("tipo_divisao")?.value || "PATIO_BORDO",
         vagoes_patio: document.getElementById("vagoes_patio")?.value || "",
         patio_partida: toUpperSafe(document.getElementById("patio_partida")?.value) || "",
         baliza_partida: toUpperSafe(document.getElementById("baliza_partida")?.value) || "",
+        maquina_patio1: toUpperSafe(document.getElementById("maquina_patio1")?.value) || "",
         hora_inicio_patio: document.getElementById("hora_inicio_patio")?.value || "",
         hora_fim_patio: document.getElementById("hora_fim_patio")?.value || "",
+        // bordo (para pátio+bordo)
         vagoes_bordo: document.getElementById("vagoes_bordo")?.value || "",
         hora_inicio_bordo: document.getElementById("hora_inicio_bordo")?.value || "",
         hora_fim_bordo: document.getElementById("hora_fim_bordo")?.value || "",
-        mudanca_maquina: document.getElementById("mudanca_maquina")?.value || "NAO",
-        maquina_inicial: toUpperSafe(document.getElementById("maquina_inicial")?.value) || "",
-        maquina_final: toUpperSafe(document.getElementById("maquina_final")?.value) || "",
-        hora_mudanca_maquina: document.getElementById("hora_mudanca_maquina")?.value || "",
+        // segundo pátio (para pátio+pátio)
+        vagoes_patio2: document.getElementById("vagoes_patio2")?.value || "",
+        patio_partida2: toUpperSafe(document.getElementById("patio_partida2")?.value) || "",
+        baliza_partida2: toUpperSafe(document.getElementById("baliza_partida2")?.value) || "",
+        maquina_patio2: toUpperSafe(document.getElementById("maquina_patio2")?.value) || "",
+        hora_inicio_patio2: document.getElementById("hora_inicio_patio2")?.value || "",
+        hora_fim_patio2: document.getElementById("hora_fim_patio2")?.value || "",
 
         // campos específicos carvão
         equipamento_carvao: document.getElementById("equipamento_carvao")?.value || "",
@@ -511,14 +526,25 @@ function gerarResultadoMinerio(dados, data) {
     // Tabela partida
     let tabelaPartidaHTML = "";
     if (dados.destino === "PARTIDA") {
-        tabelaPartidaHTML = `
-<strong>📊 TABELA PARTIDA:</strong><br>
-<strong>Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida}<br>
-Vagões para Pátio: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br>
-<strong>Bordo:</strong><br>
-Vagões para Bordo: ${dados.vagoes_bordo || "—"} (${dados.hora_inicio_bordo || "—"} → ${dados.hora_fim_bordo || "—"})<br>
-${dados.mudanca_maquina === "SIM" ? `<br>⚙️ <strong>Mudança de Máquina:</strong> ${dados.maquina_inicial} → ${dados.maquina_final} às ${dados.hora_mudanca_maquina}<br>` : ""}
+        if (dados.tipo_divisao === "PATIO_PATIO") {
+            // Pátio + Pátio
+            tabelaPartidaHTML = `
+<strong>📊 TABELA DIVIDIDA (PÁTIO + PÁTIO):</strong><br>
+<strong>1º Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
+Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br><br>
+<strong>2º Pátio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "—"}<br>
+Vagões: ${dados.vagoes_patio2 || "—"} (${dados.hora_inicio_patio2 || "—"} → ${dados.hora_fim_patio2 || "—"})<br>
 <br>`;
+        } else {
+            // Pátio + Bordo
+            tabelaPartidaHTML = `
+<strong>📊 TABELA DIVIDIDA (PÁTIO + BORDO):</strong><br>
+<strong>Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
+Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br><br>
+<strong>Bordo:</strong><br>
+Vagões: ${dados.vagoes_bordo || "—"} (${dados.hora_inicio_bordo || "—"} → ${dados.hora_fim_bordo || "—"})<br>
+<br>`;
+        }
     }
 
     return `
@@ -542,14 +568,14 @@ ${dados.oferta}<br><br>
 📍 Destino: ${destinoTexto}<br><br>
 
 ${tabelaPartidaHTML}
-
-🕐 Início: ${dados.inicio || "—"}<br>
-🕚 Término: ${dados.termino || "—"}<br>
-⏱ ${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}: ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
+<br>
+⏳ <strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
+⌛ <strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
+⏱ <strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
 ⛔ Impactos Totais: ${formatarTempo(data.impactos_total)}<br>
 ✅ Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
 
-⚖️ Peso: ${dados.peso} t<br>
+⚖️ Peso Total: ${dados.peso} t<br>
 📈 <strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
 
 ${mudancaFluxoHTML}
@@ -588,7 +614,7 @@ function gerarResultadoCarvao(dados, data) {
 ⚖️ <strong>Peso ECV:</strong> ${mat.peso_ecv || "—"} t<br>
 ⚖️ <strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "—"} t<br>
 🚃 Vagões: ${mat.vagoes || "—"}<br>
-${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br>` : ""}
+${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br><br>` : ""}
 </div>`;
             }
         });
@@ -610,10 +636,10 @@ ${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br>` : 
 🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>
 📍 Passagem Ponto B: ${dados.ponto_b}<br>
- Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
+📋 Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
 
 ${materiaisHTML}
-
+<br>
 ⏳ <strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
 ⌛ <strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
 ⏱ <strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
