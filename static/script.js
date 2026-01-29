@@ -69,7 +69,28 @@ function controleMudancaFluxo() {
 
 function controlePassagem() {
     const houve = document.getElementById("houve_passagem").value;
-    document.getElementById("passagemExtra").style.display = houve === "SIM" ? "block" : "none";
+    const passagemExtra = document.getElementById("passagemExtra");
+    passagemExtra.style.display = houve === "SIM" ? "block" : "none";
+    
+    // Campos que devem ser obrigatórios quando houver passagem de turno
+    const camposPassagem = [
+        "vagoes_meu_turno",
+        "turno_assumiu",
+        "operador_assumiu",
+        "vagoes_proximo_turno"
+    ];
+    
+    camposPassagem.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            if (houve === "SIM") {
+                campo.setAttribute("required", "required");
+            } else {
+                campo.removeAttribute("required");
+                campo.value = ""; // Limpar campo quando desabilitar
+            }
+        }
+    });
 }
 
 function controleFalhaAssumida() {

@@ -68,6 +68,17 @@ input, select, textarea, button {
     border-radius: 10px;
     border: 1px solid #ccc;
     font-size: 15px;
+    box-sizing: border-box;
+}
+
+/* Garantir que campos de data e hora ocupem 100% no mobile */
+input[type="date"],
+input[type="time"] {
+    width: 100%;
+    min-width: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 button {
@@ -180,6 +191,42 @@ button:hover {
 @media (min-width: 601px) {
     .impacto-row .impacto-tempo-grupo input {
         max-width: 120px;
+    }
+}
+
+/* Mobile - garantir alinhamento de todos os campos */
+@media (max-width: 600px) {
+    input[type="date"],
+    input[type="time"],
+    input[type="number"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+    }
+    
+    .impacto-row .impacto-tempo-grupo {
+        flex-direction: column;
+    }
+    
+    .impacto-row .impacto-tempo-grupo input {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .fluxo-campos {
+        flex-direction: column;
+    }
+    
+    .fluxo-campos input {
+        width: 100% !important;
+    }
+    
+    .carvao-pesos {
+        flex-direction: column;
+    }
+    
+    .partida-secao input {
+        width: 100% !important;
     }
 }
 
