@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Taxa Efetiva - Operação Portuária</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚆 Registro Operacional Geral</h1>
+        <!-- BOTÃO DARK MODE -->
+    <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
+
+    <!-- NOVOS CAMPOS -->
+    <div class="card">
+        <h2>Dados do Maquinista</h2>
+
+        <label>Nome do Maquinista</label>
+        <input type="text" id="maquinista">
+
+        <label>Numeração 1ª Locomotiva</label>
+        <input type="text" id="loc1">
+
+        <label>Numeração 2ª Locomotiva</label>
+        <input type="text" id="loc2">
+
+        <label>Horas que fez contato com Maquinista</label>
+        <input type="time" id="horas_maquinista">
+
+        <label>Passagem pelo Ponto B</label>
+        <input type="time" id="ponto_b">
+
+        <label>Passagem pelo Sinal</label>
+        <input type="time" id="sinal">
+
+        <label>Tabela Posicionada</label>
+        <input type="time" id="tabela_posicionada">
+    </div>
+
+
+    <div class="card">
+        <h2>Dados Gerais</h2>
+
+        <label>Data</label>
+        <input type="date" id="data">
+
+        <label>Turno</label>
+        <select id="turno">
+            {% for t in turnos %}
+            <option>{{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Nome do Operador</label>
+        <input type="text" id="operador" placeholder="Ex: João Silva">
+
+        <label>Produto</label>
+        <select id="produto" onchange="controleProduto()">
+            {% for p in produtos %}
+            <option>{{ p }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- CAMPOS PARA MINÉRIO -->
+        <div id="minerioExtra">
+            <label>Equipamento</label>
+            <select id="equipamento">
+                {% for e in equipamentos %}
+                <option>{{ e }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Tipo de material</label>
+            <input type="text" id="tipo_material" placeholder="Ex: IOH4">
+
+            <label>Destino do material</label>
+            <select id="destino" onchange="controleDestino()">
+                <option value="">Selecione</option>
+                <option value="PATIO">Pátio</option>
+                <option value="BORDO">Bordo</option>
+                <option value="PARTIDA">Tabela Partida (Pátio + Bordo)</option>
+            </select>
+
+            <div id="patioExtra" style="display:none;">
+                <label>Qual pátio?</label>
+                <input type="text" id="patio_nome" placeholder="Ex: Pátio 5">
+        
+                <label>Baliza</label>
+                <input type="text" id="baliza" placeholder="Ex: 31-39 E3">
+            </div>
+
+            <!-- TABELA PARTIDA (PÁTIO + BORDO) -->
+            <div id="tabelaPartidaExtra" style="display:none;">
+                <h3>📊 Tabela Partida</h3>
+                
+                <div class="partida-secao">
+                    <label><strong>Vagões para Pátio</strong></label>
+                    <input type="number" id="vagoes_patio" min="0" placeholder="Qtd vagões p/ pátio">
+                    <input type="text" id="patio_partida" placeholder="Qual pátio? Ex: Pátio 5">
+                    <input type="text" id="baliza_partida" placeholder="Baliza Ex: 31-39 E3">
+                    <input type="time" id="hora_inicio_patio" title="Hora início empilhamento pátio">
+                    <input type="time" id="hora_fim_patio" title="Hora fim empilhamento pátio">
+                </div>
+
+                <div class="partida-secao">
+                    <label><strong>Vagões para Bordo</strong></label>
+                    <input type="number" id="vagoes_bordo" min="0" placeholder="Qtd vagões p/ bordo">
+                    <input type="time" id="hora_inicio_bordo" title="Hora início bordo">
+                    <input type="time" id="hora_fim_bordo" title="Hora fim bordo">
+                </div>
+
+                <label>Houve mudança de máquina?</label>
+                <select id="mudanca_maquina" onchange="controleMudancaMaquina()">
+                    <option value="NAO">Não</option>
+                    <option value="SIM">Sim</option>
+                </select>
+
+                <div id="mudancaMaquinaExtra" style="display:none;">
+                    <input type="text" id="maquina_inicial" placeholder="Máquina inicial (Ex: VV1)">
+                    <input type="text" id="maquina_final" placeholder="Máquina que assumiu (Ex: VV2)">
+                    <input type="time" id="hora_mudanca_maquina" title="Hora da mudança">
+                </div>
+            </div>
+        </div>
+
+        <!-- CAMPOS ESPECÍFICOS PARA CARVÃO -->
+        <div id="carvaoExtra" style="display:none;">
+            <h3>⚫ Carregamento de Carvão</h3>
+
+            <label>Equipamento Principal</label>
+            <select id="equipamento_carvao">
+                <option value="ECV">ECV</option>
+            </select>
+
+            <label>Recuperadora auxiliar</label>
+            <select id="recuperadora_carvao">
+                <option value="">Nenhuma</option>
+                <option value="R5">R5</option>
+                <option value="R1A">R1A</option>
+                <option value="E1">E1</option>
+            </select>
+
+            <!-- MATERIAIS DO CARVÃO (DINÂMICO) -->
+            <div id="materiaisCarvaoContainer"></div>
+
+            <button type="button" onclick="adicionarMaterialCarvao()">
+                ➕ Adicionar Material/Pátio
+            </button>
+        </div>
+
+
+
+        <label>Prefixo / Trem</label>
+        <input type="text" id="prefixo" placeholder="Ex: NFL0150">
+
+        <label>Oferta</label>
+        <input type="text" id="oferta" placeholder="Ex: 4º da oferta">
+    </div>
+
+    <div class="card">
+        <h2>Horários</h2>
+
+        <label>Início</label>
+        <input type="time" id="inicio">
+
+        <label>Término</label>
+        <input type="time" id="termino">
+
+        <label>Peso da composição (t)</label>
+        <input type="number" id="peso">
+    </div>
+
+    <!-- MUDANÇA DE FLUXO -->
+    <div class="card">
+        <h2>🔄 Mudança de Fluxo</h2>
+        
+        <label>Houve mudança de fluxo?</label>
+        <select id="houve_mudanca_fluxo" onchange="controleMudancaFluxo()">
+            <option value="NAO">Não</option>
+            <option value="SIM">Sim</option>
+        </select>
+
+        <div id="mudancaFluxoContainer" style="display:none;"></div>
+
+        <div id="btnAdicionarFluxo" style="display:none;">
+            <button type="button" onclick="adicionarMudancaFluxo()">
+                ➕ Adicionar Mudança de Fluxo
+            </button>
+        </div>
+    </div>
+
+    <!-- IMPACTOS DINÂMICOS -->
+    <div class="card">
+        <h2>Impactos / Falhas</h2>
+
+        <div id="impactosContainer"></div>
+
+        <button type="button" onclick="adicionarImpacto()">
+            ➕ Adicionar Impacto/Falha
+        </button>
+    </div>
+
+    <!-- PASSAGEM DE TURNO -->
+    <div class="card">
+        <h2>Passagem de Turno</h2>
+
+        <label>Houve passagem de turno?</label>
+        <select id="houve_passagem" onchange="controlePassagem()">
+            <option value="NAO">Não</option>
+            <option value="SIM">Sim</option>
+        </select>
+
+        <div id="passagemExtra" style="display:none;">
+            <label>Vagões descarregados no meu turno</label>
+            <input type="number" id="vagoes_meu_turno" min="0" placeholder="Ex: 45">
+
+            <label>Turno que assumiu</label>
+            <select id="turno_assumiu">
+                <option value="">Selecione</option>
+                <option>TURNO A</option>
+                <option>TURNO B</option>
+                <option>TURNO C</option>
+                <option>TURNO D</option>
+            </select>
+
+            <label>Operador que assumiu</label>
+            <input type="text" id="operador_assumiu" placeholder="Ex: Carlos Santos">
+
+            <label>Vagões restantes para o próximo turno</label>
+            <input type="number" id="vagoes_proximo_turno" min="0" placeholder="Ex: 35">
+
+            <label>Assumiu em falha/impacto?</label>
+            <select id="assumiu_em_falha">
+                <option value="NAO">Não</option>
+                <option value="SIM">Sim</option>
+            </select>
+
+            <div id="falhaAssumidaExtra" style="display:none;">
+                <label>Qual falha?</label>
+                <input type="text" id="descricao_falha_assumida" placeholder="Descreva a falha">
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- OBSERVAÇÕES -->
+    <div class="card">
+        <h2>Observações</h2>
+        <textarea id="observacoes" rows="4"
+            placeholder="Relato operacional, falha, rota, manutenção..."></textarea>
+    </div>
+
+    <!-- EMAIL -->
+    <div class="card">
+        <label>📧 Enviar relatório para</label>
+        <input type="email" id="email" placeholder="email@exemplo.com">
+    </div>
+
+    <button onclick="calcular()">📊 Gerar Resultado</button>
+
+    <!-- RESULTADO -->
+    <div class="resultado" id="resultado" style="display:none;"></div>
+
+    <div class="acoes">
+        <button onclick="gerarPDF()">📄 Gerar PDF</button>
+        <button onclick="copiarWhatsApp()">📲 Copiar p/ WhatsApp</button>
+    </div>
+
+
+    <div class="footer">
+        Criado por Allan Correa – Matrícula MIP0048<br>
+        Todos os direitos reservados
+    </div>
+
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>

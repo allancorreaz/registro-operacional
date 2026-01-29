@@ -1,0 +1,4 @@
+gunicorn
+Flask
+reportlab
+python-dotenv
