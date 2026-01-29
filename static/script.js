@@ -1,3 +1,27 @@
+/* ===== FUNÇÕES DE FORMATAÇÃO DE TEXTO ===== */
+
+// Capitalizar primeira letra e após pontos (para descrição de impactos)
+function capitalizarFrases(texto) {
+    if (!texto) return texto;
+    return texto
+        .toLowerCase()
+        .replace(/(^|[.!?]\s*)([a-záàâãéèêíïóôõöúçñ])/gi, (match, p1, p2) => p1 + p2.toUpperCase());
+}
+
+// Aplicar capitalização em tempo real nos campos de impacto
+function aplicarCapitalizacaoImpacto(input) {
+    input.addEventListener('blur', function() {
+        this.value = capitalizarFrases(this.value);
+    });
+}
+
+// Converter para maiúsculas (para envio ao servidor)
+function toUpperSafe(valor) {
+    return valor ? valor.toUpperCase() : valor;
+}
+
+/* ===== CONTROLES DE VISIBILIDADE ===== */
+
 function controleDestino() {
     const destino = document.getElementById("destino").value;
     const patioExtra = document.getElementById("patioExtra");
@@ -226,6 +250,12 @@ function adicionarImpacto() {
     horasParado.addEventListener("input", calcularHoraFim);
     minutosParado.addEventListener("input", calcularHoraFim);
 
+    // Aplicar capitalização inteligente nos campos de descrição e ação
+    const descInput = row.querySelector(".impacto-desc");
+    const acaoInput = row.querySelector(".impacto-acao");
+    aplicarCapitalizacaoImpacto(descInput);
+    aplicarCapitalizacaoImpacto(acaoInput);
+
     container.appendChild(row);
 }
 function calcular() {
@@ -241,7 +271,8 @@ function calcular() {
         const h = parseInt(row.querySelector(".impacto-h")?.value || 0);
         const m = parseInt(row.querySelector(".impacto-m")?.value || 0);
         impactos.push((h * 60) + m);
-        impactosDesc.push(row.querySelector(".impacto-desc")?.value || "");
+        // Aplicar capitalização de frases na descrição e ação
+        impactosDesc.push(capitalizarFrases(row.querySelector(".impacto-desc")?.value || ""));
         impactosHoraInicio.push(row.querySelector(".impacto-hora-inicio")?.value || "");
         impactosHoraFim.push(row.querySelector(".impacto-hora-fim")?.value || "");
         
@@ -253,7 +284,8 @@ function calcular() {
         if (row.querySelector(".impacto-atend-outro")?.checked) atendimentos.push("OUTRO");
         impactosTipoAtendimento.push(atendimentos.join(" / "));
         
-        impactosAcao.push(row.querySelector(".impacto-acao")?.value || "");
+        // Aplicar capitalização de frases na ação
+        impactosAcao.push(capitalizarFrases(row.querySelector(".impacto-acao")?.value || ""));
     });
 
     // Coletar mudanças de fluxo
@@ -267,10 +299,10 @@ function calcular() {
         
         mudancasFluxo.push({
             hora: row.querySelector(".fluxo-hora")?.value || "",
-            fluxo_anterior: row.querySelector(".fluxo-anterior")?.value || "",
-            fluxo_novo: row.querySelector(".fluxo-novo")?.value || "",
+            fluxo_anterior: toUpperSafe(row.querySelector(".fluxo-anterior")?.value) || "",
+            fluxo_novo: toUpperSafe(row.querySelector(".fluxo-novo")?.value) || "",
             solicitante: solicitantes.join(" / "),
-            motivo: row.querySelector(".fluxo-motivo")?.value || ""
+            motivo: toUpperSafe(row.querySelector(".fluxo-motivo")?.value) || ""
         });
     });
 
@@ -278,10 +310,10 @@ function calcular() {
     const materiaisCarvao = [];
     document.querySelectorAll(".material-carvao-row").forEach(row => {
         materiaisCarvao.push({
-            patio: row.querySelector(".carvao-patio")?.value || "",
-            baliza: row.querySelector(".carvao-baliza")?.value || "",
+            patio: toUpperSafe(row.querySelector(".carvao-patio")?.value) || "",
+            baliza: toUpperSafe(row.querySelector(".carvao-baliza")?.value) || "",
             recuperadora: row.querySelector(".carvao-recuperadora")?.value || "",
-            tipo_material: row.querySelector(".carvao-tipo-material")?.value || "",
+            tipo_material: toUpperSafe(row.querySelector(".carvao-tipo-material")?.value) || "",
             acao: row.querySelector(".carvao-acao")?.value || "",
             hora_inicio: row.querySelector(".carvao-hora-inicio")?.value || "",
             hora_fim: row.querySelector(".carvao-hora-fim")?.value || "",
@@ -296,11 +328,11 @@ function calcular() {
     const dados = {
         data: document.getElementById("data").value,
         turno: document.getElementById("turno").value,
-        operador: document.getElementById("operador").value,
-        matricula: document.getElementById("matricula").value,
+        operador: toUpperSafe(document.getElementById("operador").value),
+        matricula: toUpperSafe(document.getElementById("matricula").value),
         produto: produto,
-        prefixo: document.getElementById("prefixo").value,
-        oferta: document.getElementById("oferta").value,
+        prefixo: toUpperSafe(document.getElementById("prefixo").value),
+        oferta: toUpperSafe(document.getElementById("oferta").value),
         inicio: document.getElementById("inicio").value,
         termino: document.getElementById("termino").value,
         peso: parseFloat(document.getElementById("peso").value || 0),
@@ -310,13 +342,13 @@ function calcular() {
         impactos_hora_fim: impactosHoraFim,
         impactos_tipo_atendimento: impactosTipoAtendimento,
         impactos_acao: impactosAcao,
-        observacoes: document.getElementById("observacoes").value,
+        observacoes: toUpperSafe(document.getElementById("observacoes").value),
         email: document.getElementById("email").value,
 
         // campos maquinista
-        maquinista: document.getElementById("maquinista")?.value || "",
-        loc1: document.getElementById("loc1")?.value || "",
-        loc2: document.getElementById("loc2")?.value || "",
+        maquinista: toUpperSafe(document.getElementById("maquinista")?.value) || "",
+        loc1: toUpperSafe(document.getElementById("loc1")?.value) || "",
+        loc2: toUpperSafe(document.getElementById("loc2")?.value) || "",
         horas_maquinista: document.getElementById("horas_maquinista")?.value || "",
         ponto_b: document.getElementById("ponto_b")?.value || "",
         sinal: document.getElementById("sinal")?.value || "",
@@ -326,10 +358,10 @@ function calcular() {
         houve_passagem: document.getElementById("houve_passagem")?.value || "NAO",
         vagoes_meu_turno: document.getElementById("vagoes_meu_turno")?.value || "",
         turno_assumiu: document.getElementById("turno_assumiu")?.value || "",
-        operador_assumiu: document.getElementById("operador_assumiu")?.value || "",
+        operador_assumiu: toUpperSafe(document.getElementById("operador_assumiu")?.value) || "",
         vagoes_proximo_turno: document.getElementById("vagoes_proximo_turno")?.value || "",
         assumiu_em_falha: document.getElementById("assumiu_em_falha")?.value || "NAO",
-        descricao_falha_assumida: document.getElementById("descricao_falha_assumida")?.value || "",
+        descricao_falha_assumida: toUpperSafe(document.getElementById("descricao_falha_assumida")?.value) || "",
 
         // mudança de fluxo
         houve_mudanca_fluxo: document.getElementById("houve_mudanca_fluxo")?.value || "NAO",
@@ -337,23 +369,23 @@ function calcular() {
 
         // campos específicos minério
         equipamento: document.getElementById("equipamento")?.value || "",
-        tipo_material: document.getElementById("tipo_material")?.value || "",
+        tipo_material: toUpperSafe(document.getElementById("tipo_material")?.value) || "",
         destino: document.getElementById("destino")?.value || "",
-        patio: document.getElementById("patio_nome")?.value || "",
-        baliza: document.getElementById("baliza")?.value || "",
+        patio: toUpperSafe(document.getElementById("patio_nome")?.value) || "",
+        baliza: toUpperSafe(document.getElementById("baliza")?.value) || "",
 
         // tabela partida (minério)
         vagoes_patio: document.getElementById("vagoes_patio")?.value || "",
-        patio_partida: document.getElementById("patio_partida")?.value || "",
-        baliza_partida: document.getElementById("baliza_partida")?.value || "",
+        patio_partida: toUpperSafe(document.getElementById("patio_partida")?.value) || "",
+        baliza_partida: toUpperSafe(document.getElementById("baliza_partida")?.value) || "",
         hora_inicio_patio: document.getElementById("hora_inicio_patio")?.value || "",
         hora_fim_patio: document.getElementById("hora_fim_patio")?.value || "",
         vagoes_bordo: document.getElementById("vagoes_bordo")?.value || "",
         hora_inicio_bordo: document.getElementById("hora_inicio_bordo")?.value || "",
         hora_fim_bordo: document.getElementById("hora_fim_bordo")?.value || "",
         mudanca_maquina: document.getElementById("mudanca_maquina")?.value || "NAO",
-        maquina_inicial: document.getElementById("maquina_inicial")?.value || "",
-        maquina_final: document.getElementById("maquina_final")?.value || "",
+        maquina_inicial: toUpperSafe(document.getElementById("maquina_inicial")?.value) || "",
+        maquina_final: toUpperSafe(document.getElementById("maquina_final")?.value) || "",
         hora_mudanca_maquina: document.getElementById("hora_mudanca_maquina")?.value || "",
 
         // campos específicos carvão

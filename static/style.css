@@ -48,6 +48,18 @@ select[required] {
     border-left: 3px solid #f44336;
 }
 
+/* Forçar maiúsculas em todos os campos */
+input[type="text"],
+textarea {
+    text-transform: uppercase;
+}
+
+/* Exceção: descrição de impactos - capitalização de frases */
+input.impacto-desc,
+input.impacto-acao {
+    text-transform: none;
+}
+
 input, select, textarea, button {
     width: 100%;
     padding: 12px;
