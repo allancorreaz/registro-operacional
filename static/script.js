@@ -774,7 +774,12 @@ function adicionarMaterialCarvao() {
         <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvão) ou CCM, KL (coque)">
         
         <label>Pátio de origem</label>
-        <input type="text" class="carvao-patio" placeholder="Ex: Pátio 0">
+        <select class="carvao-patio">
+            <option value="">Selecione</option>
+            <option value="PATIO 0">Pátio 0</option>
+            <option value="PATIO 1">Pátio 1</option>
+            <option value="PATIO 2">Pátio 2</option>
+        </select>
         
         <label>Baliza</label>
         <input type="text" class="carvao-baliza" placeholder="Ex: 57 a 60">
