@@ -159,12 +159,13 @@ function controleFalhaAssumida() {
 
 /* ===== PERSISTÊNCIA DE DADOS (SESSION STORAGE) ===== */
 const STORAGE_KEY = "registro_operacional_dados";
+const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
 
 // Lista de IDs dos campos do formulário para salvar
 const camposFormulario = [
     "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
     "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
-    "tipo_material", "destino", "patio_nome", "baliza", "tipo_divisao",
+    "tipo_material", "destino", "patio_nome", "baliza", "tipo_divisao", "primeiro_vagao",
     "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
     "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
     "hora_fim_bordo", "vagoes_patio2", "patio_partida2", "baliza_partida2",
@@ -174,6 +175,346 @@ const camposFormulario = [
     "operador_assumiu", "vagoes_proximo_turno", "assumiu_em_falha", "descricao_falha_assumida",
     "observacoes", "email"
 ];
+
+/* ===== HISTÓRICO DE TABELAS EM ANDAMENTO ===== */
+
+// Obter todas as tabelas salvas
+function obterTabelasAndamento() {
+    const dados = localStorage.getItem(STORAGE_KEY_TABELAS);
+    return dados ? JSON.parse(dados) : [];
+}
+
+// Salvar lista de tabelas
+function salvarTabelasAndamento(tabelas) {
+    localStorage.setItem(STORAGE_KEY_TABELAS, JSON.stringify(tabelas));
+}
+
+// Coletar dados atuais do formulário
+function coletarDadosFormulario() {
+    const dados = {};
+    
+    // Salvar campos simples
+    camposFormulario.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            dados[id] = elemento.value;
+        }
+    });
+    
+    // Salvar impactos
+    dados.impactos = [];
+    document.querySelectorAll(".impacto-row").forEach(row => {
+        const h = parseInt(row.querySelector(".impacto-h")?.value || 0);
+        const m = parseInt(row.querySelector(".impacto-m")?.value || 0);
+        dados.impactos.push({
+            desc: row.querySelector(".impacto-desc")?.value || "",
+            h: h,
+            m: m,
+            hora_inicio: row.querySelector(".impacto-hora-inicio")?.value || "",
+            hora_fim: row.querySelector(".impacto-hora-fim")?.value || "",
+            atend_mecanica: row.querySelector(".impacto-atend-mecanica")?.checked || false,
+            atend_eletrica: row.querySelector(".impacto-atend-eletrica")?.checked || false,
+            atend_operacional: row.querySelector(".impacto-atend-operacional")?.checked || false,
+            atend_outro: row.querySelector(".impacto-atend-outro")?.checked || false,
+            acao: row.querySelector(".impacto-acao")?.value || ""
+        });
+    });
+    
+    // Salvar materiais carvão
+    dados.materiais_carvao = [];
+    document.querySelectorAll(".material-carvao-row").forEach(row => {
+        dados.materiais_carvao.push({
+            categoria: row.querySelector(".carvao-categoria")?.value || "",
+            tipo_material: row.querySelector(".carvao-tipo-material")?.value || "",
+            patio: row.querySelector(".carvao-patio")?.value || "",
+            baliza: row.querySelector(".carvao-baliza")?.value || "",
+            recuperadora: row.querySelector(".carvao-recuperadora")?.value || "",
+            acao: row.querySelector(".carvao-acao")?.value || "",
+            hora_inicio: row.querySelector(".carvao-hora-inicio")?.value || "",
+            hora_fim: row.querySelector(".carvao-hora-fim")?.value || "",
+            peso_ecv: row.querySelector(".carvao-peso-ecv")?.value || "",
+            peso_recup: row.querySelector(".carvao-peso-recup")?.value || "",
+            vagoes: row.querySelector(".carvao-vagoes")?.value || ""
+        });
+    });
+    
+    // Salvar mudanças de fluxo
+    dados.mudancas_fluxo = [];
+    document.querySelectorAll(".fluxo-row").forEach(row => {
+        dados.mudancas_fluxo.push({
+            hora: row.querySelector(".fluxo-hora")?.value || "",
+            anterior: row.querySelector(".fluxo-anterior")?.value || "",
+            novo: row.querySelector(".fluxo-novo")?.value || "",
+            cco: row.querySelector(".fluxo-cco")?.checked || false,
+            mecanica: row.querySelector(".fluxo-mecanica")?.checked || false,
+            eletrica: row.querySelector(".fluxo-eletrica")?.checked || false,
+            operacao: row.querySelector(".fluxo-operacao")?.checked || false,
+            motivo: row.querySelector(".fluxo-motivo")?.value || ""
+        });
+    });
+    
+    return dados;
+}
+
+// Salvar tabela como início (em andamento)
+function salvarTabelaInicio() {
+    const prefixo = document.getElementById("prefixo").value;
+    const inicio = document.getElementById("inicio").value;
+    const data = document.getElementById("data").value;
+    const turno = document.getElementById("turno").value;
+    const produto = document.getElementById("produto").value;
+    const operador = document.getElementById("operador").value;
+    
+    if (!prefixo) {
+        alert("⚠️ Preencha o Prefixo/Trem para salvar a tabela!");
+        document.getElementById("prefixo").focus();
+        return;
+    }
+    
+    if (!inicio) {
+        alert("⚠️ Preencha o horário de Início para salvar a tabela!");
+        document.getElementById("inicio").focus();
+        return;
+    }
+    
+    const tabelas = obterTabelasAndamento();
+    
+    // Verificar se já existe uma tabela com mesmo prefixo, data e turno
+    const indiceExistente = tabelas.findIndex(t => 
+        t.prefixo === prefixo && t.data === data && t.turno === turno
+    );
+    
+    const dadosFormulario = coletarDadosFormulario();
+    
+    const novaTabela = {
+        id: indiceExistente >= 0 ? tabelas[indiceExistente].id : Date.now(),
+        prefixo: prefixo,
+        data: data,
+        turno: turno,
+        produto: produto,
+        operador: operador,
+        inicio: inicio,
+        salvoEm: new Date().toLocaleString('pt-BR'),
+        dados: dadosFormulario
+    };
+    
+    if (indiceExistente >= 0) {
+        tabelas[indiceExistente] = novaTabela;
+        alert(`✅ Tabela "${prefixo}" atualizada no histórico!`);
+    } else {
+        tabelas.unshift(novaTabela); // Adicionar no início da lista
+        alert(`✅ Tabela "${prefixo}" salva no histórico!\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".`);
+    }
+    
+    salvarTabelasAndamento(tabelas);
+    atualizarSeletorTabelas();
+    
+    // Selecionar a tabela recém-salva
+    document.getElementById("seletorTabelasAndamento").value = novaTabela.id;
+    mostrarInfoTabelaSelecionada(novaTabela);
+}
+
+// Atualizar o seletor de tabelas em andamento
+function atualizarSeletorTabelas() {
+    const select = document.getElementById("seletorTabelasAndamento");
+    const tabelas = obterTabelasAndamento();
+    
+    // Limpar opções existentes (exceto a primeira)
+    select.innerHTML = '<option value="">-- Nova Tabela --</option>';
+    
+    tabelas.forEach(tabela => {
+        const option = document.createElement("option");
+        option.value = tabela.id;
+        
+        // Formatar data para exibição
+        let dataFormatada = "";
+        if (tabela.data) {
+            const [ano, mes, dia] = tabela.data.split("-");
+            dataFormatada = `${dia}/${mes}`;
+        }
+        
+        option.textContent = `${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | Início: ${tabela.inicio}`;
+        select.appendChild(option);
+    });
+}
+
+// Mostrar informações da tabela selecionada
+function mostrarInfoTabelaSelecionada(tabela) {
+    const info = document.getElementById("infoTabelaSelecionada");
+    
+    if (!tabela) {
+        info.style.display = "none";
+        return;
+    }
+    
+    let dataFormatada = "";
+    if (tabela.data) {
+        const [ano, mes, dia] = tabela.data.split("-");
+        dataFormatada = `${dia}/${mes}/${ano}`;
+    }
+    
+    info.innerHTML = `
+        <strong>📋 Tabela Carregada:</strong><br>
+        🚆 Prefixo: ${tabela.prefixo}<br>
+        📅 Data: ${dataFormatada}<br>
+        🕒 Turno: ${tabela.turno}<br>
+        ⏳ Início: ${tabela.inicio}<br>
+        👷 Operador: ${tabela.operador || '-'}<br>
+        <small>💾 Salvo em: ${tabela.salvoEm}</small>
+    `;
+    info.style.display = "block";
+}
+
+// Carregar tabela selecionada do histórico
+function carregarTabelaAndamento() {
+    const select = document.getElementById("seletorTabelasAndamento");
+    const tabelaId = select.value;
+    
+    if (!tabelaId) {
+        // Nova tabela - limpar formulário
+        document.getElementById("infoTabelaSelecionada").style.display = "none";
+        return;
+    }
+    
+    const tabelas = obterTabelasAndamento();
+    const tabela = tabelas.find(t => t.id == tabelaId);
+    
+    if (!tabela) {
+        alert("⚠️ Tabela não encontrada!");
+        return;
+    }
+    
+    // Confirmar carregamento
+    if (!confirm(`Carregar a tabela "${tabela.prefixo}"?\n\nOs dados atuais do formulário serão substituídos.`)) {
+        select.value = "";
+        return;
+    }
+    
+    // Limpar containers dinâmicos
+    document.getElementById("impactosContainer").innerHTML = "";
+    document.getElementById("materiaisCarvaoContainer").innerHTML = "";
+    document.getElementById("mudancaFluxoContainer").innerHTML = "";
+    
+    const dados = tabela.dados;
+    
+    // Restaurar campos simples
+    camposFormulario.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento && dados[id] !== undefined) {
+            elemento.value = dados[id];
+        }
+    });
+    
+    // Atualizar controles visuais
+    atualizarEquipamentos();
+    controleProduto();
+    controleDestino();
+    controleTipoDivisao();
+    controleMudancaFluxo();
+    controlePassagem();
+    controleFalhaAssumida();
+    
+    // Restaurar impactos
+    if (dados.impactos && dados.impactos.length > 0) {
+        dados.impactos.forEach(imp => {
+            adicionarImpacto();
+            const rows = document.querySelectorAll(".impacto-row");
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                if (lastRow.querySelector(".impacto-desc")) lastRow.querySelector(".impacto-desc").value = imp.desc;
+                if (lastRow.querySelector(".impacto-h")) lastRow.querySelector(".impacto-h").value = imp.h || "";
+                if (lastRow.querySelector(".impacto-m")) lastRow.querySelector(".impacto-m").value = imp.m || "";
+                if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
+                if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
+                if (lastRow.querySelector(".impacto-atend-mecanica")) lastRow.querySelector(".impacto-atend-mecanica").checked = imp.atend_mecanica;
+                if (lastRow.querySelector(".impacto-atend-eletrica")) lastRow.querySelector(".impacto-atend-eletrica").checked = imp.atend_eletrica;
+                if (lastRow.querySelector(".impacto-atend-operacional")) lastRow.querySelector(".impacto-atend-operacional").checked = imp.atend_operacional;
+                if (lastRow.querySelector(".impacto-atend-outro")) lastRow.querySelector(".impacto-atend-outro").checked = imp.atend_outro;
+                if (lastRow.querySelector(".impacto-acao")) lastRow.querySelector(".impacto-acao").value = imp.acao;
+            }
+        });
+    }
+    
+    // Restaurar materiais carvão
+    if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
+        dados.materiais_carvao.forEach(mat => {
+            adicionarMaterialCarvao();
+            const rows = document.querySelectorAll(".material-carvao-row");
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                if (lastRow.querySelector(".carvao-categoria")) lastRow.querySelector(".carvao-categoria").value = mat.categoria;
+                if (lastRow.querySelector(".carvao-tipo-material")) lastRow.querySelector(".carvao-tipo-material").value = mat.tipo_material;
+                if (lastRow.querySelector(".carvao-patio")) lastRow.querySelector(".carvao-patio").value = mat.patio;
+                if (lastRow.querySelector(".carvao-baliza")) lastRow.querySelector(".carvao-baliza").value = mat.baliza;
+                if (lastRow.querySelector(".carvao-recuperadora")) lastRow.querySelector(".carvao-recuperadora").value = mat.recuperadora;
+                if (lastRow.querySelector(".carvao-acao")) lastRow.querySelector(".carvao-acao").value = mat.acao;
+                if (lastRow.querySelector(".carvao-hora-inicio")) lastRow.querySelector(".carvao-hora-inicio").value = mat.hora_inicio;
+                if (lastRow.querySelector(".carvao-hora-fim")) lastRow.querySelector(".carvao-hora-fim").value = mat.hora_fim;
+                if (lastRow.querySelector(".carvao-peso-ecv")) lastRow.querySelector(".carvao-peso-ecv").value = mat.peso_ecv;
+                if (lastRow.querySelector(".carvao-peso-recup")) lastRow.querySelector(".carvao-peso-recup").value = mat.peso_recup;
+                if (lastRow.querySelector(".carvao-vagoes")) lastRow.querySelector(".carvao-vagoes").value = mat.vagoes;
+            }
+        });
+    }
+    
+    // Restaurar mudanças de fluxo
+    if (dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
+        dados.mudancas_fluxo.forEach(fluxo => {
+            adicionarMudancaFluxo();
+            const rows = document.querySelectorAll(".fluxo-row");
+            const lastRow = rows[rows.length - 1];
+            if (lastRow) {
+                if (lastRow.querySelector(".fluxo-hora")) lastRow.querySelector(".fluxo-hora").value = fluxo.hora;
+                if (lastRow.querySelector(".fluxo-anterior")) lastRow.querySelector(".fluxo-anterior").value = fluxo.anterior;
+                if (lastRow.querySelector(".fluxo-novo")) lastRow.querySelector(".fluxo-novo").value = fluxo.novo;
+                if (lastRow.querySelector(".fluxo-cco")) lastRow.querySelector(".fluxo-cco").checked = fluxo.cco;
+                if (lastRow.querySelector(".fluxo-mecanica")) lastRow.querySelector(".fluxo-mecanica").checked = fluxo.mecanica;
+                if (lastRow.querySelector(".fluxo-eletrica")) lastRow.querySelector(".fluxo-eletrica").checked = fluxo.eletrica;
+                if (lastRow.querySelector(".fluxo-operacao")) lastRow.querySelector(".fluxo-operacao").checked = fluxo.operacao;
+                if (lastRow.querySelector(".fluxo-motivo")) lastRow.querySelector(".fluxo-motivo").value = fluxo.motivo;
+            }
+        });
+    }
+    
+    mostrarInfoTabelaSelecionada(tabela);
+    
+    // Rolar para o campo de término
+    document.getElementById("termino").scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById("termino").focus();
+    
+    alert(`✅ Tabela "${tabela.prefixo}" carregada!\n\nAgora preencha o Término e gere o resultado.`);
+}
+
+// Excluir tabela selecionada
+function excluirTabelaAndamento() {
+    const select = document.getElementById("seletorTabelasAndamento");
+    const tabelaId = select.value;
+    
+    if (!tabelaId) {
+        alert("⚠️ Selecione uma tabela para excluir!");
+        return;
+    }
+    
+    const tabelas = obterTabelasAndamento();
+    const tabela = tabelas.find(t => t.id == tabelaId);
+    
+    if (!tabela) {
+        alert("⚠️ Tabela não encontrada!");
+        return;
+    }
+    
+    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do histórico?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+    }
+    
+    const novasTabelas = tabelas.filter(t => t.id != tabelaId);
+    salvarTabelasAndamento(novasTabelas);
+    atualizarSeletorTabelas();
+    
+    document.getElementById("infoTabelaSelecionada").style.display = "none";
+    
+    alert(`✅ Tabela "${tabela.prefixo}" excluída do histórico!`);
+}
 
 function salvarDadosFormulario() {
     const dados = {};
@@ -331,6 +672,9 @@ document.addEventListener("DOMContentLoaded", function() {
     // Inicializar equipamentos e controles
     atualizarEquipamentos();
     controleProduto();
+    
+    // Carregar histórico de tabelas em andamento
+    atualizarSeletorTabelas();
     
     // Restaurar dados salvos
     restaurarDadosFormulario();
@@ -655,6 +999,7 @@ function calcular() {
         // campos específicos carvão
         equipamento_carvao: document.getElementById("equipamento_carvao")?.value || "",
         recuperadora_carvao: document.getElementById("recuperadora_carvao")?.value || "",
+        primeiro_vagao: toUpperSafe(document.getElementById("primeiro_vagao")?.value) || "",
         materiais_carvao: materiaisCarvao
     };
 
@@ -743,7 +1088,7 @@ ${tabelaPartidaHTML}
 ⏳ <strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
 ⌛ <strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
 ⏱ <strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
-⛔ Impactos Totais: ${formatarTempo(data.impactos_total)}<br>
+⛔ Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
 ✅ Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
 
 ⚖️ Peso Total: ${dados.peso} t<br>
@@ -807,14 +1152,15 @@ ${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br><br>
 🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>
 📍 Passagem Ponto B: ${dados.ponto_b}<br>
-📋 Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
+📋 Tabela Posicionada: ${dados.tabela_posicionada}<br>
+🚃 1º Vagão: ${dados.primeiro_vagao || "—"}<br><br>
 
 ${materiaisHTML}
 <br>
 ⏳ <strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
 ⌛ <strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
 ⏱ <strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
-⛔ Impactos Totais: ${formatarTempo(data.impactos_total)}<br>
+⛔ Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
 ✅ Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
 
 ⚖️ Peso Total: ${dados.peso} t<br>

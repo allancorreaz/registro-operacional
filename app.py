@@ -111,6 +111,8 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
         linhas.append("-" * 40)
         linhas.append("CARREGAMENTO DE CARVAO - ECV")
         linhas.append("-" * 40)
+        linhas.append(f"1o VAGAO DA TABELA: {d.get('primeiro_vagao', '')}")
+        linhas.append("")
         
         materiais_carvao = d.get("materiais_carvao", [])
         for i, mat in enumerate(materiais_carvao, 1):
@@ -156,7 +158,7 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
     linhas.append(f"INICIO: {d.get('inicio', '')}")
     linhas.append(f"TERMINO: {termino if termino else '-'}")
     linhas.append(f"TMD/C: {formatar_tempo(tmd) if termino else '-'}")
-    linhas.append(f"IMPACTOS TOTAIS: {formatar_tempo(impactos)}")
+    linhas.append(f"TEMPO TOTAL PARADO: {formatar_tempo(impactos)}")
     linhas.append(f"HORA EFETIVA: {formatar_tempo(efetiva) if termino else '-'}")
     linhas.append(f"TAXA EFETIVA: {taxa} t/h" if termino and taxa > 0 else "TAXA EFETIVA: -")
     linhas.append("")

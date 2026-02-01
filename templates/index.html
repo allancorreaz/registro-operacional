@@ -18,6 +18,22 @@
         <button onclick="limparFormulario()" style="background: #c62828;">🗑️ Limpar Tudo</button>
     </div>
 
+    <!-- TABELAS EM ANDAMENTO -->
+    <div class="card" id="cardTabelasAndamento">
+        <h2>📋 Tabelas em Andamento</h2>
+        <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+            Selecione uma tabela iniciada para preencher o término:
+        </p>
+        <select id="seletorTabelasAndamento" onchange="carregarTabelaAndamento()">
+            <option value="">-- Nova Tabela --</option>
+        </select>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button type="button" onclick="salvarTabelaInicio()" style="background: #1976d2;">💾 Salvar Início</button>
+            <button type="button" onclick="excluirTabelaAndamento()" style="background: #c62828;">🗑️ Excluir Selecionada</button>
+        </div>
+        <div id="infoTabelaSelecionada" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; display: none;"></div>
+    </div>
+
     <!-- NOVOS CAMPOS -->
     <div class="card">
         <h2>Tipo de Operação</h2>
@@ -144,6 +160,9 @@
         <!-- CAMPOS ESPECÍFICOS PARA CARVÃO -->
         <div id="carvaoExtra" style="display:none;">
             <h3>⚫ Carregamento de Carvão/Coque</h3>
+
+            <label>Número do 1º Vagão da Tabela</label>
+            <input type="text" id="primeiro_vagao" placeholder="Ex: GDT 123456-7">
 
             <!-- MATERIAIS DO CARVÃO (DINÂMICO) -->
             <div id="materiaisCarvaoContainer"></div>

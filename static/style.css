@@ -33,6 +33,27 @@ h2 {
     color: #203a43;
 }
 
+/* Card de tabelas em andamento */
+#cardTabelasAndamento {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    border: 2px solid #4caf50;
+}
+
+#cardTabelasAndamento h2 {
+    color: #2e7d32;
+}
+
+#seletorTabelasAndamento {
+    background: #fff;
+    font-weight: bold;
+}
+
+#infoTabelaSelecionada {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+    font-size: 0.9em;
+}
+
 label {
     font-weight: 600;
     font-size: 14px;
