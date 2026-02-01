@@ -254,18 +254,28 @@
             <label>Operador que assumiu <span class="obrigatorio">*</span></label>
             <input type="text" id="operador_assumiu" placeholder="Ex: Carlos Santos">
 
+            <label>Matrícula do operador que assumiu <span class="obrigatorio">*</span></label>
+            <input type="text" id="matricula_assumiu" placeholder="Ex: MIP0050">
+
+            <label>Hora da rendição <span class="obrigatorio">*</span></label>
+            <input type="time" id="hora_rendicao">
+
             <label>Vagões restantes para o próximo turno <span class="obrigatorio">*</span></label>
             <input type="number" id="vagoes_proximo_turno" min="0" placeholder="Ex: 35">
 
-            <label>Assumiu em falha/impacto?</label>
-            <select id="assumiu_em_falha">
+            <label>Passou com falha/impacto? <span class="obrigatorio">*</span></label>
+            <select id="assumiu_em_falha" onchange="controleFalhaAssumida()">
+                <option value="">Selecione</option>
                 <option value="NAO">Não</option>
                 <option value="SIM">Sim</option>
             </select>
 
             <div id="falhaAssumidaExtra" style="display:none;">
-                <label>Qual falha?</label>
+                <label>Qual falha? <span class="obrigatorio">*</span></label>
                 <input type="text" id="descricao_falha_assumida" placeholder="Descreva a falha">
+                
+                <label>Hora da falha <span class="obrigatorio">*</span></label>
+                <input type="time" id="hora_falha_passagem">
             </div>
         </div>
     </div>

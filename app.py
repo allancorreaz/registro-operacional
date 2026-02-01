@@ -209,12 +209,13 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
         linhas.append("-" * 40)
         linhas.append("PASSAGEM DE TURNO")
         linhas.append("-" * 40)
+        linhas.append(f"  Hora da rendicao: {d.get('hora_rendicao', '')}")
         linhas.append(f"  Vagoes descarregados no meu turno: {d.get('vagoes_meu_turno', '')}")
+        linhas.append(f"  Vagoes restantes p/ proximo turno: {d.get('vagoes_proximo_turno', '')}")
         linhas.append(f"  Turno que assumiu: {d.get('turno_assumiu', '')}")
-        linhas.append(f"  Operador que assumiu: {d.get('operador_assumiu', '')}")
-        linhas.append(f"  Vagoes restantes: {d.get('vagoes_proximo_turno', '')}")
+        linhas.append(f"  Operador que assumiu: {d.get('operador_assumiu', '')} | Mat: {d.get('matricula_assumiu', '')}")
         if d.get("assumiu_em_falha") == "SIM":
-            linhas.append(f"  ** ASSUMIU EM FALHA: {d.get('descricao_falha_assumida', '')} **")
+            linhas.append(f"  ** PASSOU EM FALHA: {d.get('descricao_falha_assumida', '')} (as {d.get('hora_falha_passagem', '')}) **")
 
     linhas.append("")
     linhas.append("-" * 40)

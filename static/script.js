@@ -136,7 +136,10 @@ function controlePassagem() {
         "vagoes_meu_turno",
         "turno_assumiu",
         "operador_assumiu",
-        "vagoes_proximo_turno"
+        "matricula_assumiu",
+        "hora_rendicao",
+        "vagoes_proximo_turno",
+        "assumiu_em_falha"
     ];
     
     camposPassagem.forEach(id => {
@@ -150,11 +153,34 @@ function controlePassagem() {
             }
         }
     });
+    
+    // Se não houve passagem, limpar também os campos de falha
+    if (houve !== "SIM") {
+        document.getElementById("descricao_falha_assumida").value = "";
+        document.getElementById("hora_falha_passagem").value = "";
+        document.getElementById("falhaAssumidaExtra").style.display = "none";
+    }
 }
 
 function controleFalhaAssumida() {
     const assumiu = document.getElementById("assumiu_em_falha").value;
-    document.getElementById("falhaAssumidaExtra").style.display = assumiu === "SIM" ? "block" : "none";
+    const falhaExtra = document.getElementById("falhaAssumidaExtra");
+    falhaExtra.style.display = assumiu === "SIM" ? "block" : "none";
+    
+    // Campos obrigatórios se passou com falha
+    const camposFalha = ["descricao_falha_assumida", "hora_falha_passagem"];
+    
+    camposFalha.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            if (assumiu === "SIM") {
+                campo.setAttribute("required", "required");
+            } else {
+                campo.removeAttribute("required");
+                campo.value = "";
+            }
+        }
+    });
 }
 
 /* ===== PERSISTÊNCIA DE DADOS (SESSION STORAGE) ===== */
@@ -172,7 +198,8 @@ const camposFormulario = [
     "maquina_patio2", "hora_inicio_patio2", "hora_fim_patio2",
     "prefixo", "oferta", "inicio", "termino", "peso",
     "houve_mudanca_fluxo", "houve_passagem", "vagoes_meu_turno", "turno_assumiu",
-    "operador_assumiu", "vagoes_proximo_turno", "assumiu_em_falha", "descricao_falha_assumida",
+    "operador_assumiu", "matricula_assumiu", "hora_rendicao", "vagoes_proximo_turno", 
+    "assumiu_em_falha", "descricao_falha_assumida", "hora_falha_passagem",
     "observacoes", "email"
 ];
 
@@ -961,9 +988,12 @@ function calcular() {
         vagoes_meu_turno: document.getElementById("vagoes_meu_turno")?.value || "",
         turno_assumiu: document.getElementById("turno_assumiu")?.value || "",
         operador_assumiu: toUpperSafe(document.getElementById("operador_assumiu")?.value) || "",
+        matricula_assumiu: toUpperSafe(document.getElementById("matricula_assumiu")?.value) || "",
+        hora_rendicao: document.getElementById("hora_rendicao")?.value || "",
         vagoes_proximo_turno: document.getElementById("vagoes_proximo_turno")?.value || "",
         assumiu_em_falha: document.getElementById("assumiu_em_falha")?.value || "NAO",
         descricao_falha_assumida: toUpperSafe(document.getElementById("descricao_falha_assumida")?.value) || "",
+        hora_falha_passagem: document.getElementById("hora_falha_passagem")?.value || "",
 
         // mudança de fluxo
         houve_mudanca_fluxo: document.getElementById("houve_mudanca_fluxo")?.value || "NAO",
@@ -1193,13 +1223,19 @@ function gerarImpactosHTML(dados) {
 
 function gerarPassagemHTML(dados) {
     if (dados.houve_passagem === "SIM") {
+        let falhaTexto = "";
+        if (dados.assumiu_em_falha === "SIM") {
+            falhaTexto = `⚠️ Passou em FALHA: ${dados.descricao_falha_assumida} (às ${dados.hora_falha_passagem || "—"})<br>`;
+        }
+        
         return `
 <strong>🔄 PASSAGEM DE TURNO:</strong><br>
-Vagões descarregados no meu turno: ${dados.vagoes_meu_turno || "—"}<br>
-Turno que assumiu: ${dados.turno_assumiu || "—"}<br>
-Operador que assumiu: ${dados.operador_assumiu || "—"}<br>
-Vagões restantes: ${dados.vagoes_proximo_turno || "—"}<br>
-${dados.assumiu_em_falha === "SIM" ? `⚠️ Assumiu em FALHA: ${dados.descricao_falha_assumida}<br>` : ""}
+🕐 Hora da rendição: ${dados.hora_rendicao || "—"}<br>
+🚃 Vagões descarregados no meu turno: ${dados.vagoes_meu_turno || "—"}<br>
+🚃 Vagões restantes p/ próximo turno: ${dados.vagoes_proximo_turno || "—"}<br>
+👷 Turno que assumiu: ${dados.turno_assumiu || "—"}<br>
+👷 Operador que assumiu: ${dados.operador_assumiu || "—"} | Mat: ${dados.matricula_assumiu || "—"}<br>
+${falhaTexto}
 <br>`;
     }
     return "";
