@@ -73,9 +73,11 @@ function atualizarTiposMaterial(selectCategoria) {
 function controleDestino() {
     const destino = document.getElementById("destino").value;
     const patioExtra = document.getElementById("patioExtra");
+    const bordoExtra = document.getElementById("bordoExtra");
     const tabelaPartidaExtra = document.getElementById("tabelaPartidaExtra");
     
     patioExtra.style.display = destino === "PATIO" ? "block" : "none";
+    bordoExtra.style.display = destino === "BORDO" ? "block" : "none";
     tabelaPartidaExtra.style.display = destino === "PARTIDA" ? "block" : "none";
 }
 
@@ -191,7 +193,8 @@ const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
 const camposFormulario = [
     "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
     "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
-    "tipo_material", "destino", "patio_nome", "baliza", "tipo_divisao", "primeiro_vagao",
+    "tipo_material", "destino", "patio_nome", "baliza", "maquina_patio", "passando_por",
+    "tipo_divisao", "primeiro_vagao",
     "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
     "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
     "hora_fim_bordo", "vagoes_patio2", "patio_partida2", "baliza_partida2",
@@ -1005,13 +1008,15 @@ function calcular() {
         destino: document.getElementById("destino")?.value || "",
         patio: toUpperSafe(document.getElementById("patio_nome")?.value) || "",
         baliza: toUpperSafe(document.getElementById("baliza")?.value) || "",
+        maquina_patio: document.getElementById("maquina_patio")?.value || "",
+        passando_por: toUpperSafe(document.getElementById("passando_por")?.value) || "",
 
         // tabela partida (minério)
         tipo_divisao: document.getElementById("tipo_divisao")?.value || "PATIO_BORDO",
         vagoes_patio: document.getElementById("vagoes_patio")?.value || "",
         patio_partida: toUpperSafe(document.getElementById("patio_partida")?.value) || "",
         baliza_partida: toUpperSafe(document.getElementById("baliza_partida")?.value) || "",
-        maquina_patio1: toUpperSafe(document.getElementById("maquina_patio1")?.value) || "",
+        maquina_patio1: document.getElementById("maquina_patio1")?.value || "",
         hora_inicio_patio: document.getElementById("hora_inicio_patio")?.value || "",
         hora_fim_patio: document.getElementById("hora_fim_patio")?.value || "",
         // bordo (para pátio+bordo)
@@ -1022,7 +1027,7 @@ function calcular() {
         vagoes_patio2: document.getElementById("vagoes_patio2")?.value || "",
         patio_partida2: toUpperSafe(document.getElementById("patio_partida2")?.value) || "",
         baliza_partida2: toUpperSafe(document.getElementById("baliza_partida2")?.value) || "",
-        maquina_patio2: toUpperSafe(document.getElementById("maquina_patio2")?.value) || "",
+        maquina_patio2: document.getElementById("maquina_patio2")?.value || "",
         hora_inicio_patio2: document.getElementById("hora_inicio_patio2")?.value || "",
         hora_fim_patio2: document.getElementById("hora_fim_patio2")?.value || "",
 
@@ -1054,9 +1059,13 @@ function calcular() {
 /* ===== GERAR RESULTADO MINÉRIO ===== */
 function gerarResultadoMinerio(dados, data) {
     let destinoTexto = "";
-    if (dados.destino === "PATIO") destinoTexto = `Pátio ${dados.patio} | Baliza ${dados.baliza}`;
-    if (dados.destino === "BORDO") destinoTexto = "Trem de Bordo";
-    if (dados.destino === "PARTIDA") destinoTexto = "Tabela Partida (Pátio + Bordo)";
+    if (dados.destino === "PATIO") {
+        destinoTexto = `Pátio ${dados.patio} | Baliza ${dados.baliza} | ${dados.maquina_patio || "—"}`;
+    }
+    if (dados.destino === "BORDO") {
+        destinoTexto = dados.passando_por ? `Bordo (passando por ${dados.passando_por})` : "Trem de Bordo";
+    }
+    if (dados.destino === "PARTIDA") destinoTexto = "Tabela Dividida/Fracionada";
 
     let impactosHTML = gerarImpactosHTML(dados);
     let passagemHTML = gerarPassagemHTML(dados);

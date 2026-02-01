@@ -115,7 +115,22 @@
                 <input type="text" id="patio_nome" placeholder="Ex: Pátio 5">
         
                 <label>Baliza</label>
-                <input type="text" id="baliza" placeholder="Ex: 31-39 E3">
+                <input type="text" id="baliza" placeholder="Ex: 31-39">
+                
+                <label>Máquina</label>
+                <select id="maquina_patio">
+                    <option value="">Selecione</option>
+                    <option value="ER1A">ER1A</option>
+                    <option value="ER2">ER2</option>
+                    <option value="E3">E3</option>
+                    <option value="E4">E4</option>
+                </select>
+            </div>
+
+            <!-- DESTINO BORDO -->
+            <div id="bordoExtra" style="display:none;">
+                <label>Passando por (opcional)</label>
+                <input type="text" id="passando_por" placeholder="Ex: Pátio 3 (opcional)">
             </div>
 
             <!-- TABELA DIVIDIDA/FRACIONADA -->
@@ -133,7 +148,13 @@
                     <input type="number" id="vagoes_patio" min="0" placeholder="Qtd vagões">
                     <input type="text" id="patio_partida" placeholder="Qual pátio? Ex: Pátio 5">
                     <input type="text" id="baliza_partida" placeholder="Baliza Ex: 31-39">
-                    <input type="text" id="maquina_patio1" placeholder="Máquina (Ex: VV1)">
+                    <select id="maquina_patio1">
+                        <option value="">Máquina</option>
+                        <option value="ER1A">ER1A</option>
+                        <option value="ER2">ER2</option>
+                        <option value="E3">E3</option>
+                        <option value="E4">E4</option>
+                    </select>
                     <input type="time" id="hora_inicio_patio" title="Hora início">
                     <input type="time" id="hora_fim_patio" title="Hora fim">
                 </div>
@@ -150,7 +171,13 @@
                     <input type="number" id="vagoes_patio2" min="0" placeholder="Qtd vagões">
                     <input type="text" id="patio_partida2" placeholder="Qual pátio? Ex: Pátio 3">
                     <input type="text" id="baliza_partida2" placeholder="Baliza Ex: 10-15">
-                    <input type="text" id="maquina_patio2" placeholder="Máquina (Ex: VV2)">
+                    <select id="maquina_patio2">
+                        <option value="">Máquina</option>
+                        <option value="ER1A">ER1A</option>
+                        <option value="ER2">ER2</option>
+                        <option value="E3">E3</option>
+                        <option value="E4">E4</option>
+                    </select>
                     <input type="time" id="hora_inicio_patio2" title="Hora início">
                     <input type="time" id="hora_fim_patio2" title="Hora fim">
                 </div>
