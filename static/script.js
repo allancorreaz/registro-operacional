@@ -600,11 +600,11 @@ function salvarDadosFormulario() {
         });
     });
     
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
 }
 
 function restaurarDadosFormulario() {
-    const dadosSalvos = sessionStorage.getItem(STORAGE_KEY);
+    const dadosSalvos = localStorage.getItem(STORAGE_KEY);
     if (!dadosSalvos) return;
     
     const dados = JSON.parse(dadosSalvos);
@@ -686,7 +686,7 @@ function restaurarDadosFormulario() {
 }
 
 function limparDadosSalvos() {
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
 }
 
 // Adicionar listener após carregar a página
