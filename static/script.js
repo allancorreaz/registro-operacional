@@ -1,6 +1,57 @@
-/* ===== FUNÇÕES DE FORMATAÇÃO DE TEXTO ===== */
+/**
+ * ======================================
+ * REGISTRO OPERACIONAL - JAVASCRIPT
+ * Organizado por Allan De Melo Correa
+ * ======================================
+ */
 
-// Capitalizar primeira letra e após pontos (para descrição de impactos)
+/* ======================================
+   CONFIGURAÇÕES E CONSTANTES
+====================================== */
+
+// Equipamentos por produto
+const EQUIPAMENTOS_MINERIO = ["VV1", "VV2", "VV3"];
+const EQUIPAMENTOS_CARVAO = ["ECV"];
+const RECUPERADORAS_CARVAO = ["R5", "R1A"];
+
+// Chaves de armazenamento
+const STORAGE_KEY = "registro_operacional_dados";
+const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
+
+// Campos do formulário para persistência
+const CAMPOS_FORMULARIO = [
+    "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
+    "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
+    "tipo_material", "destino", "patio_nome", "baliza", "maquina_patio", "passando_por",
+    "tipo_divisao", "primeiro_vagao",
+    "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
+    "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
+    "hora_fim_bordo", "vagoes_patio2", "patio_partida2", "baliza_partida2",
+    "maquina_patio2", "hora_inicio_patio2", "hora_fim_patio2",
+    "prefixo", "oferta", "inicio", "termino", "peso",
+    "houve_mudanca_fluxo", "houve_passagem", "vagoes_meu_turno", "turno_assumiu",
+    "operador_assumiu", "matricula_assumiu", "hora_rendicao", "vagoes_proximo_turno", 
+    "assumiu_em_falha", "descricao_falha_assumida", "hora_falha_passagem",
+    "turno_passou_tabela", "operador_passou_tabela", "matricula_passou_tabela",
+    "hora_assumiu_tabela", "vagoes_faltavam_assumir", "recebeu_em_falha",
+    "falha_recebida_desc", "hora_inicio_falha_recebida", "tempo_parado_h", "tempo_parado_m",
+    "acao_falha_recebida",
+    "observacoes", "email"
+];
+
+// Cache de tabelas
+let tabelasAndamentoCache = [];
+let tabelasFinalizadasCache = [];
+let atualizacaoAutomaticaInterval = null;
+let tabelaCarregadaInfo = null;
+
+/* ======================================
+   FUNÇÕES DE FORMATAÇÃO
+====================================== */
+
+/**
+ * Capitaliza primeira letra e após pontos
+ */
 function capitalizarFrases(texto) {
     if (!texto) return texto;
     return texto
@@ -8,30 +59,48 @@ function capitalizarFrases(texto) {
         .replace(/(^|[.!?]\s*)([a-záàâãéèêíïóôõöúçñ])/gi, (match, p1, p2) => p1 + p2.toUpperCase());
 }
 
-// Aplicar capitalização em tempo real nos campos de impacto
+/**
+ * Aplica capitalização em tempo real nos campos de impacto
+ */
 function aplicarCapitalizacaoImpacto(input) {
     input.addEventListener('blur', function() {
         this.value = capitalizarFrases(this.value);
     });
 }
 
-// Converter para maiúsculas (para envio ao servidor)
+/**
+ * Converte para maiúsculas (para envio ao servidor)
+ */
 function toUpperSafe(valor) {
     return valor ? valor.toUpperCase() : valor;
 }
 
-/* ===== EQUIPAMENTOS POR PRODUTO ===== */
-const equipamentosMinério = ["VV1", "VV2", "VV3"];
-const equipamentosCarvao = ["ECV"];
-const recuperadorasCarvao = ["R5", "R1A"];
+/**
+ * Formata tempo em horas e minutos
+ */
+function formatarTempo(minutos) {
+    if (minutos >= 60) {
+        const h = Math.floor(minutos / 60);
+        const m = minutos % 60;
+        return m > 0 ? `${h}h ${m}min` : `${h}h`;
+    }
+    return `${minutos} min`;
+}
 
+/* ======================================
+   CONTROLES DE EQUIPAMENTO/PRODUTO
+====================================== */
+
+/**
+ * Atualiza lista de equipamentos baseado no produto
+ */
 function atualizarEquipamentos() {
     const produto = document.getElementById("produto").value;
     const selectEquip = document.getElementById("equipamento");
     
     selectEquip.innerHTML = "";
     
-    const equipamentos = produto === "Carvão" ? equipamentosCarvao : equipamentosMinério;
+    const equipamentos = produto === "Carvão" ? EQUIPAMENTOS_CARVAO : EQUIPAMENTOS_MINERIO;
     
     equipamentos.forEach(eq => {
         const opt = document.createElement("option");
@@ -43,74 +112,70 @@ function atualizarEquipamentos() {
     controleEquipamento();
 }
 
+/**
+ * Controla visibilidade do campo de sinal
+ */
 function controleEquipamento() {
     const equipamento = document.getElementById("equipamento").value;
     const sinalContainer = document.getElementById("sinalContainer");
     
     // ECV não tem passagem pelo sinal
-    if (equipamento === "ECV") {
-        sinalContainer.style.display = "none";
-    } else {
-        sinalContainer.style.display = "block";
-    }
+    sinalContainer.style.display = equipamento === "ECV" ? "none" : "block";
 }
 
-// Atualizar placeholder do tipo de material com base na categoria
+/**
+ * Atualiza placeholder do tipo de material com base na categoria
+ */
 function atualizarTiposMaterial(selectCategoria) {
     const row = selectCategoria.closest('.material-carvao-row');
     const inputTipo = row.querySelector('.carvao-tipo-material');
     const categoria = selectCategoria.value;
     
-    if (categoria === "CARVAO") {
-        inputTipo.placeholder = "Ex: MU, OG";
-    } else {
-        inputTipo.placeholder = "Ex: CCM, KL, KIN";
-    }
+    inputTipo.placeholder = categoria === "CARVAO" 
+        ? "Ex: MU, OG (carvão)"
+        : "Ex: CCM, KL, KIN (coque)";
 }
 
-/* ===== CONTROLES DE VISIBILIDADE ===== */
+/* ======================================
+   CONTROLES DE VISIBILIDADE
+====================================== */
 
+/**
+ * Controla visibilidade baseado no destino selecionado
+ */
 function controleDestino() {
     const destino = document.getElementById("destino").value;
-    const patioExtra = document.getElementById("patioExtra");
-    const bordoExtra = document.getElementById("bordoExtra");
-    const tabelaPartidaExtra = document.getElementById("tabelaPartidaExtra");
     
-    patioExtra.style.display = destino === "PATIO" ? "block" : "none";
-    bordoExtra.style.display = destino === "BORDO" ? "block" : "none";
-    tabelaPartidaExtra.style.display = destino === "PARTIDA" ? "block" : "none";
+    document.getElementById("patioExtra").style.display = destino === "PATIO" ? "block" : "none";
+    document.getElementById("bordoExtra").style.display = destino === "BORDO" ? "block" : "none";
+    document.getElementById("tabelaPartidaExtra").style.display = destino === "PARTIDA" ? "block" : "none";
 }
 
+/**
+ * Controla visibilidade baseado no produto selecionado
+ */
 function controleProduto() {
     const produto = document.getElementById("produto").value;
-    const minerioExtra = document.getElementById("minerioExtra");
-    const carvaoExtra = document.getElementById("carvaoExtra");
     
     atualizarEquipamentos();
     
-    if (produto === "Carvão") {
-        minerioExtra.style.display = "none";
-        carvaoExtra.style.display = "block";
-    } else {
-        minerioExtra.style.display = "block";
-        carvaoExtra.style.display = "none";
-    }
+    document.getElementById("minerioExtra").style.display = produto === "Carvão" ? "none" : "block";
+    document.getElementById("carvaoExtra").style.display = produto === "Carvão" ? "block" : "none";
 }
 
+/**
+ * Controla visibilidade do tipo de divisão
+ */
 function controleTipoDivisao() {
     const tipo = document.getElementById("tipo_divisao").value;
-    const secaoBordo = document.getElementById("secaoBordo");
-    const secaoPatio2 = document.getElementById("secaoPatio2");
     
-    if (tipo === "PATIO_PATIO") {
-        secaoBordo.style.display = "none";
-        secaoPatio2.style.display = "block";
-    } else {
-        secaoBordo.style.display = "block";
-        secaoPatio2.style.display = "none";
-    }
+    document.getElementById("secaoBordo").style.display = tipo === "PATIO_PATIO" ? "none" : "block";
+    document.getElementById("secaoPatio2").style.display = tipo === "PATIO_PATIO" ? "block" : "none";
 }
 
+/**
+ * Controla visibilidade da mudança de fluxo
+ */
 function controleMudancaFluxo() {
     const houve = document.getElementById("houve_mudanca_fluxo").value;
     const container = document.getElementById("mudancaFluxoContainer");
@@ -128,20 +193,18 @@ function controleMudancaFluxo() {
     }
 }
 
+/**
+ * Controla visibilidade da passagem de turno
+ */
 function controlePassagem() {
     const houve = document.getElementById("houve_passagem").value;
     const passagemExtra = document.getElementById("passagemExtra");
     passagemExtra.style.display = houve === "SIM" ? "block" : "none";
     
-    // Campos que devem ser obrigatórios quando houver passagem de turno
+    // Campos obrigatórios quando houver passagem
     const camposPassagem = [
-        "vagoes_meu_turno",
-        "turno_assumiu",
-        "operador_assumiu",
-        "matricula_assumiu",
-        "hora_rendicao",
-        "vagoes_proximo_turno",
-        "assumiu_em_falha"
+        "vagoes_meu_turno", "turno_assumiu", "operador_assumiu",
+        "matricula_assumiu", "hora_rendicao", "vagoes_proximo_turno", "assumiu_em_falha"
     ];
     
     camposPassagem.forEach(id => {
@@ -151,12 +214,12 @@ function controlePassagem() {
                 campo.setAttribute("required", "required");
             } else {
                 campo.removeAttribute("required");
-                campo.value = ""; // Limpar campo quando desabilitar
+                campo.value = "";
             }
         }
     });
     
-    // Se não houve passagem, limpar também os campos de falha
+    // Limpar campos de falha se não houve passagem
     if (houve !== "SIM") {
         document.getElementById("descricao_falha_assumida").value = "";
         document.getElementById("hora_falha_passagem").value = "";
@@ -164,12 +227,14 @@ function controlePassagem() {
     }
 }
 
+/**
+ * Controla visibilidade da falha assumida
+ */
 function controleFalhaAssumida() {
     const assumiu = document.getElementById("assumiu_em_falha").value;
     const falhaExtra = document.getElementById("falhaAssumidaExtra");
     falhaExtra.style.display = assumiu === "SIM" ? "block" : "none";
     
-    // Campos obrigatórios se passou com falha
     const camposFalha = ["descricao_falha_assumida", "hora_falha_passagem"];
     
     camposFalha.forEach(id => {
@@ -185,12 +250,13 @@ function controleFalhaAssumida() {
     });
 }
 
-/* ===== CONTROLE DE RECEBIMENTO DE TABELA DE OUTRO TURNO ===== */
+/* ======================================
+   CONTROLE DE RECEBIMENTO DE TABELA
+====================================== */
 
-// Variável para armazenar info da tabela carregada
-let tabelaCarregadaInfo = null;
-
-// Verificar se está finalizando tabela de outro turno
+/**
+ * Verifica se está finalizando tabela de outro turno
+ */
 function verificarTabelaOutroTurno() {
     const secaoRecebeu = document.getElementById("secaoRecebeuTabela");
     if (!secaoRecebeu) return;
@@ -203,7 +269,6 @@ function verificarTabelaOutroTurno() {
         const turnoOriginal = tabelaCarregadaInfo.turno;
         const operadorOriginal = (tabelaCarregadaInfo.operador || "").toUpperCase().trim();
         
-        // Se o turno ou operador é diferente, mostrar seção de recebimento
         const turnosDiferentes = turnoOriginal && turnoAtual && turnoOriginal !== turnoAtual;
         const operadoresDiferentes = operadorOriginal && operadorAtual && operadorOriginal !== operadorAtual;
         
@@ -219,15 +284,13 @@ function verificarTabelaOutroTurno() {
     tornarCamposRecebimentoObrigatorios(false);
 }
 
-// Tornar campos de recebimento obrigatórios ou não
+/**
+ * Torna campos de recebimento obrigatórios ou não
+ */
 function tornarCamposRecebimentoObrigatorios(obrigatorio) {
     const camposRecebimento = [
-        "turno_passou_tabela",
-        "operador_passou_tabela",
-        "matricula_passou_tabela",
-        "hora_assumiu_tabela",
-        "vagoes_faltavam_assumir",
-        "recebeu_em_falha"
+        "turno_passou_tabela", "operador_passou_tabela", "matricula_passou_tabela",
+        "hora_assumiu_tabela", "vagoes_faltavam_assumir", "recebeu_em_falha"
     ];
     
     camposRecebimento.forEach(id => {
@@ -242,7 +305,9 @@ function tornarCamposRecebimentoObrigatorios(obrigatorio) {
     });
 }
 
-// Controle de falha recebida
+/**
+ * Controla visibilidade de falha recebida
+ */
 function controleRecebeuEmFalha() {
     const recebeu = document.getElementById("recebeu_em_falha").value;
     const falhaExtra = document.getElementById("recebeuFalhaExtra");
@@ -251,12 +316,8 @@ function controleRecebeuEmFalha() {
         falhaExtra.style.display = recebeu === "SIM" ? "block" : "none";
     }
     
-    // Campos obrigatórios se recebeu com falha
     const camposFalhaRecebida = [
-        "falha_recebida_desc",
-        "hora_inicio_falha_recebida",
-        "tempo_parado_h",
-        "tempo_parado_m"
+        "falha_recebida_desc", "hora_inicio_falha_recebida", "tempo_parado_h", "tempo_parado_m"
     ];
     
     camposFalhaRecebida.forEach(id => {
@@ -272,7 +333,9 @@ function controleRecebeuEmFalha() {
     });
 }
 
-// Validar campos de recebimento antes de gerar resultado
+/**
+ * Valida campos de recebimento antes de gerar resultado
+ */
 function validarCamposRecebimento() {
     const secaoRecebeu = document.getElementById("secaoRecebeuTabela");
     if (!secaoRecebeu || secaoRecebeu.style.display === "none") {
@@ -299,8 +362,7 @@ function validarCamposRecebimento() {
     }
     
     // Se recebeu em falha, validar campos adicionais
-    const recebeuEmFalha = document.getElementById("recebeu_em_falha").value;
-    if (recebeuEmFalha === "SIM") {
+    if (document.getElementById("recebeu_em_falha").value === "SIM") {
         const camposFalha = [
             { id: "falha_recebida_desc", nome: "Descrição da falha recebida" },
             { id: "hora_inicio_falha_recebida", nome: "Hora de início da falha" }
@@ -320,39 +382,13 @@ function validarCamposRecebimento() {
     return { valido: true };
 }
 
-/* ===== PERSISTÊNCIA DE DADOS (SESSION STORAGE) ===== */
-const STORAGE_KEY = "registro_operacional_dados";
-const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
+/* ======================================
+   API DO SERVIDOR
+====================================== */
 
-// Lista de IDs dos campos do formulário para salvar
-const camposFormulario = [
-    "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
-    "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
-    "tipo_material", "destino", "patio_nome", "baliza", "maquina_patio", "passando_por",
-    "tipo_divisao", "primeiro_vagao",
-    "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
-    "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
-    "hora_fim_bordo", "vagoes_patio2", "patio_partida2", "baliza_partida2",
-    "maquina_patio2", "hora_inicio_patio2", "hora_fim_patio2",
-    "prefixo", "oferta", "inicio", "termino", "peso",
-    "houve_mudanca_fluxo", "houve_passagem", "vagoes_meu_turno", "turno_assumiu",
-    "operador_assumiu", "matricula_assumiu", "hora_rendicao", "vagoes_proximo_turno", 
-    "assumiu_em_falha", "descricao_falha_assumida", "hora_falha_passagem",
-    "turno_passou_tabela", "operador_passou_tabela", "matricula_passou_tabela",
-    "hora_assumiu_tabela", "vagoes_faltavam_assumir", "recebeu_em_falha",
-    "falha_recebida_desc", "hora_inicio_falha_recebida", "tempo_parado_h", "tempo_parado_m",
-    "acao_falha_recebida",
-    "observacoes", "email"
-];
-
-/* ===== TABELAS COMPARTILHADAS (SERVIDOR) ===== */
-
-// Cache local das tabelas (para melhor performance)
-let tabelasAndamentoCache = [];
-let tabelasFinalizadasCache = [];
-let atualizacaoAutomaticaInterval = null;
-
-// Obter tabelas em andamento do servidor
+/**
+ * Obter tabelas em andamento do servidor
+ */
 async function obterTabelasAndamentoServidor() {
     try {
         const response = await fetch('/api/tabelas/andamento');
@@ -365,7 +401,9 @@ async function obterTabelasAndamentoServidor() {
     }
 }
 
-// Obter tabelas finalizadas do servidor
+/**
+ * Obter tabelas finalizadas do servidor
+ */
 async function obterTabelasFinalizadasServidor() {
     try {
         const response = await fetch('/api/tabelas/finalizadas');
@@ -378,7 +416,9 @@ async function obterTabelasFinalizadasServidor() {
     }
 }
 
-// Salvar tabela no servidor
+/**
+ * Salvar tabela no servidor
+ */
 async function salvarTabelaServidor(dadosTabela) {
     try {
         const response = await fetch('/api/tabelas/andamento', {
@@ -393,7 +433,9 @@ async function salvarTabelaServidor(dadosTabela) {
     }
 }
 
-// Excluir tabela do servidor
+/**
+ * Excluir tabela do servidor
+ */
 async function excluirTabelaServidor(tabelaId) {
     try {
         const response = await fetch(`/api/tabelas/andamento/${tabelaId}`, {
@@ -406,7 +448,9 @@ async function excluirTabelaServidor(tabelaId) {
     }
 }
 
-// Finalizar tabela no servidor
+/**
+ * Finalizar tabela no servidor
+ */
 async function finalizarTabelaServidor(tabelaId, dadosFinalizacao) {
     try {
         const response = await fetch(`/api/tabelas/finalizar/${tabelaId}`, {
@@ -421,7 +465,9 @@ async function finalizarTabelaServidor(tabelaId, dadosFinalizacao) {
     }
 }
 
-// Excluir tabela finalizada do servidor
+/**
+ * Excluir tabela finalizada do servidor
+ */
 async function excluirTabelaFinalizadaServidor(tabelaId) {
     try {
         const response = await fetch(`/api/tabelas/finalizadas/${tabelaId}`, {
@@ -434,7 +480,13 @@ async function excluirTabelaFinalizadaServidor(tabelaId) {
     }
 }
 
-// Atualizar lista de tabelas (UI)
+/* ======================================
+   GERENCIAMENTO DE TABELAS
+====================================== */
+
+/**
+ * Atualiza lista de tabelas (UI)
+ */
 async function atualizarListaTabelas() {
     const btnAtualizar = document.getElementById("btnAtualizarTabelas");
     if (btnAtualizar) {
@@ -455,7 +507,9 @@ async function atualizarListaTabelas() {
     }
 }
 
-// Iniciar atualização automática
+/**
+ * Inicia atualização automática
+ */
 function iniciarAtualizacaoAutomatica(intervaloSegundos = 30) {
     pararAtualizacaoAutomatica();
     atualizacaoAutomaticaInterval = setInterval(async () => {
@@ -465,7 +519,9 @@ function iniciarAtualizacaoAutomatica(intervaloSegundos = 30) {
     console.log(`Atualização automática iniciada (a cada ${intervaloSegundos}s)`);
 }
 
-// Parar atualização automática
+/**
+ * Para atualização automática
+ */
 function pararAtualizacaoAutomatica() {
     if (atualizacaoAutomaticaInterval) {
         clearInterval(atualizacaoAutomaticaInterval);
@@ -473,7 +529,9 @@ function pararAtualizacaoAutomatica() {
     }
 }
 
-// Indicador de sincronização
+/**
+ * Atualiza indicador de sincronização
+ */
 function atualizarIndicadorSincronizacao() {
     const indicador = document.getElementById("indicadorSincronizacao");
     if (indicador) {
@@ -482,25 +540,21 @@ function atualizarIndicadorSincronizacao() {
     }
 }
 
-/* ===== HISTÓRICO DE TABELAS EM ANDAMENTO (FUNÇÕES ANTIGAS - COMPATIBILIDADE) ===== */
-
-// Obter todas as tabelas salvas (agora usa cache do servidor)
+/**
+ * Retorna tabelas em andamento do cache
+ */
 function obterTabelasAndamento() {
     return tabelasAndamentoCache;
 }
 
-// Salvar lista de tabelas (mantido para compatibilidade, mas agora usa servidor)
-function salvarTabelasAndamento(tabelas) {
-    // Não faz mais nada - dados são salvos no servidor
-    console.log('salvarTabelasAndamento deprecated - usando servidor');
-}
-
-// Coletar dados atuais do formulário
+/**
+ * Coleta dados atuais do formulário
+ */
 function coletarDadosFormulario() {
     const dados = {};
     
     // Salvar campos simples
-    camposFormulario.forEach(id => {
+    CAMPOS_FORMULARIO.forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento) {
             dados[id] = elemento.value;
@@ -562,7 +616,9 @@ function coletarDadosFormulario() {
     return dados;
 }
 
-// Salvar tabela como início (em andamento) - AGORA USA SERVIDOR
+/**
+ * Salvar tabela como início (em andamento)
+ */
 async function salvarTabelaInicio() {
     const prefixo = document.getElementById("prefixo").value;
     const inicio = document.getElementById("inicio").value;
@@ -613,10 +669,8 @@ async function salvarTabelaInicio() {
                 alert(`✅ Tabela "${prefixo}" salva no servidor!\n\n👥 Outros usuários podem ver e finalizar esta tabela.\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".`);
             }
             
-            // Atualizar lista de tabelas
             await atualizarSeletorTabelas();
             
-            // Selecionar a tabela recém-salva
             document.getElementById("seletorTabelasAndamento").value = resultado.id;
             const tabela = tabelasAndamentoCache.find(t => t.id === resultado.id);
             if (tabela) {
@@ -635,42 +689,39 @@ async function salvarTabelaInicio() {
     }
 }
 
-// Atualizar o seletor de tabelas em andamento - AGORA USA SERVIDOR
+/**
+ * Atualiza o seletor de tabelas em andamento
+ */
 async function atualizarSeletorTabelas() {
     const select = document.getElementById("seletorTabelasAndamento");
-    
-    // Obter tabelas do servidor
     const tabelas = await obterTabelasAndamentoServidor();
     
-    // Limpar opções existentes (exceto a primeira)
     select.innerHTML = '<option value="">-- Nova Tabela --</option>';
     
     tabelas.forEach(tabela => {
         const option = document.createElement("option");
         option.value = tabela.id;
         
-        // Formatar data para exibição
         let dataFormatada = "";
         if (tabela.data) {
             const [ano, mes, dia] = tabela.data.split("-");
             dataFormatada = `${dia}/${mes}`;
         }
         
-        // Indicar produto (Minério/Carvão)
         const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
-        
         option.textContent = `${icone} ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
     
-    // Atualizar contador
     const contador = document.getElementById("contadorTabelas");
     if (contador) {
         contador.textContent = `(${tabelas.length} tabela${tabelas.length !== 1 ? 's' : ''})`;
     }
 }
 
-// Mostrar informações da tabela selecionada
+/**
+ * Mostra informações da tabela selecionada
+ */
 function mostrarInfoTabelaSelecionada(tabela) {
     const info = document.getElementById("infoTabelaSelecionada");
     
@@ -697,13 +748,14 @@ function mostrarInfoTabelaSelecionada(tabela) {
     info.style.display = "block";
 }
 
-// Carregar tabela selecionada do histórico
+/**
+ * Carrega tabela selecionada do histórico
+ */
 function carregarTabelaAndamento() {
     const select = document.getElementById("seletorTabelasAndamento");
     const tabelaId = select.value;
     
     if (!tabelaId) {
-        // Nova tabela - limpar formulário
         document.getElementById("infoTabelaSelecionada").style.display = "none";
         return;
     }
@@ -716,7 +768,6 @@ function carregarTabelaAndamento() {
         return;
     }
     
-    // Confirmar carregamento
     if (!confirm(`Carregar a tabela "${tabela.prefixo}"?\n\nOs dados atuais do formulário serão substituídos.`)) {
         select.value = "";
         return;
@@ -730,7 +781,7 @@ function carregarTabelaAndamento() {
     const dados = tabela.dados;
     
     // Restaurar campos simples
-    camposFormulario.forEach(id => {
+    CAMPOS_FORMULARIO.forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento && dados[id] !== undefined) {
             elemento.value = dados[id];
@@ -810,14 +861,14 @@ function carregarTabelaAndamento() {
     
     mostrarInfoTabelaSelecionada(tabela);
     
-    // Guardar informações da tabela carregada para verificação de outro turno
+    // Guardar informações da tabela carregada
     tabelaCarregadaInfo = {
         turno: tabela.turno,
         operador: tabela.operador,
         prefixo: tabela.prefixo
     };
     
-    // Verificar se está finalizando tabela de outro turno (após um pequeno delay para dar tempo de preencher operador atual)
+    // Verificar se está finalizando tabela de outro turno
     setTimeout(() => {
         verificarTabelaOutroTurno();
     }, 500);
@@ -829,7 +880,9 @@ function carregarTabelaAndamento() {
     alert(`✅ Tabela "${tabela.prefixo}" carregada!\n\nAgora preencha o Término e gere o resultado.\n\n⚠️ Se você é de outro turno/operador, preencha os dados de como recebeu a tabela.`);
 }
 
-// Excluir tabela selecionada - AGORA USA SERVIDOR
+/**
+ * Exclui tabela selecionada
+ */
 async function excluirTabelaAndamento() {
     const select = document.getElementById("seletorTabelasAndamento");
     const tabelaId = select.value;
@@ -866,66 +919,120 @@ async function excluirTabelaAndamento() {
     }
 }
 
-function salvarDadosFormulario() {
-    const dados = {};
+/**
+ * Atualiza lista de tabelas finalizadas na UI
+ */
+async function atualizarListaFinalizadas() {
+    const container = document.getElementById("listaFinalizadas");
+    if (!container) return;
     
-    // Salvar campos simples
-    camposFormulario.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            dados[id] = elemento.value;
+    const tabelas = await obterTabelasFinalizadasServidor();
+    
+    if (tabelas.length === 0) {
+        container.innerHTML = '<p style="color: #666; text-align: center;">Nenhuma tabela finalizada ainda.</p>';
+        return;
+    }
+    
+    let html = '<div class="tabelas-finalizadas-lista">';
+    
+    tabelas.forEach(tabela => {
+        let dataFormatada = "";
+        if (tabela.data) {
+            const [ano, mes, dia] = tabela.data.split("-");
+            dataFormatada = `${dia}/${mes}/${ano}`;
         }
+        
+        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
+        
+        html += `
+            <div class="tabela-finalizada-item" data-id="${tabela.id}">
+                <div class="tabela-finalizada-info">
+                    <strong>${icone} ${tabela.prefixo}</strong>
+                    <span>${dataFormatada} | ${tabela.turno}</span>
+                    <span>Início: ${tabela.inicio} → Término: ${tabela.termino || '-'}</span>
+                    <span>Operador: ${tabela.operador || '-'}</span>
+                    <span>Taxa: ${tabela.taxaEfetiva ? tabela.taxaEfetiva + ' t/h' : '-'}</span>
+                </div>
+                <div class="tabela-finalizada-acoes">
+                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">📄</button>
+                    <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" class="btn-limpar">🗑️</button>
+                </div>
+            </div>
+        `;
     });
     
-    // Salvar impactos
-    dados.impactos = [];
-    document.querySelectorAll(".impacto-row").forEach(row => {
-        dados.impactos.push({
-            desc: row.querySelector(".impacto-desc")?.value || "",
-            tempo: row.querySelector(".impacto-tempo")?.value || "",
-            hora_inicio: row.querySelector(".impacto-hora-inicio")?.value || "",
-            hora_fim: row.querySelector(".impacto-hora-fim")?.value || "",
-            tipo_atendimento: row.querySelector(".impacto-tipo-atendimento")?.value || "",
-            acao: row.querySelector(".impacto-acao")?.value || ""
-        });
-    });
+    html += '</div>';
+    container.innerHTML = html;
     
-    // Salvar materiais carvão
-    dados.materiais_carvao = [];
-    document.querySelectorAll(".material-carvao-row").forEach(row => {
-        dados.materiais_carvao.push({
-            categoria: row.querySelector(".carvao-categoria")?.value || "",
-            tipo_material: row.querySelector(".carvao-tipo-material")?.value || "",
-            patio: row.querySelector(".carvao-patio")?.value || "",
-            baliza: row.querySelector(".carvao-baliza")?.value || "",
-            recuperadora: row.querySelector(".carvao-recuperadora")?.value || "",
-            acao: row.querySelector(".carvao-acao")?.value || "",
-            hora_inicio: row.querySelector(".carvao-hora-inicio")?.value || "",
-            hora_fim: row.querySelector(".carvao-hora-fim")?.value || "",
-            peso_ecv: row.querySelector(".carvao-peso-ecv")?.value || "",
-            peso_recup: row.querySelector(".carvao-peso-recup")?.value || "",
-            vagoes: row.querySelector(".carvao-vagoes")?.value || ""
-        });
-    });
+    const contador = document.getElementById("contadorFinalizadas");
+    if (contador) {
+        contador.textContent = `(${tabelas.length} tabela${tabelas.length !== 1 ? 's' : ''})`;
+    }
+}
+
+/**
+ * Ver relatório de tabela finalizada
+ */
+function verRelatorioFinalizado(tabelaId) {
+    const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
+    if (!tabela || !tabela.relatorio) {
+        alert("Relatório não disponível.");
+        return;
+    }
     
-    // Salvar mudanças de fluxo
-    dados.mudancas_fluxo = [];
-    document.querySelectorAll(".fluxo-row").forEach(row => {
-        dados.mudancas_fluxo.push({
-            hora: row.querySelector(".fluxo-hora")?.value || "",
-            anterior: row.querySelector(".fluxo-anterior")?.value || "",
-            novo: row.querySelector(".fluxo-novo")?.value || "",
-            cco: row.querySelector(".fluxo-cco")?.checked || false,
-            mecanica: row.querySelector(".fluxo-mecanica")?.checked || false,
-            eletrica: row.querySelector(".fluxo-eletrica")?.checked || false,
-            operacao: row.querySelector(".fluxo-operacao")?.checked || false,
-            motivo: row.querySelector(".fluxo-motivo")?.value || ""
-        });
-    });
+    const resultadoDiv = document.getElementById("resultado");
+    if (resultadoDiv) {
+        resultadoDiv.innerHTML = `
+            <h3>📋 Relatório - ${tabela.prefixo}</h3>
+            <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.85em;">${tabela.relatorio}</pre>
+        `;
+        resultadoDiv.style.display = "block";
+        resultadoDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+/**
+ * Excluir tabela finalizada
+ */
+async function excluirTabelaFinalizada(tabelaId) {
+    const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
+    if (!tabela) {
+        alert("Tabela não encontrada!");
+        return;
+    }
     
+    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\n⚠️ Esta ação não pode ser desfeita!`)) {
+        return;
+    }
+    
+    try {
+        const resultado = await excluirTabelaFinalizadaServidor(tabelaId);
+        if (resultado.success) {
+            await atualizarListaFinalizadas();
+            alert(`✅ Tabela "${tabela.prefixo}" excluída!`);
+        } else {
+            alert(`❌ Erro ao excluir: ${resultado.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Erro de conexão: ${error.message}`);
+    }
+}
+
+/* ======================================
+   PERSISTÊNCIA LOCAL
+====================================== */
+
+/**
+ * Salva dados do formulário no localStorage
+ */
+function salvarDadosFormulario() {
+    const dados = coletarDadosFormulario();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
 }
 
+/**
+ * Restaura dados do formulário do localStorage
+ */
 function restaurarDadosFormulario() {
     const dadosSalvos = localStorage.getItem(STORAGE_KEY);
     if (!dadosSalvos) return;
@@ -933,7 +1040,7 @@ function restaurarDadosFormulario() {
     const dados = JSON.parse(dadosSalvos);
     
     // Restaurar campos simples
-    camposFormulario.forEach(id => {
+    CAMPOS_FORMULARIO.forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento && dados[id] !== undefined) {
             elemento.value = dados[id];
@@ -957,10 +1064,14 @@ function restaurarDadosFormulario() {
             const lastRow = rows[rows.length - 1];
             if (lastRow) {
                 if (lastRow.querySelector(".impacto-desc")) lastRow.querySelector(".impacto-desc").value = imp.desc;
-                if (lastRow.querySelector(".impacto-tempo")) lastRow.querySelector(".impacto-tempo").value = imp.tempo;
+                if (lastRow.querySelector(".impacto-h")) lastRow.querySelector(".impacto-h").value = imp.h || "";
+                if (lastRow.querySelector(".impacto-m")) lastRow.querySelector(".impacto-m").value = imp.m || "";
                 if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
                 if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
-                if (lastRow.querySelector(".impacto-tipo-atendimento")) lastRow.querySelector(".impacto-tipo-atendimento").value = imp.tipo_atendimento;
+                if (lastRow.querySelector(".impacto-atend-mecanica")) lastRow.querySelector(".impacto-atend-mecanica").checked = imp.atend_mecanica;
+                if (lastRow.querySelector(".impacto-atend-eletrica")) lastRow.querySelector(".impacto-atend-eletrica").checked = imp.atend_eletrica;
+                if (lastRow.querySelector(".impacto-atend-operacional")) lastRow.querySelector(".impacto-atend-operacional").checked = imp.atend_operacional;
+                if (lastRow.querySelector(".impacto-atend-outro")) lastRow.querySelector(".impacto-atend-outro").checked = imp.atend_outro;
                 if (lastRow.querySelector(".impacto-acao")) lastRow.querySelector(".impacto-acao").value = imp.acao;
             }
         });
@@ -1008,154 +1119,20 @@ function restaurarDadosFormulario() {
     }
 }
 
+/**
+ * Limpa dados salvos do localStorage
+ */
 function limparDadosSalvos() {
     localStorage.removeItem(STORAGE_KEY);
 }
 
-// Atualizar lista de tabelas finalizadas na UI
-async function atualizarListaFinalizadas() {
-    const container = document.getElementById("listaFinalizadas");
-    if (!container) return;
-    
-    const tabelas = await obterTabelasFinalizadasServidor();
-    
-    if (tabelas.length === 0) {
-        container.innerHTML = '<p style="color: #666; text-align: center;">Nenhuma tabela finalizada ainda.</p>';
-        return;
-    }
-    
-    let html = '<div class="tabelas-finalizadas-lista">';
-    
-    tabelas.forEach(tabela => {
-        let dataFormatada = "";
-        if (tabela.data) {
-            const [ano, mes, dia] = tabela.data.split("-");
-            dataFormatada = `${dia}/${mes}/${ano}`;
-        }
-        
-        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
-        
-        html += `
-            <div class="tabela-finalizada-item" data-id="${tabela.id}">
-                <div class="tabela-finalizada-info">
-                    <strong>${icone} ${tabela.prefixo}</strong>
-                    <span>${dataFormatada} | ${tabela.turno}</span>
-                    <span>Início: ${tabela.inicio} → Término: ${tabela.termino || '-'}</span>
-                    <span>Operador: ${tabela.operador || '-'}</span>
-                    <span>Taxa: ${tabela.taxaEfetiva ? tabela.taxaEfetiva + ' t/h' : '-'}</span>
-                </div>
-                <div class="tabela-finalizada-acoes">
-                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">📄</button>
-                    <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" style="background: #c62828;">🗑️</button>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-    
-    // Atualizar contador
-    const contador = document.getElementById("contadorFinalizadas");
-    if (contador) {
-        contador.textContent = `(${tabelas.length} tabela${tabelas.length !== 1 ? 's' : ''})`;
-    }
-}
+/* ======================================
+   ELEMENTOS DINÂMICOS
+====================================== */
 
-// Ver relatório de tabela finalizada
-function verRelatorioFinalizado(tabelaId) {
-    const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
-    if (!tabela || !tabela.relatorio) {
-        alert("Relatório não disponível.");
-        return;
-    }
-    
-    // Mostrar relatório em modal ou área de resultado
-    const resultadoDiv = document.getElementById("resultado");
-    if (resultadoDiv) {
-        resultadoDiv.innerHTML = `
-            <h3>📋 Relatório - ${tabela.prefixo}</h3>
-            <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.85em;">${tabela.relatorio}</pre>
-        `;
-        resultadoDiv.scrollIntoView({ behavior: 'smooth' });
-    }
-}
-
-// Excluir tabela finalizada
-async function excluirTabelaFinalizada(tabelaId) {
-    const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
-    if (!tabela) {
-        alert("Tabela não encontrada!");
-        return;
-    }
-    
-    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\n⚠️ Esta ação não pode ser desfeita!`)) {
-        return;
-    }
-    
-    try {
-        const resultado = await excluirTabelaFinalizadaServidor(tabelaId);
-        if (resultado.success) {
-            await atualizarListaFinalizadas();
-            alert(`✅ Tabela "${tabela.prefixo}" excluída!`);
-        } else {
-            alert(`❌ Erro ao excluir: ${resultado.error}`);
-        }
-    } catch (error) {
-        alert(`❌ Erro de conexão: ${error.message}`);
-    }
-}
-
-// Adicionar listener após carregar a página
-document.addEventListener("DOMContentLoaded", async function() {
-    const assumiuFalha = document.getElementById("assumiu_em_falha");
-    if (assumiuFalha) {
-        assumiuFalha.addEventListener("change", controleFalhaAssumida);
-    }
-    
-    // Listener para controle de falha recebida
-    const recebeuEmFalha = document.getElementById("recebeu_em_falha");
-    if (recebeuEmFalha) {
-        recebeuEmFalha.addEventListener("change", controleRecebeuEmFalha);
-    }
-    
-    // Listeners para verificar se está finalizando tabela de outro turno
-    const turnoField = document.getElementById("turno");
-    const operadorField = document.getElementById("operador");
-    
-    if (turnoField) {
-        turnoField.addEventListener("change", verificarTabelaOutroTurno);
-    }
-    if (operadorField) {
-        operadorField.addEventListener("input", verificarTabelaOutroTurno);
-        operadorField.addEventListener("blur", verificarTabelaOutroTurno);
-    }
-    
-    // Inicializar equipamentos e controles
-    atualizarEquipamentos();
-    controleProduto();
-    
-    // Carregar tabelas do SERVIDOR (compartilhadas)
-    await atualizarSeletorTabelas();
-    await atualizarListaFinalizadas();
-    
-    // Atualizar indicador de sincronização
-    atualizarIndicadorSincronizacao();
-    
-    // Iniciar atualização automática (a cada 30 segundos)
-    iniciarAtualizacaoAutomatica(30);
-    
-    // Restaurar dados salvos localmente (para não perder formulário atual)
-    restaurarDadosFormulario();
-    
-    // Salvar dados automaticamente quando qualquer campo mudar
-    document.addEventListener("input", salvarDadosFormulario);
-    document.addEventListener("change", salvarDadosFormulario);
-    
-    console.log("✅ Sistema de tabelas compartilhadas inicializado!");
-});
-
-/* ===== MUDANÇA DE FLUXO (DINÂMICO) ===== */
+/**
+ * Adiciona mudança de fluxo
+ */
 function adicionarMudancaFluxo() {
     const container = document.getElementById("mudancaFluxoContainer");
     const index = container.children.length + 1;
@@ -1191,7 +1168,9 @@ function adicionarMudancaFluxo() {
     container.appendChild(row);
 }
 
-/* ===== MATERIAIS CARVÃO (DINÂMICO) ===== */
+/**
+ * Adiciona material de carvão
+ */
 function adicionarMaterialCarvao() {
     const container = document.getElementById("materiaisCarvaoContainer");
     const index = container.children.length + 1;
@@ -1261,17 +1240,9 @@ function adicionarMaterialCarvao() {
     container.appendChild(row);
 }
 
-/* ===== FORMATAR TEMPO EM HORAS E MINUTOS ===== */
-function formatarTempo(minutos) {
-    if (minutos >= 60) {
-        const h = Math.floor(minutos / 60);
-        const m = minutos % 60;
-        return m > 0 ? `${h}h ${m}min` : `${h}h`;
-    }
-    return `${minutos} min`;
-}
-
-/* ===== IMPACTOS DINÂMICOS (H + MIN) ===== */
+/**
+ * Adiciona impacto/falha
+ */
 function adicionarImpacto() {
     const container = document.getElementById("impactosContainer");
 
@@ -1327,17 +1298,22 @@ function adicionarImpacto() {
     horasParado.addEventListener("input", calcularHoraFim);
     minutosParado.addEventListener("input", calcularHoraFim);
 
-    // Aplicar capitalização inteligente nos campos de descrição e ação
-    const descInput = row.querySelector(".impacto-desc");
-    const acaoInput = row.querySelector(".impacto-acao");
-    aplicarCapitalizacaoImpacto(descInput);
-    aplicarCapitalizacaoImpacto(acaoInput);
+    // Aplicar capitalização inteligente
+    aplicarCapitalizacaoImpacto(row.querySelector(".impacto-desc"));
+    aplicarCapitalizacaoImpacto(row.querySelector(".impacto-acao"));
 
     container.appendChild(row);
 }
+
+/* ======================================
+   CÁLCULO E RESULTADO
+====================================== */
+
+/**
+ * Função principal de cálculo
+ */
 function calcular() {
-    
-    // Validar campos de recebimento de tabela de outro turno
+    // Validar campos de recebimento
     const validacaoRecebimento = validarCamposRecebimento();
     if (!validacaoRecebimento.valido) {
         alert(validacaoRecebimento.mensagem);
@@ -1355,12 +1331,10 @@ function calcular() {
         const h = parseInt(row.querySelector(".impacto-h")?.value || 0);
         const m = parseInt(row.querySelector(".impacto-m")?.value || 0);
         impactos.push((h * 60) + m);
-        // Aplicar capitalização de frases na descrição e ação
         impactosDesc.push(capitalizarFrases(row.querySelector(".impacto-desc")?.value || ""));
         impactosHoraInicio.push(row.querySelector(".impacto-hora-inicio")?.value || "");
         impactosHoraFim.push(row.querySelector(".impacto-hora-fim")?.value || "");
         
-        // Coletar checkboxes de atendimento marcados
         const atendimentos = [];
         if (row.querySelector(".impacto-atend-mecanica")?.checked) atendimentos.push("MECANICA");
         if (row.querySelector(".impacto-atend-eletrica")?.checked) atendimentos.push("ELETRICA");
@@ -1368,7 +1342,6 @@ function calcular() {
         if (row.querySelector(".impacto-atend-outro")?.checked) atendimentos.push("OUTRO");
         impactosTipoAtendimento.push(atendimentos.join(" / "));
         
-        // Aplicar capitalização de frases na ação
         impactosAcao.push(capitalizarFrases(row.querySelector(".impacto-acao")?.value || ""));
     });
 
@@ -1430,7 +1403,7 @@ function calcular() {
         observacoes: toUpperSafe(document.getElementById("observacoes").value),
         email: document.getElementById("email").value,
 
-        // campos maquinista
+        // Maquinista
         maquinista: toUpperSafe(document.getElementById("maquinista")?.value) || "",
         loc1: toUpperSafe(document.getElementById("loc1")?.value) || "",
         loc2: toUpperSafe(document.getElementById("loc2")?.value) || "",
@@ -1439,7 +1412,7 @@ function calcular() {
         sinal: document.getElementById("sinal")?.value || "",
         tabela_posicionada: document.getElementById("tabela_posicionada")?.value || "",
 
-        // campos passagem de turno (passando para outro)
+        // Passagem de turno (passando)
         houve_passagem: document.getElementById("houve_passagem")?.value || "NAO",
         vagoes_meu_turno: document.getElementById("vagoes_meu_turno")?.value || "",
         turno_assumiu: document.getElementById("turno_assumiu")?.value || "",
@@ -1451,7 +1424,7 @@ function calcular() {
         descricao_falha_assumida: toUpperSafe(document.getElementById("descricao_falha_assumida")?.value) || "",
         hora_falha_passagem: document.getElementById("hora_falha_passagem")?.value || "",
 
-        // campos recebimento de tabela de outro turno
+        // Recebimento de outro turno
         recebeu_de_outro_turno: document.getElementById("secaoRecebeuTabela")?.style.display !== "none",
         turno_passou_tabela: document.getElementById("turno_passou_tabela")?.value || "",
         operador_passou_tabela: toUpperSafe(document.getElementById("operador_passou_tabela")?.value) || "",
@@ -1469,11 +1442,11 @@ function calcular() {
         falha_recebida_operacional: document.getElementById("falha_recebida_operacional")?.checked || false,
         falha_recebida_outro: document.getElementById("falha_recebida_outro")?.checked || false,
 
-        // mudança de fluxo
+        // Mudança de fluxo
         houve_mudanca_fluxo: document.getElementById("houve_mudanca_fluxo")?.value || "NAO",
         mudancas_fluxo: mudancasFluxo,
 
-        // campos específicos minério
+        // Minério
         equipamento: document.getElementById("equipamento")?.value || "",
         tipo_material: toUpperSafe(document.getElementById("tipo_material")?.value) || "",
         destino: document.getElementById("destino")?.value || "",
@@ -1482,7 +1455,7 @@ function calcular() {
         maquina_patio: document.getElementById("maquina_patio")?.value || "",
         passando_por: toUpperSafe(document.getElementById("passando_por")?.value) || "",
 
-        // tabela partida (minério)
+        // Tabela partida
         tipo_divisao: document.getElementById("tipo_divisao")?.value || "PATIO_BORDO",
         vagoes_patio: document.getElementById("vagoes_patio")?.value || "",
         patio_partida: toUpperSafe(document.getElementById("patio_partida")?.value) || "",
@@ -1490,11 +1463,9 @@ function calcular() {
         maquina_patio1: document.getElementById("maquina_patio1")?.value || "",
         hora_inicio_patio: document.getElementById("hora_inicio_patio")?.value || "",
         hora_fim_patio: document.getElementById("hora_fim_patio")?.value || "",
-        // bordo (para pátio+bordo)
         vagoes_bordo: document.getElementById("vagoes_bordo")?.value || "",
         hora_inicio_bordo: document.getElementById("hora_inicio_bordo")?.value || "",
         hora_fim_bordo: document.getElementById("hora_fim_bordo")?.value || "",
-        // segundo pátio (para pátio+pátio)
         vagoes_patio2: document.getElementById("vagoes_patio2")?.value || "",
         patio_partida2: toUpperSafe(document.getElementById("patio_partida2")?.value) || "",
         baliza_partida2: toUpperSafe(document.getElementById("baliza_partida2")?.value) || "",
@@ -1502,9 +1473,7 @@ function calcular() {
         hora_inicio_patio2: document.getElementById("hora_inicio_patio2")?.value || "",
         hora_fim_patio2: document.getElementById("hora_fim_patio2")?.value || "",
 
-        // campos específicos carvão
-        equipamento_carvao: document.getElementById("equipamento_carvao")?.value || "",
-        recuperadora_carvao: document.getElementById("recuperadora_carvao")?.value || "",
+        // Carvão
         primeiro_vagao: toUpperSafe(document.getElementById("primeiro_vagao")?.value) || "",
         materiais_carvao: materiaisCarvao
     };
@@ -1525,12 +1494,11 @@ function calcular() {
             resultado.innerHTML = gerarResultadoMinerio(dados, data);
         }
         
-        // Se tem término, finalizar a tabela no servidor (se estava em andamento)
+        // Se tem término, finalizar a tabela
         if (dados.termino) {
             const tabelaSelecionadaId = document.getElementById("seletorTabelasAndamento").value;
             
             if (tabelaSelecionadaId) {
-                // Tabela estava em andamento - mover para finalizadas
                 try {
                     const dadosFinalizacao = {
                         termino: dados.termino,
@@ -1544,12 +1512,9 @@ function calcular() {
                     const resultadoFinalizar = await finalizarTabelaServidor(tabelaSelecionadaId, dadosFinalizacao);
                     
                     if (resultadoFinalizar.success) {
-                        // Resetar seletor e atualizar listas
                         document.getElementById("seletorTabelasAndamento").value = "";
                         document.getElementById("infoTabelaSelecionada").style.display = "none";
-                        
                         await atualizarListaTabelas();
-                        
                         console.log("✅ Tabela movida para finalizadas!");
                     }
                 } catch (error) {
@@ -1560,7 +1525,13 @@ function calcular() {
     });
 }
 
-/* ===== GERAR RESULTADO MINÉRIO ===== */
+/* ======================================
+   GERAÇÃO DE RESULTADO HTML
+====================================== */
+
+/**
+ * Gera resultado para minério
+ */
 function gerarResultadoMinerio(dados, data) {
     let destinoTexto = "";
     if (dados.destino === "PATIO") {
@@ -1575,18 +1546,15 @@ function gerarResultadoMinerio(dados, data) {
     let passagemHTML = gerarPassagemHTML(dados);
     let mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
 
-    // Formatar data para DD/MM/AAAA
     let dataFormatada = "—";
     if (dados.data) {
         const [ano, mes, dia] = dados.data.split("-");
         dataFormatada = `${dia}/${mes}/${ano}`;
     }
 
-    // Tabela partida
     let tabelaPartidaHTML = "";
     if (dados.destino === "PARTIDA") {
         if (dados.tipo_divisao === "PATIO_PATIO") {
-            // Pátio + Pátio
             tabelaPartidaHTML = `
 <strong>📊 TABELA DIVIDIDA (PÁTIO + PÁTIO):</strong><br>
 <strong>1º Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
@@ -1595,7 +1563,6 @@ Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} →
 Vagões: ${dados.vagoes_patio2 || "—"} (${dados.hora_inicio_patio2 || "—"} → ${dados.hora_fim_patio2 || "—"})<br>
 <br>`;
         } else {
-            // Pátio + Bordo
             tabelaPartidaHTML = `
 <strong>📊 TABELA DIVIDIDA (PÁTIO + BORDO):</strong><br>
 <strong>Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
@@ -1644,20 +1611,20 @@ ${passagemHTML}
     `;
 }
 
-/* ===== GERAR RESULTADO CARVÃO ===== */
+/**
+ * Gera resultado para carvão
+ */
 function gerarResultadoCarvao(dados, data) {
     let impactosHTML = gerarImpactosHTML(dados);
     let passagemHTML = gerarPassagemHTML(dados);
     let mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
 
-    // Formatar data para DD/MM/AAAA
     let dataFormatada = "—";
     if (dados.data) {
         const [ano, mes, dia] = dados.data.split("-");
         dataFormatada = `${dia}/${mes}/${ano}`;
     }
 
-    // Gerar HTML dos materiais do carvão
     let materiaisHTML = "";
     if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
         dados.materiais_carvao.forEach((mat, i) => {
@@ -1716,7 +1683,9 @@ ${passagemHTML}
     `;
 }
 
-/* ===== FUNÇÕES AUXILIARES DE HTML ===== */
+/**
+ * Gera HTML dos impactos
+ */
 function gerarImpactosHTML(dados) {
     let html = "";
     dados.impactos.forEach((min, i) => {
@@ -1734,6 +1703,9 @@ function gerarImpactosHTML(dados) {
     return html || "Nenhum impacto registrado<br>";
 }
 
+/**
+ * Gera HTML da passagem de turno
+ */
 function gerarPassagemHTML(dados) {
     if (dados.houve_passagem === "SIM") {
         let falhaTexto = "";
@@ -1754,6 +1726,9 @@ ${falhaTexto}
     return "";
 }
 
+/**
+ * Gera HTML da mudança de fluxo
+ */
 function gerarMudancaFluxoHTML(dados) {
     if (dados.houve_mudanca_fluxo === "SIM" && dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
         let html = "<strong>🔄 MUDANÇAS DE FLUXO:</strong><br>";
@@ -1770,39 +1745,25 @@ function gerarMudancaFluxoHTML(dados) {
     return "";
 }
 
-/* ===== GERAR PDF ===== */
+/* ======================================
+   EXPORTAÇÃO (PDF, WHATSAPP, EMAIL)
+====================================== */
+
+/**
+ * Gera PDF do relatório
+ */
 function gerarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Remover emojis e caracteres especiais para o PDF
     let texto = document.getElementById("resultado").innerText;
     
-    // Remove completamente os textos entre colchetes e emojis
+    // Remover emojis e caracteres especiais
     texto = texto
         .replace(/\[DATA\]\s*/g, "")
         .replace(/\[TURNO\]\s*/g, "")
         .replace(/\[TREM\]\s*/g, "")
-        .replace(/📅/g, "")
-        .replace(/🕒/g, "")
-        .replace(/🚆/g, "")
-        .replace(/👷/g, "")
-        .replace(/👨‍✈️/g, "")
-        .replace(/🚂/g, "")
-        .replace(/🕐/g, "")
-        .replace(/📍/g, "")
-        .replace(/🚦/g, "")
-        .replace(/📋/g, "")
-        .replace(/⚙️/g, "")
-        .replace(/📦/g, "")
-        .replace(/🕚/g, "")
-        .replace(/⏱/g, "")
-        .replace(/⛔/g, "")
-        .replace(/✅/g, "")
-        .replace(/⚖️/g, "")
-        .replace(/📈/g, "")
-        .replace(/🔄/g, "")
-        .replace(/⚠️/g, "")
+        .replace(/📅|🕒|🚆|👷|👨‍✈️|🚂|🕐|📍|🚦|📋|⚙️|📦|🕚|⏱|⛔|✅|⚖️|📈|🔄|⚠️|⏳|⌛|🚃/g, "")
         .replace(/•/g, "-")
         .replace(/→/g, "->")
         .replace(/—/g, "-")
@@ -1814,13 +1775,11 @@ function gerarPDF() {
     const margemEsquerda = 15;
     const larguraPagina = 180;
 
-    // Título centralizado e em negrito
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("RELATORIO OPERACIONAL", doc.internal.pageSize.getWidth() / 2, y, { align: "center" });
     y += 12;
 
-    // Linha separadora
     doc.setLineWidth(0.5);
     doc.line(margemEsquerda, y, margemEsquerda + larguraPagina, y);
     y += 8;
@@ -1828,7 +1787,6 @@ function gerarPDF() {
     doc.setFontSize(10);
 
     linhas.forEach(linha => {
-        // Pular linha vazia
         if (linha.trim() === "") {
             y += 4;
             return;
@@ -1839,14 +1797,11 @@ function gerarPDF() {
             y = 20;
         }
 
-        // Verificar se é linha de impacto (começa com -)
         if (linha.trim().startsWith("-") && linha.includes("Acao:")) {
-            // Separar a parte do impacto da ação
             const partes = linha.split("- Acao:");
             const impactoParte = partes[0].trim();
             const acaoParte = partes[1] ? partes[1].trim() : "";
             
-            // Primeira linha: impacto sem a ação
             doc.setFont("helvetica", "normal");
             const linhasImpacto = doc.splitTextToSize(impactoParte, larguraPagina);
             linhasImpacto.forEach(li => {
@@ -1855,7 +1810,6 @@ function gerarPDF() {
                 y += 5;
             });
             
-            // Segunda linha: Ação com indentação
             if (acaoParte) {
                 doc.setFont("helvetica", "bold");
                 doc.text("Acao:", margemEsquerda + 10, y);
@@ -1876,23 +1830,19 @@ function gerarPDF() {
             return;
         }
 
-        // Verificar se a linha tem subtítulo (texto antes de dois pontos)
         const match = linha.match(/^([^:]+):(.*)/);
         if (match) {
             const subtitulo = match[1].trim();
             const valor = match[2].trim();
             
-            // Subtítulo em negrito
             doc.setFont("helvetica", "bold");
             const subtituloText = subtitulo + ": ";
             const subtituloWidth = doc.getTextWidth(subtituloText);
             
-            // Verificar se cabe na linha
             const valorWidth = doc.getTextWidth(valor);
             const espacoDisponivel = larguraPagina - subtituloWidth;
             
             if (valorWidth > espacoDisponivel) {
-                // Quebrar valor em múltiplas linhas
                 doc.text(subtituloText, margemEsquerda, y);
                 doc.setFont("helvetica", "normal");
                 const linhasValor = doc.splitTextToSize(valor, espacoDisponivel);
@@ -1914,7 +1864,6 @@ function gerarPDF() {
                 doc.text(valor, margemEsquerda + subtituloWidth, y);
             }
         } else {
-            // Linha normal sem dois pontos - sempre alinhar à esquerda
             doc.setFont("helvetica", "normal");
             const linhasTexto = doc.splitTextToSize(linha, larguraPagina);
             linhasTexto.forEach((linhaTexto, idx) => {
@@ -1937,7 +1886,9 @@ function gerarPDF() {
     doc.save("relatorio_operacional.pdf");
 }
 
-/* ===== COPIAR WHATSAPP (COM FALLBACK HTTP) ===== */
+/**
+ * Copia texto para WhatsApp
+ */
 function copiarWhatsApp() {
     const texto = document.getElementById("resultado").innerText;
 
@@ -1955,7 +1906,9 @@ function copiarWhatsApp() {
     }
 }
 
-/* ===== ENVIAR EMAIL ===== */
+/**
+ * Envia relatório por email
+ */
 function enviarEmail() {
     const resultado = document.getElementById("resultado");
     
@@ -1971,13 +1924,11 @@ function enviarEmail() {
         return;
     }
     
-    // Pegar dados para o assunto
     const data = document.getElementById("data").value || "";
     const turno = document.getElementById("turno").value || "";
     const prefixo = document.getElementById("prefixo").value || "";
     const produto = document.getElementById("produto").value || "";
     
-    // Formatar data para o assunto
     let dataFormatada = "";
     if (data) {
         const [ano, mes, dia] = data.split("-");
@@ -1985,31 +1936,83 @@ function enviarEmail() {
     }
     
     const assunto = `Relatório Operacional - ${prefixo} - ${produto} - ${turno} - ${dataFormatada}`;
-    
-    // Pegar texto sem emojis problemáticos para email
     let corpo = resultado.innerText;
     
-    // Codificar para URL
     const mailtoLink = `mailto:${encodeURIComponent(emailDestino)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
-    
-    // Abrir cliente de email
     window.location.href = mailtoLink;
 }
 
-/* ===== DARK MODE ===== */
+/* ======================================
+   DARK MODE E UTILITÁRIOS
+====================================== */
+
+/**
+ * Alterna dark mode
+ */
 function toggleDarkMode() {
     document.documentElement.classList.toggle("dark-mode");
 }
 
-/* ===== LIMPAR FORMULÁRIO ===== */
+/**
+ * Limpa formulário
+ */
 function limparFormulario() {
     if (!confirm("⚠️ Tem certeza que deseja limpar todos os dados?")) {
         return;
     }
     
-    // Limpar dados salvos
     limparDadosSalvos();
-    
-    // Recarregar página
     window.location.reload();
 }
+
+/* ======================================
+   INICIALIZAÇÃO
+====================================== */
+
+document.addEventListener("DOMContentLoaded", async function() {
+    // Listeners para controles de falha
+    const assumiuFalha = document.getElementById("assumiu_em_falha");
+    if (assumiuFalha) {
+        assumiuFalha.addEventListener("change", controleFalhaAssumida);
+    }
+    
+    const recebeuEmFalha = document.getElementById("recebeu_em_falha");
+    if (recebeuEmFalha) {
+        recebeuEmFalha.addEventListener("change", controleRecebeuEmFalha);
+    }
+    
+    // Listeners para verificar outro turno
+    const turnoField = document.getElementById("turno");
+    const operadorField = document.getElementById("operador");
+    
+    if (turnoField) {
+        turnoField.addEventListener("change", verificarTabelaOutroTurno);
+    }
+    if (operadorField) {
+        operadorField.addEventListener("input", verificarTabelaOutroTurno);
+        operadorField.addEventListener("blur", verificarTabelaOutroTurno);
+    }
+    
+    // Inicializar equipamentos e controles
+    atualizarEquipamentos();
+    controleProduto();
+    
+    // Carregar tabelas do servidor
+    await atualizarSeletorTabelas();
+    await atualizarListaFinalizadas();
+    
+    // Atualizar indicador de sincronização
+    atualizarIndicadorSincronizacao();
+    
+    // Iniciar atualização automática (30 segundos)
+    iniciarAtualizacaoAutomatica(30);
+    
+    // Restaurar dados salvos localmente
+    restaurarDadosFormulario();
+    
+    // Salvar dados automaticamente
+    document.addEventListener("input", salvarDadosFormulario);
+    document.addEventListener("change", salvarDadosFormulario);
+    
+    console.log("✅ Sistema de tabelas compartilhadas inicializado!");
+});
