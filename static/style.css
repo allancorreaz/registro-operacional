@@ -142,6 +142,17 @@ button:hover {
     font-size: 14px;
 }
 
+/* Resultado - bloco de relatório */
+.resultado .relatorio-pre {
+    white-space: pre-wrap;
+    background: #f5f5f5;
+    color: #222;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    border: 1px solid #ddd;
+}
+
 /* ===== ÁREA DE AÇÕES ===== */
 .acoes {
     display: flex;
@@ -690,6 +701,12 @@ button:hover {
 .dark-mode .resultado {
     background: #1a1a1a;
     color: #fff;
+    border: 1px solid #333;
+}
+
+.dark-mode .resultado .relatorio-pre {
+    background: #2a2a2a;
+    color: #f1f1f1;
     border: 1px solid #333;
 }
 

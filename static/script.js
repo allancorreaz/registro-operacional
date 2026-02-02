@@ -984,7 +984,7 @@ function verRelatorioFinalizado(tabelaId) {
     if (resultadoDiv) {
         resultadoDiv.innerHTML = `
             <h3>📋 Relatório - ${tabela.prefixo}</h3>
-            <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.85em;">${tabela.relatorio}</pre>
+            <pre class="relatorio-pre">${tabela.relatorio}</pre>
         `;
         resultadoDiv.style.display = "block";
         resultadoDiv.scrollIntoView({ behavior: 'smooth' });
