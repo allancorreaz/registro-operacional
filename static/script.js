@@ -1496,10 +1496,38 @@ function calcular() {
         
         // Se tem término, finalizar a tabela
         if (dados.termino) {
-            const tabelaSelecionadaId = document.getElementById("seletorTabelasAndamento").value;
-            
-            if (tabelaSelecionadaId) {
-                try {
+            let tabelaSelecionadaId = document.getElementById("seletorTabelasAndamento").value;
+
+            try {
+                // Caso nenhuma tabela esteja selecionada, salvar automaticamente uma em andamento
+                if (!tabelaSelecionadaId) {
+                    const dadosTabela = {
+                        prefixo: dados.prefixo,
+                        data: dados.data,
+                        turno: dados.turno,
+                        produto: dados.produto,
+                        operador: dados.operador,
+                        inicio: dados.inicio,
+                        dados: coletarDadosFormulario()
+                    };
+
+                    const resultadoSalvar = await salvarTabelaServidor(dadosTabela);
+                    if (resultadoSalvar && resultadoSalvar.success) {
+                        tabelaSelecionadaId = resultadoSalvar.id;
+                        // Atualiza seletor e info para refletir a tabela criada
+                        await atualizarSeletorTabelas();
+                        document.getElementById("seletorTabelasAndamento").value = tabelaSelecionadaId;
+                        const tabela = tabelasAndamentoCache.find(t => t.id === tabelaSelecionadaId);
+                        if (tabela) {
+                            mostrarInfoTabelaSelecionada(tabela);
+                        }
+                    } else {
+                        console.warn("Não foi possível salvar tabela automaticamente antes da finalização.");
+                    }
+                }
+
+                // Se conseguimos um ID (selecionado ou recém-criado), finalizar no servidor
+                if (tabelaSelecionadaId) {
                     const dadosFinalizacao = {
                         termino: dados.termino,
                         peso: dados.peso,
@@ -1508,18 +1536,19 @@ function calcular() {
                         pdf_path: data.pdf,
                         dados: coletarDadosFormulario()
                     };
-                    
+
                     const resultadoFinalizar = await finalizarTabelaServidor(tabelaSelecionadaId, dadosFinalizacao);
-                    
+
                     if (resultadoFinalizar.success) {
+                        // Limpa seleção e atualiza listas para exibir em "Finalizadas" imediatamente
                         document.getElementById("seletorTabelasAndamento").value = "";
                         document.getElementById("infoTabelaSelecionada").style.display = "none";
                         await atualizarListaTabelas();
                         console.log("✅ Tabela movida para finalizadas!");
                     }
-                } catch (error) {
-                    console.error("Erro ao finalizar tabela:", error);
                 }
+            } catch (error) {
+                console.error("Erro ao finalizar tabela:", error);
             }
         }
     });
