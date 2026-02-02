@@ -290,20 +290,15 @@
 
     <!-- PASSAGEM DE TURNO -->
     <div class="card">
-        <h2>Passagem de Turno</h2>
+        <h2>🔄 Passagem de Turno</h2>
 
-        <label>Houve passagem de turno?</label>
-        <select id="houve_passagem" onchange="controlePassagem()">
-            <option value="NAO">Não</option>
-            <option value="SIM">Sim</option>
-        </select>
-
-        <div id="passagemExtra" style="display:none;">
-            <label>Vagões descarregados no meu turno <span class="obrigatorio">*</span></label>
-            <input type="number" id="vagoes_meu_turno" min="0" placeholder="Ex: 45">
-
-            <label>Turno que assumiu <span class="obrigatorio">*</span></label>
-            <select id="turno_assumiu">
+        <!-- SEÇÃO: RECEBEU A TABELA DE OUTRO TURNO (para quem está finalizando) -->
+        <div id="secaoRecebeuTabela" style="display:none; background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff9800;">
+            <h3 style="color: #e65100; margin-top: 0;">⚠️ Você está finalizando uma tabela de outro turno</h3>
+            <p style="font-size: 0.9em; color: #666;">Preencha os dados de como você recebeu esta tabela:</p>
+            
+            <label>Turno que passou a tabela <span class="obrigatorio">*</span></label>
+            <select id="turno_passou_tabela">
                 <option value="">Selecione</option>
                 <option>TURNO A</option>
                 <option>TURNO B</option>
@@ -311,31 +306,100 @@
                 <option>TURNO D</option>
             </select>
 
-            <label>Operador que assumiu <span class="obrigatorio">*</span></label>
-            <input type="text" id="operador_assumiu" placeholder="Ex: Carlos Santos">
+            <label>Operador que passou a tabela <span class="obrigatorio">*</span></label>
+            <input type="text" id="operador_passou_tabela" placeholder="Ex: João Silva">
 
-            <label>Matrícula do operador que assumiu <span class="obrigatorio">*</span></label>
-            <input type="text" id="matricula_assumiu" placeholder="Ex: MIP0050">
+            <label>Matrícula do operador que passou <span class="obrigatorio">*</span></label>
+            <input type="text" id="matricula_passou_tabela" placeholder="Ex: MIP0048">
 
-            <label>Hora da rendição <span class="obrigatorio">*</span></label>
-            <input type="time" id="hora_rendicao">
+            <label>Hora que você assumiu a tabela <span class="obrigatorio">*</span></label>
+            <input type="time" id="hora_assumiu_tabela">
 
-            <label>Vagões restantes para o próximo turno <span class="obrigatorio">*</span></label>
-            <input type="number" id="vagoes_proximo_turno" min="0" placeholder="Ex: 35">
+            <label>Quantos vagões faltavam descarregar quando assumiu? <span class="obrigatorio">*</span></label>
+            <input type="number" id="vagoes_faltavam_assumir" min="0" placeholder="Ex: 35">
 
-            <label>Passou com falha/impacto? <span class="obrigatorio">*</span></label>
-            <select id="assumiu_em_falha" onchange="controleFalhaAssumida()">
+            <label>Recebeu a tabela em falha/parada? <span class="obrigatorio">*</span></label>
+            <select id="recebeu_em_falha" onchange="controleRecebeuEmFalha()">
                 <option value="">Selecione</option>
                 <option value="NAO">Não</option>
                 <option value="SIM">Sim</option>
             </select>
 
-            <div id="falhaAssumidaExtra" style="display:none;">
-                <label>Qual falha? <span class="obrigatorio">*</span></label>
-                <input type="text" id="descricao_falha_assumida" placeholder="Descreva a falha">
+            <div id="recebeuFalhaExtra" style="display:none;">
+                <label>Qual era a falha? <span class="obrigatorio">*</span></label>
+                <input type="text" id="falha_recebida_desc" placeholder="Descreva a falha que estava ocorrendo">
                 
-                <label>Hora da falha <span class="obrigatorio">*</span></label>
-                <input type="time" id="hora_falha_passagem">
+                <label>Hora que parou (início da falha) <span class="obrigatorio">*</span></label>
+                <input type="time" id="hora_inicio_falha_recebida">
+
+                <label>Quanto tempo já estava parado quando assumiu? <span class="obrigatorio">*</span></label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="tempo_parado_h" min="0" placeholder="Horas" style="width: 50%;">
+                    <input type="number" id="tempo_parado_m" min="0" max="59" placeholder="Minutos" style="width: 50%;">
+                </div>
+
+                <label>O que estava sendo feito para resolver?</label>
+                <input type="text" id="acao_falha_recebida" placeholder="Ex: Aguardando mecânica, trocando peça...">
+
+                <label>Tipo de atendimento na falha</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <label style="font-weight: normal;"><input type="checkbox" id="falha_recebida_mecanica"> Mecânica</label>
+                    <label style="font-weight: normal;"><input type="checkbox" id="falha_recebida_eletrica"> Elétrica</label>
+                    <label style="font-weight: normal;"><input type="checkbox" id="falha_recebida_operacional"> Operacional</label>
+                    <label style="font-weight: normal;"><input type="checkbox" id="falha_recebida_outro"> Outro</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO: PASSOU A TABELA PARA OUTRO TURNO (para quem está saindo) -->
+        <label>Houve passagem de turno?</label>
+        <select id="houve_passagem" onchange="controlePassagem()">
+            <option value="NAO">Não</option>
+            <option value="SIM">Sim</option>
+        </select>
+
+        <div id="passagemExtra" style="display:none;">
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #1976d2;">
+                <h3 style="color: #1565c0; margin-top: 0;">📤 Você está passando esta tabela</h3>
+                
+                <label>Vagões descarregados no meu turno <span class="obrigatorio">*</span></label>
+                <input type="number" id="vagoes_meu_turno" min="0" placeholder="Ex: 45">
+
+                <label>Turno que assumiu <span class="obrigatorio">*</span></label>
+                <select id="turno_assumiu">
+                    <option value="">Selecione</option>
+                    <option>TURNO A</option>
+                    <option>TURNO B</option>
+                    <option>TURNO C</option>
+                    <option>TURNO D</option>
+                </select>
+
+                <label>Operador que assumiu <span class="obrigatorio">*</span></label>
+                <input type="text" id="operador_assumiu" placeholder="Ex: Carlos Santos">
+
+                <label>Matrícula do operador que assumiu <span class="obrigatorio">*</span></label>
+                <input type="text" id="matricula_assumiu" placeholder="Ex: MIP0050">
+
+                <label>Hora da rendição <span class="obrigatorio">*</span></label>
+                <input type="time" id="hora_rendicao">
+
+                <label>Vagões restantes para o próximo turno <span class="obrigatorio">*</span></label>
+                <input type="number" id="vagoes_proximo_turno" min="0" placeholder="Ex: 35">
+
+                <label>Passou com falha/impacto? <span class="obrigatorio">*</span></label>
+                <select id="assumiu_em_falha" onchange="controleFalhaAssumida()">
+                    <option value="">Selecione</option>
+                    <option value="NAO">Não</option>
+                    <option value="SIM">Sim</option>
+                </select>
+
+                <div id="falhaAssumidaExtra" style="display:none;">
+                    <label>Qual falha? <span class="obrigatorio">*</span></label>
+                    <input type="text" id="descricao_falha_assumida" placeholder="Descreva a falha">
+                    
+                    <label>Hora da falha <span class="obrigatorio">*</span></label>
+                    <input type="time" id="hora_falha_passagem">
+                </div>
             </div>
         </div>
     </div>
@@ -367,7 +431,7 @@
 
 
     <div class="footer">
-        Criado por Allan Correa – Matrícula MIP0048<br>
+        Criado por Allan De Melo Correa – Matrícula MIP0048, Mecânica Corretiva Turno A<br>
         Todos os direitos reservados
     </div>
 

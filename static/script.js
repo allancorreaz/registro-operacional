@@ -185,6 +185,141 @@ function controleFalhaAssumida() {
     });
 }
 
+/* ===== CONTROLE DE RECEBIMENTO DE TABELA DE OUTRO TURNO ===== */
+
+// Variável para armazenar info da tabela carregada
+let tabelaCarregadaInfo = null;
+
+// Verificar se está finalizando tabela de outro turno
+function verificarTabelaOutroTurno() {
+    const secaoRecebeu = document.getElementById("secaoRecebeuTabela");
+    if (!secaoRecebeu) return;
+    
+    const turnoAtual = document.getElementById("turno").value;
+    const operadorAtual = document.getElementById("operador").value.toUpperCase().trim();
+    
+    // Se há tabela carregada do servidor
+    if (tabelaCarregadaInfo) {
+        const turnoOriginal = tabelaCarregadaInfo.turno;
+        const operadorOriginal = (tabelaCarregadaInfo.operador || "").toUpperCase().trim();
+        
+        // Se o turno ou operador é diferente, mostrar seção de recebimento
+        const turnosDiferentes = turnoOriginal && turnoAtual && turnoOriginal !== turnoAtual;
+        const operadoresDiferentes = operadorOriginal && operadorAtual && operadorOriginal !== operadorAtual;
+        
+        if (turnosDiferentes || operadoresDiferentes) {
+            secaoRecebeu.style.display = "block";
+            tornarCamposRecebimentoObrigatorios(true);
+            return;
+        }
+    }
+    
+    // Se não há diferença, esconder seção
+    secaoRecebeu.style.display = "none";
+    tornarCamposRecebimentoObrigatorios(false);
+}
+
+// Tornar campos de recebimento obrigatórios ou não
+function tornarCamposRecebimentoObrigatorios(obrigatorio) {
+    const camposRecebimento = [
+        "turno_passou_tabela",
+        "operador_passou_tabela",
+        "matricula_passou_tabela",
+        "hora_assumiu_tabela",
+        "vagoes_faltavam_assumir",
+        "recebeu_em_falha"
+    ];
+    
+    camposRecebimento.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            if (obrigatorio) {
+                campo.setAttribute("required", "required");
+            } else {
+                campo.removeAttribute("required");
+            }
+        }
+    });
+}
+
+// Controle de falha recebida
+function controleRecebeuEmFalha() {
+    const recebeu = document.getElementById("recebeu_em_falha").value;
+    const falhaExtra = document.getElementById("recebeuFalhaExtra");
+    
+    if (falhaExtra) {
+        falhaExtra.style.display = recebeu === "SIM" ? "block" : "none";
+    }
+    
+    // Campos obrigatórios se recebeu com falha
+    const camposFalhaRecebida = [
+        "falha_recebida_desc",
+        "hora_inicio_falha_recebida",
+        "tempo_parado_h",
+        "tempo_parado_m"
+    ];
+    
+    camposFalhaRecebida.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            if (recebeu === "SIM") {
+                campo.setAttribute("required", "required");
+            } else {
+                campo.removeAttribute("required");
+                campo.value = "";
+            }
+        }
+    });
+}
+
+// Validar campos de recebimento antes de gerar resultado
+function validarCamposRecebimento() {
+    const secaoRecebeu = document.getElementById("secaoRecebeuTabela");
+    if (!secaoRecebeu || secaoRecebeu.style.display === "none") {
+        return { valido: true };
+    }
+    
+    const camposObrigatorios = [
+        { id: "turno_passou_tabela", nome: "Turno que passou a tabela" },
+        { id: "operador_passou_tabela", nome: "Operador que passou a tabela" },
+        { id: "matricula_passou_tabela", nome: "Matrícula do operador que passou" },
+        { id: "hora_assumiu_tabela", nome: "Hora que assumiu a tabela" },
+        { id: "vagoes_faltavam_assumir", nome: "Vagões que faltavam descarregar" },
+        { id: "recebeu_em_falha", nome: "Se recebeu em falha" }
+    ];
+    
+    for (const campo of camposObrigatorios) {
+        const elemento = document.getElementById(campo.id);
+        if (!elemento || !elemento.value) {
+            return { 
+                valido: false, 
+                mensagem: `⚠️ Campo obrigatório: ${campo.nome}\n\nComo você está finalizando uma tabela de outro turno, é necessário preencher todos os dados de como recebeu a tabela.`
+            };
+        }
+    }
+    
+    // Se recebeu em falha, validar campos adicionais
+    const recebeuEmFalha = document.getElementById("recebeu_em_falha").value;
+    if (recebeuEmFalha === "SIM") {
+        const camposFalha = [
+            { id: "falha_recebida_desc", nome: "Descrição da falha recebida" },
+            { id: "hora_inicio_falha_recebida", nome: "Hora de início da falha" }
+        ];
+        
+        for (const campo of camposFalha) {
+            const elemento = document.getElementById(campo.id);
+            if (!elemento || !elemento.value) {
+                return { 
+                    valido: false, 
+                    mensagem: `⚠️ Campo obrigatório: ${campo.nome}\n\nComo você recebeu a tabela em falha, é necessário informar os detalhes.`
+                };
+            }
+        }
+    }
+    
+    return { valido: true };
+}
+
 /* ===== PERSISTÊNCIA DE DADOS (SESSION STORAGE) ===== */
 const STORAGE_KEY = "registro_operacional_dados";
 const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
@@ -203,6 +338,10 @@ const camposFormulario = [
     "houve_mudanca_fluxo", "houve_passagem", "vagoes_meu_turno", "turno_assumiu",
     "operador_assumiu", "matricula_assumiu", "hora_rendicao", "vagoes_proximo_turno", 
     "assumiu_em_falha", "descricao_falha_assumida", "hora_falha_passagem",
+    "turno_passou_tabela", "operador_passou_tabela", "matricula_passou_tabela",
+    "hora_assumiu_tabela", "vagoes_faltavam_assumir", "recebeu_em_falha",
+    "falha_recebida_desc", "hora_inicio_falha_recebida", "tempo_parado_h", "tempo_parado_m",
+    "acao_falha_recebida",
     "observacoes", "email"
 ];
 
@@ -671,11 +810,23 @@ function carregarTabelaAndamento() {
     
     mostrarInfoTabelaSelecionada(tabela);
     
+    // Guardar informações da tabela carregada para verificação de outro turno
+    tabelaCarregadaInfo = {
+        turno: tabela.turno,
+        operador: tabela.operador,
+        prefixo: tabela.prefixo
+    };
+    
+    // Verificar se está finalizando tabela de outro turno (após um pequeno delay para dar tempo de preencher operador atual)
+    setTimeout(() => {
+        verificarTabelaOutroTurno();
+    }, 500);
+    
     // Rolar para o campo de término
     document.getElementById("termino").scrollIntoView({ behavior: 'smooth', block: 'center' });
     document.getElementById("termino").focus();
     
-    alert(`✅ Tabela "${tabela.prefixo}" carregada!\n\nAgora preencha o Término e gere o resultado.`);
+    alert(`✅ Tabela "${tabela.prefixo}" carregada!\n\nAgora preencha o Término e gere o resultado.\n\n⚠️ Se você é de outro turno/operador, preencha os dados de como recebeu a tabela.`);
 }
 
 // Excluir tabela selecionada - AGORA USA SERVIDOR
@@ -962,6 +1113,24 @@ document.addEventListener("DOMContentLoaded", async function() {
         assumiuFalha.addEventListener("change", controleFalhaAssumida);
     }
     
+    // Listener para controle de falha recebida
+    const recebeuEmFalha = document.getElementById("recebeu_em_falha");
+    if (recebeuEmFalha) {
+        recebeuEmFalha.addEventListener("change", controleRecebeuEmFalha);
+    }
+    
+    // Listeners para verificar se está finalizando tabela de outro turno
+    const turnoField = document.getElementById("turno");
+    const operadorField = document.getElementById("operador");
+    
+    if (turnoField) {
+        turnoField.addEventListener("change", verificarTabelaOutroTurno);
+    }
+    if (operadorField) {
+        operadorField.addEventListener("input", verificarTabelaOutroTurno);
+        operadorField.addEventListener("blur", verificarTabelaOutroTurno);
+    }
+    
     // Inicializar equipamentos e controles
     atualizarEquipamentos();
     controleProduto();
@@ -1167,6 +1336,13 @@ function adicionarImpacto() {
     container.appendChild(row);
 }
 function calcular() {
+    
+    // Validar campos de recebimento de tabela de outro turno
+    const validacaoRecebimento = validarCamposRecebimento();
+    if (!validacaoRecebimento.valido) {
+        alert(validacaoRecebimento.mensagem);
+        return;
+    }
 
     const impactos = [];
     const impactosDesc = [];
@@ -1263,7 +1439,7 @@ function calcular() {
         sinal: document.getElementById("sinal")?.value || "",
         tabela_posicionada: document.getElementById("tabela_posicionada")?.value || "",
 
-        // campos passagem de turno
+        // campos passagem de turno (passando para outro)
         houve_passagem: document.getElementById("houve_passagem")?.value || "NAO",
         vagoes_meu_turno: document.getElementById("vagoes_meu_turno")?.value || "",
         turno_assumiu: document.getElementById("turno_assumiu")?.value || "",
@@ -1274,6 +1450,24 @@ function calcular() {
         assumiu_em_falha: document.getElementById("assumiu_em_falha")?.value || "NAO",
         descricao_falha_assumida: toUpperSafe(document.getElementById("descricao_falha_assumida")?.value) || "",
         hora_falha_passagem: document.getElementById("hora_falha_passagem")?.value || "",
+
+        // campos recebimento de tabela de outro turno
+        recebeu_de_outro_turno: document.getElementById("secaoRecebeuTabela")?.style.display !== "none",
+        turno_passou_tabela: document.getElementById("turno_passou_tabela")?.value || "",
+        operador_passou_tabela: toUpperSafe(document.getElementById("operador_passou_tabela")?.value) || "",
+        matricula_passou_tabela: toUpperSafe(document.getElementById("matricula_passou_tabela")?.value) || "",
+        hora_assumiu_tabela: document.getElementById("hora_assumiu_tabela")?.value || "",
+        vagoes_faltavam_assumir: document.getElementById("vagoes_faltavam_assumir")?.value || "",
+        recebeu_em_falha: document.getElementById("recebeu_em_falha")?.value || "NAO",
+        falha_recebida_desc: toUpperSafe(document.getElementById("falha_recebida_desc")?.value) || "",
+        hora_inicio_falha_recebida: document.getElementById("hora_inicio_falha_recebida")?.value || "",
+        tempo_parado_h: document.getElementById("tempo_parado_h")?.value || "",
+        tempo_parado_m: document.getElementById("tempo_parado_m")?.value || "",
+        acao_falha_recebida: toUpperSafe(document.getElementById("acao_falha_recebida")?.value) || "",
+        falha_recebida_mecanica: document.getElementById("falha_recebida_mecanica")?.checked || false,
+        falha_recebida_eletrica: document.getElementById("falha_recebida_eletrica")?.checked || false,
+        falha_recebida_operacional: document.getElementById("falha_recebida_operacional")?.checked || false,
+        falha_recebida_outro: document.getElementById("falha_recebida_outro")?.checked || false,
 
         // mudança de fluxo
         houve_mudanca_fluxo: document.getElementById("houve_mudanca_fluxo")?.value || "NAO",

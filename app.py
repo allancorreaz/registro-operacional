@@ -493,11 +493,44 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
             acao_texto = f" | Acao: {acao}" if acao else ""
             linhas.append(f"  {i}. {desc}{tipo_texto} - {formatar_tempo(tempo)}{horarios}{acao_texto}")
 
+    # Recebimento de tabela de outro turno
+    if d.get("recebeu_de_outro_turno"):
+        linhas.append("")
+        linhas.append("-" * 40)
+        linhas.append("RECEBIMENTO DE TABELA (OUTRO TURNO)")
+        linhas.append("-" * 40)
+        linhas.append(f"  Turno que passou: {d.get('turno_passou_tabela', '')}")
+        linhas.append(f"  Operador que passou: {d.get('operador_passou_tabela', '')} | Mat: {d.get('matricula_passou_tabela', '')}")
+        linhas.append(f"  Hora que assumiu: {d.get('hora_assumiu_tabela', '')}")
+        linhas.append(f"  Vagoes faltando ao assumir: {d.get('vagoes_faltavam_assumir', '')}")
+        
+        if d.get("recebeu_em_falha") == "SIM":
+            linhas.append("")
+            linhas.append("  ** RECEBEU EM FALHA **")
+            linhas.append(f"  Falha: {d.get('falha_recebida_desc', '')}")
+            linhas.append(f"  Hora inicio falha: {d.get('hora_inicio_falha_recebida', '')}")
+            
+            tempo_h = d.get('tempo_parado_h', '') or '0'
+            tempo_m = d.get('tempo_parado_m', '') or '0'
+            linhas.append(f"  Tempo ja parado ao assumir: {tempo_h}h {tempo_m}min")
+            
+            # Tipo de atendimento
+            atendimentos = []
+            if d.get('falha_recebida_mecanica'): atendimentos.append("MECANICA")
+            if d.get('falha_recebida_eletrica'): atendimentos.append("ELETRICA")
+            if d.get('falha_recebida_operacional'): atendimentos.append("OPERACIONAL")
+            if d.get('falha_recebida_outro'): atendimentos.append("OUTRO")
+            if atendimentos:
+                linhas.append(f"  Tipo atendimento: {' / '.join(atendimentos)}")
+            
+            if d.get('acao_falha_recebida'):
+                linhas.append(f"  Acao em andamento: {d.get('acao_falha_recebida', '')}")
+
     # Passagem de turno
     if d.get("houve_passagem") == "SIM":
         linhas.append("")
         linhas.append("-" * 40)
-        linhas.append("PASSAGEM DE TURNO")
+        linhas.append("PASSAGEM DE TURNO (SAINDO)")
         linhas.append("-" * 40)
         linhas.append(f"  Hora da rendicao: {d.get('hora_rendicao', '')}")
         linhas.append(f"  Vagoes descarregados no meu turno: {d.get('vagoes_meu_turno', '')}")
