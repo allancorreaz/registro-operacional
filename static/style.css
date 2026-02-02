@@ -1,3 +1,9 @@
+/* ======================================
+   REGISTRO OPERACIONAL - ESTILOS
+   Organizado por Allan De Melo Correa
+====================================== */
+
+/* ===== RESET E BASE ===== */
 * {
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -10,12 +16,23 @@ body {
     min-height: 100vh;
 }
 
+/* ===== CONTAINER PRINCIPAL ===== */
 .container {
     max-width: 520px;
     margin: auto;
     padding: 20px;
 }
 
+/* ===== TIPOGRAFIA ===== */
+h1 {
+    text-align: center;
+}
+
+h2 {
+    color: #203a43;
+}
+
+/* ===== CARDS ===== */
 .card {
     background: #ffffff;
     color: #333;
@@ -25,15 +42,166 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 }
 
-h1 {
+/* ===== FORMULÁRIOS ===== */
+label {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.obrigatorio {
+    color: #f44336;
+    font-weight: bold;
+}
+
+input[required],
+select[required] {
+    border-left: 3px solid #f44336;
+}
+
+input[type="text"],
+textarea {
+    text-transform: uppercase;
+}
+
+input.impacto-desc,
+input.impacto-acao {
+    text-transform: none;
+}
+
+input, select, textarea, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+input[type="date"],
+input[type="time"] {
+    width: 100%;
+    min-width: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* ===== BOTÕES ===== */
+button {
+    background: #2c5364;
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #203a43;
+}
+
+.btn-remover {
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    min-width: 28px;
+}
+
+.btn-remover:hover {
+    background: #d32f2f;
+}
+
+.btn-limpar {
+    background: #c62828;
+}
+
+.btn-atualizar {
+    background: #388e3c;
+}
+
+.btn-salvar {
+    background: #1976d2;
+}
+
+/* ===== ÁREA DE RESULTADO ===== */
+.resultado {
+    background: #0f2027;
+    color: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 14px;
+}
+
+/* ===== ÁREA DE AÇÕES ===== */
+.acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.acoes button {
+    flex: 1;
+    min-width: 140px;
+}
+
+/* ===== FOOTER ===== */
+.footer {
     text-align: center;
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 20px;
 }
 
-h2 {
-    color: #203a43;
+/* ======================================
+   BOTÕES DE CONTROLE
+====================================== */
+.botoes-controle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
-/* Card de tabelas em andamento */
+/* ======================================
+   INDICADOR DE SINCRONIZAÇÃO
+====================================== */
+.indicador-sincronizacao {
+    background: #e8f5e9;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 0.85em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: #000000;
+}
+
+.indicador-sincronizacao .status {
+    color: #1b5e20;
+    font-weight: 500;
+}
+
+.indicador-sincronizacao span {
+    color: #000000;
+}
+
+/* ======================================
+   TABELAS EM ANDAMENTO
+====================================== */
 #cardTabelasAndamento {
     background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
     border: 2px solid #4caf50;
@@ -48,13 +216,36 @@ h2 {
     font-weight: bold;
 }
 
-#infoTabelaSelecionada {
+.info-tabela-selecionada {
     background: #e3f2fd;
     border-left: 4px solid #1976d2;
     font-size: 0.9em;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 5px;
 }
 
-/* Card de tabelas finalizadas */
+.tabelas-andamento-acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.msg-selecione {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.contador {
+    font-size: 0.8em;
+    color: #666;
+}
+
+/* ======================================
+   TABELAS FINALIZADAS
+====================================== */
 #cardTabelasFinalizadas {
     background: linear-gradient(135deg, #e3f2fd, #bbdefb);
     border: 2px solid #1976d2;
@@ -68,6 +259,11 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.lista-finalizadas {
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .tabela-finalizada-item {
@@ -113,75 +309,9 @@ h2 {
     cursor: pointer;
 }
 
-label {
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.obrigatorio {
-    color: #f44336;
-    font-weight: bold;
-}
-
-input[required],
-select[required] {
-    border-left: 3px solid #f44336;
-}
-
-/* Forçar maiúsculas em todos os campos */
-input[type="text"],
-textarea {
-    text-transform: uppercase;
-}
-
-/* Exceção: descrição de impactos - capitalização de frases */
-input.impacto-desc,
-input.impacto-acao {
-    text-transform: none;
-}
-
-input, select, textarea, button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 6px;
-    margin-bottom: 14px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    font-size: 15px;
-    box-sizing: border-box;
-}
-
-/* Garantir que campos de data e hora ocupem 100% no mobile */
-input[type="date"],
-input[type="time"] {
-    width: 100%;
-    min-width: 0;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
-
-button {
-    background: #2c5364;
-    color: #fff;
-    font-weight: bold;
-    border: none;
-    cursor: pointer;
-}
-
-button:hover {
-    background: #203a43;
-}
-
-.resultado {
-    background: #0f2027;
-    color: #fff;
-    border-radius: 12px;
-    padding: 15px;
-    font-size: 14px;
-}
-
-/* IMPACTOS */
+/* ======================================
+   IMPACTOS/FALHAS
+====================================== */
 .impacto-row {
     display: flex;
     flex-direction: column;
@@ -191,11 +321,6 @@ button:hover {
     background: #f5f5f5;
     border-radius: 10px;
     border-left: 4px solid #2c5364;
-}
-
-.dark-mode .impacto-row {
-    background: #1a1a1a;
-    border-left-color: #fff;
 }
 
 .impacto-row input,
@@ -218,12 +343,6 @@ button:hover {
     color: #2e7d32;
 }
 
-.dark-mode .impacto-row .impacto-hora-fim {
-    background: #1b5e20;
-    color: #a5d6a7;
-}
-
-/* Layout em linha para horários e tempo */
 .impacto-row .impacto-tempo-grupo {
     display: flex;
     flex-wrap: wrap;
@@ -235,7 +354,6 @@ button:hover {
     min-width: 80px;
 }
 
-/* Grupo de checkboxes de atendimento */
 .impacto-atendimento-grupo {
     margin: 5px 0;
 }
@@ -268,153 +386,9 @@ button:hover {
     cursor: pointer;
 }
 
-@media (min-width: 601px) {
-    .impacto-row .impacto-tempo-grupo input {
-        max-width: 120px;
-    }
-}
-
-/* Mobile - garantir alinhamento de todos os campos */
-@media (max-width: 600px) {
-    input[type="date"],
-    input[type="time"],
-    input[type="number"] {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 100% !important;
-    }
-    
-    .impacto-row .impacto-tempo-grupo {
-        flex-direction: column;
-    }
-    
-    .impacto-row .impacto-tempo-grupo input {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    
-    .fluxo-campos {
-        flex-direction: column;
-    }
-    
-    .fluxo-campos input {
-        width: 100% !important;
-    }
-    
-    .carvao-pesos {
-        flex-direction: column;
-    }
-    
-    .partida-secao input {
-        width: 100% !important;
-    }
-}
-
-/* DARK MODE - Tema Preto/Cinza com textos brancos */
-.dark-mode,
-.dark-mode body {
-    background: #000 !important;
-    color: #fff !important;
-}
-
-.dark-mode .container {
-    background: #000;
-}
-
-.dark-mode .card {
-    background: #1a1a1a;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    border: 1px solid #333;
-}
-
-.dark-mode h1,
-.dark-mode h2 {
-    color: #fff;
-}
-
-.dark-mode label {
-    color: #fff;
-}
-
-.dark-mode input,
-.dark-mode select,
-.dark-mode textarea {
-    background: #2a2a2a;
-    color: #fff;
-    border: 1px solid #444;
-}
-
-.dark-mode input::placeholder,
-.dark-mode textarea::placeholder {
-    color: #888;
-}
-
-.dark-mode input:focus,
-.dark-mode select:focus,
-.dark-mode textarea:focus {
-    border-color: #666;
-    outline: none;
-}
-
-.dark-mode button {
-    background: #333;
-    color: #fff;
-    border: 1px solid #555;
-}
-
-.dark-mode button:hover {
-    background: #444;
-}
-
-.dark-mode .resultado {
-    background: #1a1a1a;
-    color: #fff;
-    border: 1px solid #333;
-}
-
-.dark-mode .impacto-row {
-    background: #222;
-    border-left-color: #666;
-}
-
-.dark-mode .impacto-row input,
-.dark-mode .impacto-row select {
-    background: #2a2a2a;
-    color: #fff;
-    border: 1px solid #444;
-}
-
-.dark-mode .impacto-row .impacto-hora-fim {
-    background: #2a2a2a;
-    color: #4caf50;
-    border: 1px solid #4caf50;
-}
-
-.dark-mode .impacto-atendimento-grupo .atendimento-label {
-    color: #fff;
-}
-
-.dark-mode .atendimento-checkboxes label {
-    color: #fff;
-}
-
-.dark-mode .footer {
-    color: #888;
-}
-
-.dark-mode hr {
-    border-color: #444;
-}
-
-.footer {
-    text-align: center;
-    font-size: 12px;
-    color: #aaa;
-    margin-top: 20px;
-}
-
-/* ===== MATERIAIS CARVÃO ===== */
+/* ======================================
+   MATERIAIS CARVÃO
+====================================== */
 .material-carvao-row {
     background: #fff8e1;
     border-left: 4px solid #ffa500;
@@ -423,22 +397,8 @@ button:hover {
     margin-bottom: 25px;
 }
 
-.dark-mode .material-carvao-row {
-    background: #2a2a1a;
-    border-left-color: #ffa500;
-}
-
 .material-carvao-row:last-child {
     margin-bottom: 10px;
-}
-
-.carvao-categoria {
-    background: #ffe0b2;
-    font-weight: 600;
-}
-
-.dark-mode .carvao-categoria {
-    background: #3d3d1a;
 }
 
 .material-header {
@@ -452,8 +412,9 @@ button:hover {
     color: #e65100;
 }
 
-.dark-mode .material-header strong {
-    color: #ffb74d;
+.carvao-categoria {
+    background: #ffe0b2;
+    font-weight: 600;
 }
 
 .carvao-pesos {
@@ -467,18 +428,15 @@ button:hover {
     min-width: 120px;
 }
 
-/* ===== MUDANÇA DE FLUXO ===== */
+/* ======================================
+   MUDANÇA DE FLUXO
+====================================== */
 .fluxo-row {
     background: #e3f2fd;
     border-left: 4px solid #2196f3;
     border-radius: 10px;
     padding: 15px;
     margin-bottom: 15px;
-}
-
-.dark-mode .fluxo-row {
-    background: #1a2a3a;
-    border-left-color: #2196f3;
 }
 
 .fluxo-header {
@@ -490,10 +448,6 @@ button:hover {
 
 .fluxo-header strong {
     color: #1565c0;
-}
-
-.dark-mode .fluxo-header strong {
-    color: #64b5f6;
 }
 
 .fluxo-campos {
@@ -540,7 +494,9 @@ button:hover {
     cursor: pointer;
 }
 
-/* ===== TABELA PARTIDA ===== */
+/* ======================================
+   TABELA PARTIDA/DIVIDIDA
+====================================== */
 .partida-secao {
     background: #f3e5f5;
     border-left: 4px solid #9c27b0;
@@ -549,56 +505,293 @@ button:hover {
     margin-bottom: 12px;
 }
 
+.partida-secao label strong {
+    color: #7b1fa2;
+}
+
+/* ======================================
+   PASSAGEM DE TURNO
+====================================== */
+.secao-recebeu-tabela {
+    background: #fff3e0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border-left: 4px solid #ff9800;
+}
+
+.secao-recebeu-tabela h3 {
+    color: #e65100;
+    margin-top: 0;
+}
+
+.secao-recebeu-tabela p {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.secao-passou-tabela {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #1976d2;
+}
+
+.secao-passou-tabela h3 {
+    color: #1565c0;
+    margin-top: 0;
+}
+
+.tempo-parado-grupo {
+    display: flex;
+    gap: 10px;
+}
+
+.tempo-parado-grupo input {
+    width: 50%;
+}
+
+.checkboxes-falha-recebida {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.checkboxes-falha-recebida label {
+    font-weight: normal;
+}
+
+/* ======================================
+   SEÇÕES EXTRAS (CARVÃO/MINÉRIO)
+====================================== */
+#carvaoExtra h3,
+#tabelaPartidaExtra h3 {
+    color: #424242;
+    margin-bottom: 15px;
+}
+
+/* ======================================
+   RESPONSIVIDADE
+====================================== */
+@media (min-width: 601px) {
+    .impacto-row .impacto-tempo-grupo input {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 600px) {
+    input[type="date"],
+    input[type="time"],
+    input[type="number"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+    }
+    
+    .impacto-row .impacto-tempo-grupo {
+        flex-direction: column;
+    }
+    
+    .impacto-row .impacto-tempo-grupo input {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .fluxo-campos {
+        flex-direction: column;
+    }
+    
+    .fluxo-campos input {
+        width: 100% !important;
+    }
+    
+    .carvao-pesos {
+        flex-direction: column;
+    }
+    
+    .partida-secao input {
+        width: 100% !important;
+    }
+    
+    .tempo-parado-grupo {
+        flex-direction: column;
+    }
+    
+    .tempo-parado-grupo input {
+        width: 100% !important;
+    }
+}
+
+/* ======================================
+   DARK MODE
+====================================== */
+.dark-mode,
+.dark-mode body {
+    background: #000 !important;
+    color: #fff !important;
+}
+
+.dark-mode .container {
+    background: #000;
+}
+
+.dark-mode .card {
+    background: #1a1a1a;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    border: 1px solid #333;
+}
+
+.dark-mode h1,
+.dark-mode h2 {
+    color: #fff;
+}
+
+.dark-mode label {
+    color: #fff;
+}
+
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #444;
+}
+
+.dark-mode select option {
+    background: #2a2a2a;
+    color: #fff;
+}
+
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+    color: #888;
+}
+
+.dark-mode input:focus,
+.dark-mode select:focus,
+.dark-mode textarea:focus {
+    border-color: #666;
+    outline: none;
+}
+
+.dark-mode button {
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+.dark-mode button:hover {
+    background: #444;
+}
+
+.dark-mode .resultado {
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #333;
+}
+
+.dark-mode .footer {
+    color: #888;
+}
+
+.dark-mode hr {
+    border-color: #444;
+}
+
+/* Dark mode - Impactos */
+.dark-mode .impacto-row {
+    background: #222;
+    border-left-color: #666;
+}
+
+.dark-mode .impacto-row input,
+.dark-mode .impacto-row select {
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #444;
+}
+
+.dark-mode .impacto-row .impacto-hora-fim {
+    background: #2a2a2a;
+    color: #4caf50;
+    border: 1px solid #4caf50;
+}
+
+.dark-mode .impacto-atendimento-grupo .atendimento-label,
+.dark-mode .atendimento-checkboxes label {
+    color: #fff;
+}
+
+/* Dark mode - Carvão */
+.dark-mode .material-carvao-row {
+    background: #2a2a1a;
+    border-left-color: #ffa500;
+}
+
+.dark-mode .carvao-categoria {
+    background: #3d3d1a;
+}
+
+.dark-mode .material-header strong {
+    color: #ffb74d;
+}
+
+/* Dark mode - Fluxo */
+.dark-mode .fluxo-row {
+    background: #1a2a3a;
+    border-left-color: #2196f3;
+}
+
+.dark-mode .fluxo-header strong {
+    color: #64b5f6;
+}
+
+/* Dark mode - Partida */
 .dark-mode .partida-secao {
     background: #2a1a2a;
     border-left-color: #9c27b0;
-}
-
-.partida-secao label strong {
-    color: #7b1fa2;
 }
 
 .dark-mode .partida-secao label strong {
     color: #ce93d8;
 }
 
-/* ===== BOTÃO REMOVER ===== */
-.btn-remover {
-    background: #f44336;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    min-width: 28px;
-}
-
-.btn-remover:hover {
-    background: #d32f2f;
-}
-
-/* ===== SEÇÃO CARVÃO ===== */
-#carvaoExtra h3 {
-    color: #424242;
-    margin-bottom: 15px;
-}
-
-.dark-mode #carvaoExtra h3 {
-    color: #e0e0e0;
-}
-
-/* ===== SEÇÃO TABELA PARTIDA ===== */
-#tabelaPartidaExtra h3 {
-    color: #424242;
-    margin-bottom: 15px;
-}
-
+/* Dark mode - Seções extras */
+.dark-mode #carvaoExtra h3,
 .dark-mode #tabelaPartidaExtra h3 {
     color: #e0e0e0;
+}
+
+/* Dark mode - Indicador sincronização */
+.dark-mode .indicador-sincronizacao {
+    background: #1a2a1a;
+    color: #a5d6a7;
+}
+
+.dark-mode .indicador-sincronizacao span {
+    color: #a5d6a7;
+}
+
+.dark-mode .indicador-sincronizacao .status {
+    color: #4caf50;
+}
+
+/* Dark mode - Passagem de turno */
+.dark-mode .secao-recebeu-tabela {
+    background: #2a2a1a;
+}
+
+.dark-mode .secao-recebeu-tabela h3 {
+    color: #ffb74d;
+}
+
+.dark-mode .secao-passou-tabela {
+    background: #1a2a3a;
+}
+
+.dark-mode .secao-passou-tabela h3 {
+    color: #64b5f6;
 }
