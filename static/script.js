@@ -206,17 +206,154 @@ const camposFormulario = [
     "observacoes", "email"
 ];
 
-/* ===== HISTÓRICO DE TABELAS EM ANDAMENTO ===== */
+/* ===== TABELAS COMPARTILHADAS (SERVIDOR) ===== */
 
-// Obter todas as tabelas salvas
-function obterTabelasAndamento() {
-    const dados = localStorage.getItem(STORAGE_KEY_TABELAS);
-    return dados ? JSON.parse(dados) : [];
+// Cache local das tabelas (para melhor performance)
+let tabelasAndamentoCache = [];
+let tabelasFinalizadasCache = [];
+let atualizacaoAutomaticaInterval = null;
+
+// Obter tabelas em andamento do servidor
+async function obterTabelasAndamentoServidor() {
+    try {
+        const response = await fetch('/api/tabelas/andamento');
+        const data = await response.json();
+        tabelasAndamentoCache = data.tabelas || [];
+        return tabelasAndamentoCache;
+    } catch (error) {
+        console.error('Erro ao obter tabelas:', error);
+        return [];
+    }
 }
 
-// Salvar lista de tabelas
+// Obter tabelas finalizadas do servidor
+async function obterTabelasFinalizadasServidor() {
+    try {
+        const response = await fetch('/api/tabelas/finalizadas');
+        const data = await response.json();
+        tabelasFinalizadasCache = data.tabelas || [];
+        return tabelasFinalizadasCache;
+    } catch (error) {
+        console.error('Erro ao obter tabelas finalizadas:', error);
+        return [];
+    }
+}
+
+// Salvar tabela no servidor
+async function salvarTabelaServidor(dadosTabela) {
+    try {
+        const response = await fetch('/api/tabelas/andamento', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosTabela)
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao salvar tabela:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Excluir tabela do servidor
+async function excluirTabelaServidor(tabelaId) {
+    try {
+        const response = await fetch(`/api/tabelas/andamento/${tabelaId}`, {
+            method: 'DELETE'
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao excluir tabela:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Finalizar tabela no servidor
+async function finalizarTabelaServidor(tabelaId, dadosFinalizacao) {
+    try {
+        const response = await fetch(`/api/tabelas/finalizar/${tabelaId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosFinalizacao)
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao finalizar tabela:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Excluir tabela finalizada do servidor
+async function excluirTabelaFinalizadaServidor(tabelaId) {
+    try {
+        const response = await fetch(`/api/tabelas/finalizadas/${tabelaId}`, {
+            method: 'DELETE'
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao excluir tabela finalizada:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Atualizar lista de tabelas (UI)
+async function atualizarListaTabelas() {
+    const btnAtualizar = document.getElementById("btnAtualizarTabelas");
+    if (btnAtualizar) {
+        btnAtualizar.disabled = true;
+        btnAtualizar.textContent = "🔄 Atualizando...";
+    }
+    
+    try {
+        await Promise.all([
+            atualizarSeletorTabelas(),
+            atualizarListaFinalizadas()
+        ]);
+    } finally {
+        if (btnAtualizar) {
+            btnAtualizar.disabled = false;
+            btnAtualizar.textContent = "🔄 Atualizar Lista";
+        }
+    }
+}
+
+// Iniciar atualização automática
+function iniciarAtualizacaoAutomatica(intervaloSegundos = 30) {
+    pararAtualizacaoAutomatica();
+    atualizacaoAutomaticaInterval = setInterval(async () => {
+        await atualizarListaTabelas();
+        atualizarIndicadorSincronizacao();
+    }, intervaloSegundos * 1000);
+    console.log(`Atualização automática iniciada (a cada ${intervaloSegundos}s)`);
+}
+
+// Parar atualização automática
+function pararAtualizacaoAutomatica() {
+    if (atualizacaoAutomaticaInterval) {
+        clearInterval(atualizacaoAutomaticaInterval);
+        atualizacaoAutomaticaInterval = null;
+    }
+}
+
+// Indicador de sincronização
+function atualizarIndicadorSincronizacao() {
+    const indicador = document.getElementById("indicadorSincronizacao");
+    if (indicador) {
+        const agora = new Date().toLocaleTimeString('pt-BR');
+        indicador.textContent = `Última sincronização: ${agora}`;
+    }
+}
+
+/* ===== HISTÓRICO DE TABELAS EM ANDAMENTO (FUNÇÕES ANTIGAS - COMPATIBILIDADE) ===== */
+
+// Obter todas as tabelas salvas (agora usa cache do servidor)
+function obterTabelasAndamento() {
+    return tabelasAndamentoCache;
+}
+
+// Salvar lista de tabelas (mantido para compatibilidade, mas agora usa servidor)
 function salvarTabelasAndamento(tabelas) {
-    localStorage.setItem(STORAGE_KEY_TABELAS, JSON.stringify(tabelas));
+    // Não faz mais nada - dados são salvos no servidor
+    console.log('salvarTabelasAndamento deprecated - usando servidor');
 }
 
 // Coletar dados atuais do formulário
@@ -286,8 +423,8 @@ function coletarDadosFormulario() {
     return dados;
 }
 
-// Salvar tabela como início (em andamento)
-function salvarTabelaInicio() {
+// Salvar tabela como início (em andamento) - AGORA USA SERVIDOR
+async function salvarTabelaInicio() {
     const prefixo = document.getElementById("prefixo").value;
     const inicio = document.getElementById("inicio").value;
     const data = document.getElementById("data").value;
@@ -307,47 +444,64 @@ function salvarTabelaInicio() {
         return;
     }
     
-    const tabelas = obterTabelasAndamento();
-    
-    // Verificar se já existe uma tabela com mesmo prefixo, data e turno
-    const indiceExistente = tabelas.findIndex(t => 
-        t.prefixo === prefixo && t.data === data && t.turno === turno
-    );
-    
     const dadosFormulario = coletarDadosFormulario();
     
-    const novaTabela = {
-        id: indiceExistente >= 0 ? tabelas[indiceExistente].id : Date.now(),
+    const dadosTabela = {
         prefixo: prefixo,
         data: data,
         turno: turno,
         produto: produto,
         operador: operador,
         inicio: inicio,
-        salvoEm: new Date().toLocaleString('pt-BR'),
         dados: dadosFormulario
     };
     
-    if (indiceExistente >= 0) {
-        tabelas[indiceExistente] = novaTabela;
-        alert(`✅ Tabela "${prefixo}" atualizada no histórico!`);
-    } else {
-        tabelas.unshift(novaTabela); // Adicionar no início da lista
-        alert(`✅ Tabela "${prefixo}" salva no histórico!\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".`);
+    // Mostrar indicador de salvamento
+    const btnSalvar = document.querySelector('button[onclick="salvarTabelaInicio()"]');
+    const textoOriginal = btnSalvar ? btnSalvar.textContent : '';
+    if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.textContent = '⏳ Salvando...';
     }
     
-    salvarTabelasAndamento(tabelas);
-    atualizarSeletorTabelas();
-    
-    // Selecionar a tabela recém-salva
-    document.getElementById("seletorTabelasAndamento").value = novaTabela.id;
-    mostrarInfoTabelaSelecionada(novaTabela);
+    try {
+        const resultado = await salvarTabelaServidor(dadosTabela);
+        
+        if (resultado.success) {
+            if (resultado.atualizado) {
+                alert(`✅ Tabela "${prefixo}" atualizada no servidor!\n\n👥 Outros usuários podem ver esta tabela.`);
+            } else {
+                alert(`✅ Tabela "${prefixo}" salva no servidor!\n\n👥 Outros usuários podem ver e finalizar esta tabela.\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".`);
+            }
+            
+            // Atualizar lista de tabelas
+            await atualizarSeletorTabelas();
+            
+            // Selecionar a tabela recém-salva
+            document.getElementById("seletorTabelasAndamento").value = resultado.id;
+            const tabela = tabelasAndamentoCache.find(t => t.id === resultado.id);
+            if (tabela) {
+                mostrarInfoTabelaSelecionada(tabela);
+            }
+        } else {
+            alert(`❌ Erro ao salvar tabela: ${resultado.error || 'Erro desconhecido'}`);
+        }
+    } catch (error) {
+        alert(`❌ Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
+    } finally {
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+            btnSalvar.textContent = textoOriginal;
+        }
+    }
 }
 
-// Atualizar o seletor de tabelas em andamento
-function atualizarSeletorTabelas() {
+// Atualizar o seletor de tabelas em andamento - AGORA USA SERVIDOR
+async function atualizarSeletorTabelas() {
     const select = document.getElementById("seletorTabelasAndamento");
-    const tabelas = obterTabelasAndamento();
+    
+    // Obter tabelas do servidor
+    const tabelas = await obterTabelasAndamentoServidor();
     
     // Limpar opções existentes (exceto a primeira)
     select.innerHTML = '<option value="">-- Nova Tabela --</option>';
@@ -363,9 +517,18 @@ function atualizarSeletorTabelas() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        option.textContent = `${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | Início: ${tabela.inicio}`;
+        // Indicar produto (Minério/Carvão)
+        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
+        
+        option.textContent = `${icone} ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
+    
+    // Atualizar contador
+    const contador = document.getElementById("contadorTabelas");
+    if (contador) {
+        contador.textContent = `(${tabelas.length} tabela${tabelas.length !== 1 ? 's' : ''})`;
+    }
 }
 
 // Mostrar informações da tabela selecionada
@@ -515,8 +678,8 @@ function carregarTabelaAndamento() {
     alert(`✅ Tabela "${tabela.prefixo}" carregada!\n\nAgora preencha o Término e gere o resultado.`);
 }
 
-// Excluir tabela selecionada
-function excluirTabelaAndamento() {
+// Excluir tabela selecionada - AGORA USA SERVIDOR
+async function excluirTabelaAndamento() {
     const select = document.getElementById("seletorTabelasAndamento");
     const tabelaId = select.value;
     
@@ -533,17 +696,23 @@ function excluirTabelaAndamento() {
         return;
     }
     
-    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do histórico?\n\nEsta ação não pode ser desfeita.`)) {
+    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\n⚠️ Esta ação não pode ser desfeita e afetará todos os usuários.`)) {
         return;
     }
     
-    const novasTabelas = tabelas.filter(t => t.id != tabelaId);
-    salvarTabelasAndamento(novasTabelas);
-    atualizarSeletorTabelas();
-    
-    document.getElementById("infoTabelaSelecionada").style.display = "none";
-    
-    alert(`✅ Tabela "${tabela.prefixo}" excluída do histórico!`);
+    try {
+        const resultado = await excluirTabelaServidor(tabelaId);
+        
+        if (resultado.success) {
+            await atualizarSeletorTabelas();
+            document.getElementById("infoTabelaSelecionada").style.display = "none";
+            alert(`✅ Tabela "${tabela.prefixo}" excluída do servidor!`);
+        } else {
+            alert(`❌ Erro ao excluir: ${resultado.error || 'Erro desconhecido'}`);
+        }
+    } catch (error) {
+        alert(`❌ Erro de conexão: ${error.message}`);
+    }
 }
 
 function salvarDadosFormulario() {
@@ -692,8 +861,102 @@ function limparDadosSalvos() {
     localStorage.removeItem(STORAGE_KEY);
 }
 
+// Atualizar lista de tabelas finalizadas na UI
+async function atualizarListaFinalizadas() {
+    const container = document.getElementById("listaFinalizadas");
+    if (!container) return;
+    
+    const tabelas = await obterTabelasFinalizadasServidor();
+    
+    if (tabelas.length === 0) {
+        container.innerHTML = '<p style="color: #666; text-align: center;">Nenhuma tabela finalizada ainda.</p>';
+        return;
+    }
+    
+    let html = '<div class="tabelas-finalizadas-lista">';
+    
+    tabelas.forEach(tabela => {
+        let dataFormatada = "";
+        if (tabela.data) {
+            const [ano, mes, dia] = tabela.data.split("-");
+            dataFormatada = `${dia}/${mes}/${ano}`;
+        }
+        
+        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
+        
+        html += `
+            <div class="tabela-finalizada-item" data-id="${tabela.id}">
+                <div class="tabela-finalizada-info">
+                    <strong>${icone} ${tabela.prefixo}</strong>
+                    <span>${dataFormatada} | ${tabela.turno}</span>
+                    <span>Início: ${tabela.inicio} → Término: ${tabela.termino || '-'}</span>
+                    <span>Operador: ${tabela.operador || '-'}</span>
+                    <span>Taxa: ${tabela.taxaEfetiva ? tabela.taxaEfetiva + ' t/h' : '-'}</span>
+                </div>
+                <div class="tabela-finalizada-acoes">
+                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">📄</button>
+                    <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" style="background: #c62828;">🗑️</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Atualizar contador
+    const contador = document.getElementById("contadorFinalizadas");
+    if (contador) {
+        contador.textContent = `(${tabelas.length} tabela${tabelas.length !== 1 ? 's' : ''})`;
+    }
+}
+
+// Ver relatório de tabela finalizada
+function verRelatorioFinalizado(tabelaId) {
+    const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
+    if (!tabela || !tabela.relatorio) {
+        alert("Relatório não disponível.");
+        return;
+    }
+    
+    // Mostrar relatório em modal ou área de resultado
+    const resultadoDiv = document.getElementById("resultado");
+    if (resultadoDiv) {
+        resultadoDiv.innerHTML = `
+            <h3>📋 Relatório - ${tabela.prefixo}</h3>
+            <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.85em;">${tabela.relatorio}</pre>
+        `;
+        resultadoDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Excluir tabela finalizada
+async function excluirTabelaFinalizada(tabelaId) {
+    const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
+    if (!tabela) {
+        alert("Tabela não encontrada!");
+        return;
+    }
+    
+    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\n⚠️ Esta ação não pode ser desfeita!`)) {
+        return;
+    }
+    
+    try {
+        const resultado = await excluirTabelaFinalizadaServidor(tabelaId);
+        if (resultado.success) {
+            await atualizarListaFinalizadas();
+            alert(`✅ Tabela "${tabela.prefixo}" excluída!`);
+        } else {
+            alert(`❌ Erro ao excluir: ${resultado.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Erro de conexão: ${error.message}`);
+    }
+}
+
 // Adicionar listener após carregar a página
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
     const assumiuFalha = document.getElementById("assumiu_em_falha");
     if (assumiuFalha) {
         assumiuFalha.addEventListener("change", controleFalhaAssumida);
@@ -703,15 +966,24 @@ document.addEventListener("DOMContentLoaded", function() {
     atualizarEquipamentos();
     controleProduto();
     
-    // Carregar histórico de tabelas em andamento
-    atualizarSeletorTabelas();
+    // Carregar tabelas do SERVIDOR (compartilhadas)
+    await atualizarSeletorTabelas();
+    await atualizarListaFinalizadas();
     
-    // Restaurar dados salvos
+    // Atualizar indicador de sincronização
+    atualizarIndicadorSincronizacao();
+    
+    // Iniciar atualização automática (a cada 30 segundos)
+    iniciarAtualizacaoAutomatica(30);
+    
+    // Restaurar dados salvos localmente (para não perder formulário atual)
     restaurarDadosFormulario();
     
     // Salvar dados automaticamente quando qualquer campo mudar
     document.addEventListener("input", salvarDadosFormulario);
     document.addEventListener("change", salvarDadosFormulario);
+    
+    console.log("✅ Sistema de tabelas compartilhadas inicializado!");
 });
 
 /* ===== MUDANÇA DE FLUXO (DINÂMICO) ===== */
@@ -1049,7 +1321,7 @@ function calcular() {
         body: JSON.stringify(dados)
     })
     .then(res => res.json())
-    .then(data => {
+    .then(async data => {
         const resultado = document.getElementById("resultado");
         resultado.style.display = "block";
         
@@ -1057,6 +1329,39 @@ function calcular() {
             resultado.innerHTML = gerarResultadoCarvao(dados, data);
         } else {
             resultado.innerHTML = gerarResultadoMinerio(dados, data);
+        }
+        
+        // Se tem término, finalizar a tabela no servidor (se estava em andamento)
+        if (dados.termino) {
+            const tabelaSelecionadaId = document.getElementById("seletorTabelasAndamento").value;
+            
+            if (tabelaSelecionadaId) {
+                // Tabela estava em andamento - mover para finalizadas
+                try {
+                    const dadosFinalizacao = {
+                        termino: dados.termino,
+                        peso: dados.peso,
+                        taxa_efetiva: data.taxa_efetiva,
+                        relatorio: data.relatorio,
+                        pdf_path: data.pdf,
+                        dados: coletarDadosFormulario()
+                    };
+                    
+                    const resultadoFinalizar = await finalizarTabelaServidor(tabelaSelecionadaId, dadosFinalizacao);
+                    
+                    if (resultadoFinalizar.success) {
+                        // Resetar seletor e atualizar listas
+                        document.getElementById("seletorTabelasAndamento").value = "";
+                        document.getElementById("infoTabelaSelecionada").style.display = "none";
+                        
+                        await atualizarListaTabelas();
+                        
+                        console.log("✅ Tabela movida para finalizadas!");
+                    }
+                } catch (error) {
+                    console.error("Erro ao finalizar tabela:", error);
+                }
+            }
         }
     });
 }

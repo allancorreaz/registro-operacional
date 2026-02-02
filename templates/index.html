@@ -13,25 +13,43 @@
     <h1>🚆 Registro Operacional Geral</h1>
     
     <!-- BOTÕES DE CONTROLE -->
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
         <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
         <button onclick="limparFormulario()" style="background: #c62828;">🗑️ Limpar Tudo</button>
+        <button id="btnAtualizarTabelas" onclick="atualizarListaTabelas()" style="background: #388e3c;">🔄 Atualizar Lista</button>
+    </div>
+    
+    <!-- INDICADOR DE SINCRONIZAÇÃO -->
+    <div style="background: #e8f5e9; padding: 8px 12px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: #000000;">
+        <span>👥 <strong>Tabelas compartilhadas</strong> - Todos os usuários veem as mesmas tabelas</span>
+        <span id="indicadorSincronizacao" style="color: #1b5e20; font-weight: 500;">Sincronizando...</span>
     </div>
 
     <!-- TABELAS EM ANDAMENTO -->
     <div class="card" id="cardTabelasAndamento">
-        <h2>📋 Tabelas em Andamento</h2>
+        <h2>📋 Tabelas em Andamento <span id="contadorTabelas" style="font-size: 0.8em; color: #666;"></span></h2>
         <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
-            Selecione uma tabela iniciada para preencher o término:
+            👥 Selecione uma tabela iniciada por você ou outro operador para preencher o término:
         </p>
         <select id="seletorTabelasAndamento" onchange="carregarTabelaAndamento()">
             <option value="">-- Nova Tabela --</option>
         </select>
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
             <button type="button" onclick="salvarTabelaInicio()" style="background: #1976d2;">💾 Salvar Início</button>
             <button type="button" onclick="excluirTabelaAndamento()" style="background: #c62828;">🗑️ Excluir Selecionada</button>
         </div>
         <div id="infoTabelaSelecionada" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; display: none;"></div>
+    </div>
+    
+    <!-- TABELAS FINALIZADAS -->
+    <div class="card" id="cardTabelasFinalizadas">
+        <h2>✅ Tabelas Finalizadas <span id="contadorFinalizadas" style="font-size: 0.8em; color: #666;"></span></h2>
+        <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+            Últimas 50 tabelas finalizadas por todos os operadores:
+        </p>
+        <div id="listaFinalizadas" style="max-height: 300px; overflow-y: auto;">
+            <p style="color: #666; text-align: center;">Carregando...</p>
+        </div>
     </div>
 
     <!-- NOVOS CAMPOS -->

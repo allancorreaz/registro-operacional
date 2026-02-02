@@ -54,6 +54,65 @@ h2 {
     font-size: 0.9em;
 }
 
+/* Card de tabelas finalizadas */
+#cardTabelasFinalizadas {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border: 2px solid #1976d2;
+}
+
+#cardTabelasFinalizadas h2 {
+    color: #1565c0;
+}
+
+.tabelas-finalizadas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tabela-finalizada-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-left: 4px solid #4caf50;
+}
+
+.tabela-finalizada-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.85em;
+    flex: 1;
+}
+
+.tabela-finalizada-info strong {
+    font-size: 1em;
+    color: #333;
+}
+
+.tabela-finalizada-info span {
+    color: #666;
+}
+
+.tabela-finalizada-acoes {
+    display: flex;
+    gap: 5px;
+}
+
+.tabela-finalizada-acoes button {
+    width: auto;
+    padding: 8px 12px;
+    margin: 0;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 label {
     font-weight: 600;
     font-size: 14px;

@@ -5,11 +5,68 @@ from reportlab.lib.units import cm
 from datetime import datetime, timedelta
 import os
 import uuid
+import sqlite3
+import json
 
 app = Flask(__name__)
 
 REPORT_DIR = "reports"
+DATABASE = "tabelas.db"
 os.makedirs(REPORT_DIR, exist_ok=True)
+
+# ===== BANCO DE DADOS =====
+def get_db():
+    """Conecta ao banco de dados SQLite"""
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    """Inicializa o banco de dados com as tabelas necessárias"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Tabela para registros em andamento (iniciados)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tabelas_andamento (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prefixo TEXT NOT NULL,
+            data TEXT,
+            turno TEXT,
+            produto TEXT,
+            operador TEXT,
+            inicio TEXT,
+            salvo_em TEXT,
+            dados TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Tabela para registros finalizados
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tabelas_finalizadas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prefixo TEXT NOT NULL,
+            data TEXT,
+            turno TEXT,
+            produto TEXT,
+            operador TEXT,
+            inicio TEXT,
+            termino TEXT,
+            peso REAL,
+            taxa_efetiva REAL,
+            relatorio TEXT,
+            pdf_path TEXT,
+            dados TEXT,
+            finalizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+# Inicializar banco ao iniciar a aplicação
+init_db()
 
 @app.route("/")
 def index():
@@ -19,6 +76,227 @@ def index():
         equipamentos=["VV1", "VV2", "VV3", "ECV"],
         produtos=["Minério", "Carvão"]
     )
+
+# ===== APIs PARA TABELAS COMPARTILHADAS =====
+
+@app.route("/api/tabelas/andamento", methods=["GET"])
+def listar_tabelas_andamento():
+    """Lista todas as tabelas em andamento (iniciadas mas não finalizadas)"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, prefixo, data, turno, produto, operador, inicio, salvo_em, dados
+        FROM tabelas_andamento
+        ORDER BY criado_em DESC
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    tabelas = []
+    for row in rows:
+        tabela = {
+            "id": row["id"],
+            "prefixo": row["prefixo"],
+            "data": row["data"],
+            "turno": row["turno"],
+            "produto": row["produto"],
+            "operador": row["operador"],
+            "inicio": row["inicio"],
+            "salvoEm": row["salvo_em"],
+            "dados": json.loads(row["dados"]) if row["dados"] else {}
+        }
+        tabelas.append(tabela)
+    
+    return jsonify({"tabelas": tabelas})
+
+@app.route("/api/tabelas/andamento", methods=["POST"])
+def salvar_tabela_andamento():
+    """Salva ou atualiza uma tabela em andamento"""
+    data = request.json
+    
+    prefixo = data.get("prefixo", "")
+    data_tabela = data.get("data", "")
+    turno = data.get("turno", "")
+    produto = data.get("produto", "")
+    operador = data.get("operador", "")
+    inicio = data.get("inicio", "")
+    dados = json.dumps(data.get("dados", {}))
+    salvo_em = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Verificar se já existe tabela com mesmo prefixo, data e turno
+    cursor.execute('''
+        SELECT id FROM tabelas_andamento 
+        WHERE prefixo = ? AND data = ? AND turno = ?
+    ''', (prefixo, data_tabela, turno))
+    
+    existente = cursor.fetchone()
+    
+    if existente:
+        # Atualizar tabela existente
+        cursor.execute('''
+            UPDATE tabelas_andamento 
+            SET produto = ?, operador = ?, inicio = ?, salvo_em = ?, dados = ?
+            WHERE id = ?
+        ''', (produto, operador, inicio, salvo_em, dados, existente["id"]))
+        tabela_id = existente["id"]
+        atualizado = True
+    else:
+        # Inserir nova tabela
+        cursor.execute('''
+            INSERT INTO tabelas_andamento (prefixo, data, turno, produto, operador, inicio, salvo_em, dados)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (prefixo, data_tabela, turno, produto, operador, inicio, salvo_em, dados))
+        tabela_id = cursor.lastrowid
+        atualizado = False
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        "success": True,
+        "id": tabela_id,
+        "atualizado": atualizado,
+        "salvoEm": salvo_em
+    })
+
+@app.route("/api/tabelas/andamento/<int:tabela_id>", methods=["GET"])
+def obter_tabela_andamento(tabela_id):
+    """Obtém uma tabela específica em andamento"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, prefixo, data, turno, produto, operador, inicio, salvo_em, dados
+        FROM tabelas_andamento WHERE id = ?
+    ''', (tabela_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        return jsonify({"error": "Tabela não encontrada"}), 404
+    
+    tabela = {
+        "id": row["id"],
+        "prefixo": row["prefixo"],
+        "data": row["data"],
+        "turno": row["turno"],
+        "produto": row["produto"],
+        "operador": row["operador"],
+        "inicio": row["inicio"],
+        "salvoEm": row["salvo_em"],
+        "dados": json.loads(row["dados"]) if row["dados"] else {}
+    }
+    
+    return jsonify(tabela)
+
+@app.route("/api/tabelas/andamento/<int:tabela_id>", methods=["DELETE"])
+def excluir_tabela_andamento(tabela_id):
+    """Exclui uma tabela em andamento"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM tabelas_andamento WHERE id = ?', (tabela_id,))
+    deletados = cursor.rowcount
+    conn.commit()
+    conn.close()
+    
+    if deletados == 0:
+        return jsonify({"error": "Tabela não encontrada"}), 404
+    
+    return jsonify({"success": True})
+
+@app.route("/api/tabelas/finalizadas", methods=["GET"])
+def listar_tabelas_finalizadas():
+    """Lista todas as tabelas finalizadas"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, prefixo, data, turno, produto, operador, inicio, termino, 
+               peso, taxa_efetiva, relatorio, pdf_path, finalizado_em
+        FROM tabelas_finalizadas
+        ORDER BY finalizado_em DESC
+        LIMIT 50
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    tabelas = []
+    for row in rows:
+        tabela = {
+            "id": row["id"],
+            "prefixo": row["prefixo"],
+            "data": row["data"],
+            "turno": row["turno"],
+            "produto": row["produto"],
+            "operador": row["operador"],
+            "inicio": row["inicio"],
+            "termino": row["termino"],
+            "peso": row["peso"],
+            "taxaEfetiva": row["taxa_efetiva"],
+            "relatorio": row["relatorio"],
+            "pdfPath": row["pdf_path"],
+            "finalizadoEm": row["finalizado_em"]
+        }
+        tabelas.append(tabela)
+    
+    return jsonify({"tabelas": tabelas})
+
+@app.route("/api/tabelas/finalizar/<int:tabela_id>", methods=["POST"])
+def finalizar_tabela(tabela_id):
+    """Move uma tabela de andamento para finalizadas"""
+    data = request.json
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Obter tabela em andamento
+    cursor.execute('SELECT * FROM tabelas_andamento WHERE id = ?', (tabela_id,))
+    tabela = cursor.fetchone()
+    
+    if not tabela:
+        conn.close()
+        return jsonify({"error": "Tabela não encontrada"}), 404
+    
+    # Dados da finalização
+    termino = data.get("termino", "")
+    peso = data.get("peso", 0)
+    taxa_efetiva = data.get("taxa_efetiva", 0)
+    relatorio = data.get("relatorio", "")
+    pdf_path = data.get("pdf_path", "")
+    dados = data.get("dados", "{}")
+    
+    # Inserir na tabela de finalizadas
+    cursor.execute('''
+        INSERT INTO tabelas_finalizadas 
+        (prefixo, data, turno, produto, operador, inicio, termino, peso, taxa_efetiva, relatorio, pdf_path, dados)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (tabela["prefixo"], tabela["data"], tabela["turno"], tabela["produto"],
+          tabela["operador"], tabela["inicio"], termino, peso, taxa_efetiva, 
+          relatorio, pdf_path, json.dumps(dados)))
+    
+    # Remover da tabela de andamento
+    cursor.execute('DELETE FROM tabelas_andamento WHERE id = ?', (tabela_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({"success": True})
+
+@app.route("/api/tabelas/finalizadas/<int:tabela_id>", methods=["DELETE"])
+def excluir_tabela_finalizada(tabela_id):
+    """Exclui uma tabela finalizada"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM tabelas_finalizadas WHERE id = ?', (tabela_id,))
+    deletados = cursor.rowcount
+    conn.commit()
+    conn.close()
+    
+    if deletados == 0:
+        return jsonify({"error": "Tabela não encontrada"}), 404
+    
+    return jsonify({"success": True})
 
 def minutos_entre(inicio, termino):
     fmt = "%H:%M"
