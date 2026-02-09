@@ -354,17 +354,23 @@ function controleAssuncao() {
     const assuncaoExtra = document.getElementById("assuncaoExtra");
     const cardTabelasAndamento = document.getElementById("cardTabelasAndamento");
     const cardsDados = document.querySelectorAll('.card:not(#cardAssuncao):not(#cardTabelasAndamento):not(#cardTabelasFinalizadas)');
+    const divSalvar = document.getElementById("divSalvar");
     
     if (assumindo === "NAO") {
-        // Iniciando nova tabela - mostrar fluxo normal
+        // Iniciando nova tabela - mostrar fluxo normal mas sem botão salvar ainda
         assuncaoExtra.style.display = "none";
         cardTabelasAndamento.style.display = "block";
         // Mostrar todos os outros cards
         cardsDados.forEach(card => card.style.display = "block");
+        // Esconder botão salvar até preencher dados
+        divSalvar.style.display = "none";
         
         // Limpar dados de assunção
         document.getElementById("seletorTabelasAssuncao").value = "";
         document.getElementById("dadosAssuncao").style.display = "none";
+        
+        // Verificar se deve mostrar botão salvar
+        verificarMostrarBotaoSalvar();
         
     } else if (assumindo === "SIM") {
         // Assumindo tabela - mostrar seção de assunção
@@ -372,6 +378,8 @@ function controleAssuncao() {
         cardTabelasAndamento.style.display = "none";
         // Ocultar outros cards até selecionar tabela
         cardsDados.forEach(card => card.style.display = "none");
+        // Esconder botão salvar até selecionar tabela e preencher dados
+        divSalvar.style.display = "none";
         
         // Carregar tabelas disponíveis para assunção
         atualizarSeletorTabelasAssuncao();
@@ -380,6 +388,7 @@ function controleAssuncao() {
         assuncaoExtra.style.display = "none";
         cardTabelasAndamento.style.display = "none";
         cardsDados.forEach(card => card.style.display = "none");
+        divSalvar.style.display = "none";
     }
 }
 
@@ -468,24 +477,46 @@ async function carregarTabelaAssuncao() {
     const cardsDados = document.querySelectorAll('.card:not(#cardAssuncao):not(#cardTabelasAndamento):not(#cardTabelasFinalizadas)');
     cardsDados.forEach(card => card.style.display = "block");
     
-    alert(`✅ Tabela "${tabela.prefixo}" carregada para assunção!\n\nAgora preencha seus dados pessoais e a situação atual da tabela.`);
+    // Verificar se deve mostrar botão salvar
+    verificarMostrarBotaoSalvar();
+    
+    alert(`✅ Tabela "${tabela.prefixo}" carregada para assunção!\n\nAgora preencha seus dados pessoais obrigatórios e a situação atual da tabela.`);
+}
 }
 
 /**
- * Atualiza seletor de tabelas para assunção
+ * Verifica se deve mostrar o botão de salvar baseado nos dados preenchidos
  */
-async function atualizarSeletorTabelasAssuncao() {
-    const select = document.getElementById("seletorTabelasAssuncao");
-    const tabelas = await obterTabelasAndamentoServidor();
+function verificarMostrarBotaoSalvar() {
+    const assumindo = document.getElementById("assumindo_tabela").value;
+    const divSalvar = document.getElementById("divSalvar");
     
-    select.innerHTML = '<option value="">-- Selecione uma tabela --</option>';
-    
-    tabelas.forEach(tabela => {
-        const option = document.createElement("option");
-        option.value = tabela.id;
-        option.textContent = `${tabela.prefixo} - ${tabela.data} ${tabela.turno} (${tabela.operador})`;
-        select.appendChild(option);
-    });
+    if (assumindo === "NAO") {
+        // Para nova tabela, verificar campos básicos
+        const prefixo = document.getElementById("prefixo").value;
+        const inicio = document.getElementById("inicio").value;
+        const produto = document.getElementById("produto").value;
+        const equipamento = document.getElementById("equipamento").value;
+        
+        if (prefixo && inicio && produto && equipamento) {
+            divSalvar.style.display = "block";
+        } else {
+            divSalvar.style.display = "none";
+        }
+        
+    } else if (assumindo === "SIM") {
+        // Para assunção, verificar campos obrigatórios de assunção
+        const operadorAssumiu = document.getElementById("operador_assumiu").value;
+        const matriculaAssumiu = document.getElementById("matricula_assumiu").value;
+        const turnoAssumiu = document.getElementById("turno_assumiu").value;
+        const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir").value;
+        
+        if (operadorAssumiu && matriculaAssumiu && turnoAssumiu && vagoesFaltavam) {
+            divSalvar.style.display = "block";
+        } else {
+            divSalvar.style.display = "none";
+        }
+    }
 }
 
 /**
@@ -789,7 +820,6 @@ async function salvarTabelaInicio() {
     const turno = document.getElementById("turno").value;
     const produto = document.getElementById("produto").value;
     const operador = document.getElementById("operador").value;
-    const assumindo = document.getElementById("assumindo_tabela").value;
     
     if (!prefixo) {
         alert("⚠️ Preencha o Prefixo/Trem para salvar a tabela!");
@@ -2216,6 +2246,16 @@ document.addEventListener("DOMContentLoaded", async function() {
     if (recebeuEmFalhaAssuncao) {
         recebeuEmFalhaAssuncao.addEventListener("change", controleFalhaRecebida);
     }
+    
+    // Listeners para mostrar/esconder botão salvar
+    const camposSalvar = ["prefixo", "inicio", "produto", "equipamento", "operador_assumiu", "matricula_assumiu", "turno_assumiu", "vagoes_faltavam_assumir"];
+    camposSalvar.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener("input", verificarMostrarBotaoSalvar);
+            campo.addEventListener("change", verificarMostrarBotaoSalvar);
+        }
+    });
     
     // Listeners para verificar outro turno
     const turnoField = document.getElementById("turno");

@@ -18,6 +18,33 @@
         <button onclick="limparFormulario()" class="btn-limpar">🗑️ Limpar Tudo</button>
         <button id="btnAtualizarTabelas" onclick="atualizarListaTabelas()" class="btn-atualizar">🔄 Atualizar Lista</button>
     </div>
+
+
+        <!-- TABELAS EM ANDAMENTO -->
+    <div class="card" id="cardTabelasAndamento">
+        <h2>📋 Tabelas em Andamento <span id="contadorTabelas" class="contador"></span></h2>
+        <p class="msg-selecione">
+            👥 Selecione uma tabela iniciada por você ou outro operador para preencher o término:
+        </p>
+        <select id="seletorTabelasAndamento" onchange="carregarTabelaAndamento()">
+            <option value="">-- Nova Tabela --</option>
+        </select>
+        <div class="tabelas-andamento-acoes">
+            <button type="button" onclick="excluirTabelaAndamento()" class="btn-limpar">🗑️ Excluir Selecionada</button>
+        </div>
+        <div id="infoTabelaSelecionada" class="info-tabela-selecionada" style="display: none;"></div>
+    </div>
+    
+    <!-- TABELAS FINALIZADAS -->
+    <div class="card" id="cardTabelasFinalizadas">
+        <h2>✅ Tabelas Finalizadas <span id="contadorFinalizadas" class="contador"></span></h2>
+        <p class="msg-selecione">
+            Últimas 50 tabelas finalizadas por todos os operadores:
+        </p>
+        <div id="listaFinalizadas" class="lista-finalizadas">
+            <p style="color: #666; text-align: center;">Carregando...</p>
+        </div>
+    </div>
     
     <!-- INDICADOR DE SINCRONIZAÇÃO -->
     <div class="indicador-sincronizacao">
@@ -102,40 +129,16 @@
                 </div>
             </div>
         </div>
-        
-        <!-- BOTÃO DE SALVAR - SEMPRE VISÍVEL -->
-        <div class="botoes-controle" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
-            <button type="button" onclick="salvarTabelaInicio()" class="btn-salvar" id="btnSalvarGlobal">
-                💾 Salvar Tabela
-            </button>
-        </div>
     </div>
 
-    <!-- TABELAS EM ANDAMENTO -->
-    <div class="card" id="cardTabelasAndamento">
-        <h2>📋 Tabelas em Andamento <span id="contadorTabelas" class="contador"></span></h2>
-        <p class="msg-selecione">
-            👥 Selecione uma tabela iniciada por você ou outro operador para preencher o término:
-        </p>
-        <select id="seletorTabelasAndamento" onchange="carregarTabelaAndamento()">
-            <option value="">-- Nova Tabela --</option>
-        </select>
-        <div class="tabelas-andamento-acoes">
-            <button type="button" onclick="excluirTabelaAndamento()" class="btn-limpar">🗑️ Excluir Selecionada</button>
-        </div>
-        <div id="infoTabelaSelecionada" class="info-tabela-selecionada" style="display: none;"></div>
+    <!-- BOTÃO DE SALVAR - APARECERÁ APÓS PREENCHIMENTO -->
+    <div class="botoes-controle" id="divSalvar" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; display: none;">
+        <button type="button" onclick="salvarTabelaInicio()" class="btn-salvar" id="btnSalvarGlobal">
+            💾 Salvar Tabela
+        </button>
     </div>
-    
-    <!-- TABELAS FINALIZADAS -->
-    <div class="card" id="cardTabelasFinalizadas">
-        <h2>✅ Tabelas Finalizadas <span id="contadorFinalizadas" class="contador"></span></h2>
-        <p class="msg-selecione">
-            Últimas 50 tabelas finalizadas por todos os operadores:
-        </p>
-        <div id="listaFinalizadas" class="lista-finalizadas">
-            <p style="color: #666; text-align: center;">Carregando...</p>
-        </div>
-    </div>
+
+
 
     <!-- TIPO DE OPERAÇÃO -->
     <div class="card">
