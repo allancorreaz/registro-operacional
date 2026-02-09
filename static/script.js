@@ -384,10 +384,12 @@ function controleAssuncao() {
         // Carregar tabelas disponíveis para assunção
         atualizarSeletorTabelasAssuncao();
     } else {
-        // Nada selecionado - ocultar tudo exceto assunção
+        // Nada selecionado - mostrar cards para que usuário veja o que precisa preencher
         assuncaoExtra.style.display = "none";
-        cardTabelasAndamento.style.display = "none";
-        cardsDados.forEach(card => card.style.display = "none");
+        cardTabelasAndamento.style.display = "block";
+        // Mostrar todos os outros cards para visualização
+        cardsDados.forEach(card => card.style.display = "block");
+        // Esconder botão salvar até seleção ser feita
         divSalvar.style.display = "none";
     }
 }
