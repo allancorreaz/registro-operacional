@@ -35,7 +35,9 @@ const CAMPOS_FORMULARIO = [
     "turno_passou_tabela", "operador_passou_tabela", "matricula_passou_tabela",
     "hora_assumiu_tabela", "vagoes_faltavam_assumir", "recebeu_em_falha",
     "falha_recebida_desc", "hora_inicio_falha_recebida", "tempo_parado_h", "tempo_parado_m",
-    "acao_falha_recebida",
+    "acao_falha_recebida", "assumindo_tabela", "operador_assumiu", "matricula_assumiu",
+    "turno_assumiu", "supervisor_assumiu",
+    "falha_recebida_mecanica", "falha_recebida_eletrica", "falha_recebida_operacional", "falha_recebida_outro",
     "observacoes", "email"
 ];
 
@@ -44,6 +46,7 @@ let tabelasAndamentoCache = [];
 let tabelasFinalizadasCache = [];
 let atualizacaoAutomaticaInterval = null;
 let tabelaCarregadaInfo = null;
+let tabelaSalva = false; // Flag para controlar se tabela foi salva
 
 /* ======================================
    FUNÇÕES DE FORMATAÇÃO
@@ -97,6 +100,7 @@ function formatarTempo(minutos) {
 function atualizarEquipamentos() {
     const produto = document.getElementById("produto").value;
     const selectEquip = document.getElementById("equipamento");
+    const equipamentoAtual = selectEquip.value; // Preservar valor atual
     
     selectEquip.innerHTML = "";
     
@@ -108,6 +112,11 @@ function atualizarEquipamentos() {
         opt.textContent = eq;
         selectEquip.appendChild(opt);
     });
+    
+    // Restaurar valor selecionado se ainda for válido
+    if (equipamentoAtual && equipamentos.includes(equipamentoAtual)) {
+        selectEquip.value = equipamentoAtual;
+    }
     
     controleEquipamento();
 }
@@ -330,6 +339,152 @@ function controleRecebeuEmFalha() {
                 campo.value = "";
             }
         }
+    });
+}
+
+/* ======================================
+   CONTROLE DE ASSUNÇÃO DE TABELA
+====================================== */
+
+/**
+ * Controla visibilidade da seção de assunção
+ */
+function controleAssuncao() {
+    const assumindo = document.getElementById("assumindo_tabela").value;
+    const assuncaoExtra = document.getElementById("assuncaoExtra");
+    const cardTabelasAndamento = document.getElementById("cardTabelasAndamento");
+    const cardsDados = document.querySelectorAll('.card:not(#cardAssuncao):not(#cardTabelasAndamento):not(#cardTabelasFinalizadas)');
+    
+    if (assumindo === "NAO") {
+        // Iniciando nova tabela - mostrar fluxo normal
+        assuncaoExtra.style.display = "none";
+        cardTabelasAndamento.style.display = "block";
+        // Mostrar todos os outros cards
+        cardsDados.forEach(card => card.style.display = "block");
+        
+        // Limpar dados de assunção
+        document.getElementById("seletorTabelasAssuncao").value = "";
+        document.getElementById("dadosAssuncao").style.display = "none";
+        
+    } else if (assumindo === "SIM") {
+        // Assumindo tabela - mostrar seção de assunção
+        assuncaoExtra.style.display = "block";
+        cardTabelasAndamento.style.display = "none";
+        // Ocultar outros cards até selecionar tabela
+        cardsDados.forEach(card => card.style.display = "none");
+        
+        // Carregar tabelas disponíveis para assunção
+        atualizarSeletorTabelasAssuncao();
+    } else {
+        // Nada selecionado - ocultar tudo exceto assunção
+        assuncaoExtra.style.display = "none";
+        cardTabelasAndamento.style.display = "none";
+        cardsDados.forEach(card => card.style.display = "none");
+    }
+}
+
+/**
+ * Controla visibilidade de falha recebida na assunção
+ */
+function controleFalhaRecebida() {
+    const recebeu = document.getElementById("recebeu_em_falha_assuncao").value;
+    const falhaExtra = document.getElementById("falhaRecebidaExtra");
+    
+    falhaExtra.style.display = recebeu === "SIM" ? "block" : "none";
+}
+
+/**
+ * Carrega tabela selecionada para assunção
+ */
+async function carregarTabelaAssuncao() {
+    const select = document.getElementById("seletorTabelasAssuncao");
+    const tabelaId = select.value;
+    const dadosAssuncao = document.getElementById("dadosAssuncao");
+    
+    if (!tabelaId) {
+        dadosAssuncao.style.display = "none";
+        return;
+    }
+    
+    const tabelas = await obterTabelasAndamentoServidor();
+    const tabela = tabelas.find(t => t.id == tabelaId);
+    
+    if (!tabela) {
+        alert("⚠️ Tabela não encontrada!");
+        return;
+    }
+    
+    // Mostrar dados da tabela selecionada
+    const infoTabela = `
+        <div class="info-tabela-assuncao">
+            <h4>📋 Tabela Selecionada: ${tabela.prefixo}</h4>
+            <p><strong>Data:</strong> ${tabela.data}</p>
+            <p><strong>Turno Anterior:</strong> ${tabela.turno}</p>
+            <p><strong>Operador Anterior:</strong> ${tabela.operador}</p>
+            <p><strong>Produto:</strong> ${tabela.produto}</p>
+            <p><strong>Equipamento:</strong> ${tabela.dados.equipamento || 'Não informado'}</p>
+            <p><strong>Início:</strong> ${tabela.inicio}</p>
+            <p><strong>Salvo em:</strong> ${tabela.salvoEm}</p>
+        </div>
+    `;
+    
+    dadosAssuncao.innerHTML = infoTabela + dadosAssuncao.innerHTML;
+    dadosAssuncao.style.display = "block";
+    
+    // Preencher automaticamente dados do turno anterior
+    document.getElementById("turno_passou_tabela").value = tabela.turno;
+    document.getElementById("operador_passou_tabela").value = tabela.operador;
+    // Matrícula do anterior pode não estar disponível, deixar em branco
+    
+    // Preencher dados gerais da tabela
+    document.getElementById("produto").value = tabela.produto;
+    atualizarEquipamentos();
+    document.getElementById("equipamento").value = tabela.dados.equipamento || "";
+    document.getElementById("prefixo").value = tabela.prefixo;
+    document.getElementById("data").value = tabela.data;
+    document.getElementById("inicio").value = tabela.inicio;
+    
+    // Restaurar outros dados da tabela
+    const dados = tabela.dados;
+    CAMPOS_FORMULARIO.forEach(id => {
+        if (id !== "operador" && id !== "matricula" && id !== "turno" && 
+            id !== "operador_assumiu" && id !== "matricula_assumiu" && id !== "turno_assumiu") {
+            const elemento = document.getElementById(id);
+            if (elemento && dados[id] !== undefined) {
+                elemento.value = dados[id];
+            }
+        }
+    });
+    
+    // Atualizar controles visuais
+    controleProduto();
+    controleDestino();
+    controleTipoDivisao();
+    controleMudancaFluxo();
+    controlePassagem();
+    controleFalhaAssumida();
+    
+    // Mostrar cards de dados após carregar tabela
+    const cardsDados = document.querySelectorAll('.card:not(#cardAssuncao):not(#cardTabelasAndamento):not(#cardTabelasFinalizadas)');
+    cardsDados.forEach(card => card.style.display = "block");
+    
+    alert(`✅ Tabela "${tabela.prefixo}" carregada para assunção!\n\nAgora preencha seus dados pessoais e a situação atual da tabela.`);
+}
+
+/**
+ * Atualiza seletor de tabelas para assunção
+ */
+async function atualizarSeletorTabelasAssuncao() {
+    const select = document.getElementById("seletorTabelasAssuncao");
+    const tabelas = await obterTabelasAndamentoServidor();
+    
+    select.innerHTML = '<option value="">-- Selecione uma tabela --</option>';
+    
+    tabelas.forEach(tabela => {
+        const option = document.createElement("option");
+        option.value = tabela.id;
+        option.textContent = `${tabela.prefixo} - ${tabela.data} ${tabela.turno} (${tabela.operador})`;
+        select.appendChild(option);
     });
 }
 
@@ -620,12 +775,21 @@ function coletarDadosFormulario() {
  * Salvar tabela como início (em andamento)
  */
 async function salvarTabelaInicio() {
+    const assumindo = document.getElementById("assumindo_tabela").value;
+    
+    if (!assumindo) {
+        alert("⚠️ Selecione o tipo de operação primeiro!");
+        document.getElementById("assumindo_tabela").focus();
+        return;
+    }
+    
     const prefixo = document.getElementById("prefixo").value;
     const inicio = document.getElementById("inicio").value;
     const data = document.getElementById("data").value;
     const turno = document.getElementById("turno").value;
     const produto = document.getElementById("produto").value;
     const operador = document.getElementById("operador").value;
+    const assumindo = document.getElementById("assumindo_tabela").value;
     
     if (!prefixo) {
         alert("⚠️ Preencha o Prefixo/Trem para salvar a tabela!");
@@ -637,6 +801,23 @@ async function salvarTabelaInicio() {
         alert("⚠️ Preencha o horário de Início para salvar a tabela!");
         document.getElementById("inicio").focus();
         return;
+    }
+    
+    // Se está assumindo tabela, validar campos obrigatórios
+    if (assumindo === "SIM") {
+        const operadorAssumiu = document.getElementById("operador_assumiu").value;
+        const matriculaAssumiu = document.getElementById("matricula_assumiu").value;
+        const turnoAssumiu = document.getElementById("turno_assumiu").value;
+        const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir").value;
+        
+        if (!operadorAssumiu || !matriculaAssumiu || !turnoAssumiu || !vagoesFaltavam) {
+            alert("⚠️ Preencha todos os dados obrigatórios da assunção!");
+            return;
+        }
+        
+        // Preencher campos de recebimento automaticamente
+        document.getElementById("recebeu_de_outro_turno").value = "true";
+        document.getElementById("hora_assumiu_tabela").value = new Date().toTimeString().slice(0, 5);
     }
     
     const dadosFormulario = coletarDadosFormulario();
@@ -652,7 +833,7 @@ async function salvarTabelaInicio() {
     };
     
     // Mostrar indicador de salvamento
-    const btnSalvar = document.querySelector('button[onclick="salvarTabelaInicio()"]');
+    const btnSalvar = document.getElementById("btnSalvarGlobal");
     const textoOriginal = btnSalvar ? btnSalvar.textContent : '';
     if (btnSalvar) {
         btnSalvar.disabled = true;
@@ -663,6 +844,8 @@ async function salvarTabelaInicio() {
         const resultado = await salvarTabelaServidor(dadosTabela);
         
         if (resultado.success) {
+            tabelaSalva = true; // Marcar que tabela foi salva
+            
             if (resultado.atualizado) {
                 alert(`✅ Tabela "${prefixo}" atualizada no servidor!\n\n👥 Outros usuários podem ver esta tabela.`);
             } else {
@@ -787,6 +970,12 @@ function carregarTabelaAndamento() {
             elemento.value = dados[id];
         }
     });
+    
+    // Quando carrega uma tabela existente para finalizar, não está assumindo
+    document.getElementById("assumindo_tabela").value = "NAO";
+    controleAssuncao();
+    
+    tabelaSalva = false; // Resetar flag pois tabela foi carregada mas não salva ainda
     
     // Atualizar controles visuais
     atualizarEquipamentos();
@@ -1313,6 +1502,12 @@ function adicionarImpacto() {
  * Função principal de cálculo
  */
 function calcular() {
+    // Verificar se tabela foi salva
+    if (!tabelaSalva) {
+        alert("⚠️ Você deve salvar a tabela antes de gerar o resultado!\n\nClique em '💾 Salvar Início' primeiro.");
+        return;
+    }
+    
     // Validar campos de recebimento
     const validacaoRecebimento = validarCamposRecebimento();
     if (!validacaoRecebimento.valido) {
@@ -1991,6 +2186,7 @@ function limparFormulario() {
     }
     
     limparDadosSalvos();
+    tabelaSalva = false; // Resetar flag de salvamento
     window.location.reload();
 }
 
@@ -2008,6 +2204,17 @@ document.addEventListener("DOMContentLoaded", async function() {
     const recebeuEmFalha = document.getElementById("recebeu_em_falha");
     if (recebeuEmFalha) {
         recebeuEmFalha.addEventListener("change", controleRecebeuEmFalha);
+    }
+    
+    // Listener para assunção de tabela
+    const assumindoTabela = document.getElementById("assumindo_tabela");
+    if (assumindoTabela) {
+        assumindoTabela.addEventListener("change", controleAssuncao);
+    }
+    
+    const recebeuEmFalhaAssuncao = document.getElementById("recebeu_em_falha_assuncao");
+    if (recebeuEmFalhaAssuncao) {
+        recebeuEmFalhaAssuncao.addEventListener("change", controleFalhaRecebida);
     }
     
     // Listeners para verificar outro turno

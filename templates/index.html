@@ -10,7 +10,7 @@
 <body>
 
 <div class="container">
-    <h1>🚆 Registro Operacional Geral</h1>
+    <h1>🚆 Registro Operacional Virador de Vagões</h1>
     
     <!-- BOTÕES DE CONTROLE -->
     <div class="botoes-controle">
@@ -25,6 +25,92 @@
         <span id="indicadorSincronizacao" class="status">Sincronizando...</span>
     </div>
 
+    <!-- ASSUNÇÃO DE TABELA - OBRIGATÓRIA -->
+    <div class="card" id="cardAssuncao">
+        <h2>🔄 Tipo de Operação <span class="obrigatorio">*</span></h2>
+        
+        <label>Como você vai iniciar esta operação?</label>
+        <select id="assumindo_tabela" onchange="controleAssuncao()" required>
+            <option value="">-- Selecione --</option>
+            <option value="NAO">Iniciar nova tabela do zero</option>
+            <option value="SIM">Assumir tabela de outro turno</option>
+        </select>
+        
+        <div id="assuncaoExtra" style="display:none;">
+            <h3>📋 Selecionar Tabela para Assumir</h3>
+            <p class="msg-selecione">
+                Selecione a tabela que foi passada pelo turno anterior:
+            </p>
+            <select id="seletorTabelasAssuncao" onchange="carregarTabelaAssuncao()">
+                <option value="">-- Selecione uma tabela --</option>
+            </select>
+            
+            <div id="dadosAssuncao" style="display:none;">
+                <h3>👤 Dados do Novo Operador (Você)</h3>
+                
+                <label>Nome do Operador <span class="obrigatorio">*</span></label>
+                <input type="text" id="operador_assumiu" placeholder="Ex: João Silva" required>
+                
+                <label>Matrícula <span class="obrigatorio">*</span></label>
+                <input type="text" id="matricula_assumiu" placeholder="Ex: MIP0048" required>
+                
+                <label>Turno Atual <span class="obrigatorio">*</span></label>
+                <select id="turno_assumiu" required>
+                    <option value="">Selecione</option>
+                    {% for t in turnos %}
+                    <option>{{ t }}</option>
+                    {% endfor %}
+                </select>
+                
+                <label>Supervisor do Turno Atual</label>
+                <input type="text" id="supervisor_assumiu" placeholder="Ex: Maria Santos">
+                
+                <h3>📊 Situação da Tabela Assumida</h3>
+                
+                <label>Vagões que ainda faltam descarregar <span class="obrigatorio">*</span></label>
+                <input type="number" id="vagoes_faltavam_assumir" min="0" placeholder="Ex: 15" required>
+                
+                <label>Você recebeu a tabela em falha?</label>
+                <select id="recebeu_em_falha_assuncao" onchange="controleFalhaRecebida()">
+                    <option value="NAO">Não</option>
+                    <option value="SIM">Sim</option>
+                </select>
+                
+                <div id="falhaRecebidaExtra" style="display:none;">
+                    <label>Descrição da falha recebida</label>
+                    <textarea id="falha_recebida_desc" rows="2" placeholder="Descreva a falha que você assumiu..."></textarea>
+                    
+                    <label>Hora que iniciou a falha (turno anterior)</label>
+                    <input type="time" id="hora_inicio_falha_recebida">
+                    
+                    <label>Tempo já parado quando assumiu</label>
+                    <div class="tempo-container">
+                        <input type="number" id="tempo_parado_h" min="0" placeholder="Horas">
+                        <input type="number" id="tempo_parado_m" min="0" max="59" placeholder="Minutos">
+                    </div>
+                    
+                    <label>Tipo de atendimento em andamento</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="falha_recebida_mecanica"> Mecânica</label>
+                        <label><input type="checkbox" id="falha_recebida_eletrica"> Elétrica</label>
+                        <label><input type="checkbox" id="falha_recebida_operacional"> Operacional</label>
+                        <label><input type="checkbox" id="falha_recebida_outro"> Outro</label>
+                    </div>
+                    
+                    <label>Ação que estava sendo tomada</label>
+                    <textarea id="acao_falha_recebida" rows="2" placeholder="Descreva a ação em andamento..."></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- BOTÃO DE SALVAR - SEMPRE VISÍVEL -->
+        <div class="botoes-controle" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <button type="button" onclick="salvarTabelaInicio()" class="btn-salvar" id="btnSalvarGlobal">
+                💾 Salvar Tabela
+            </button>
+        </div>
+    </div>
+
     <!-- TABELAS EM ANDAMENTO -->
     <div class="card" id="cardTabelasAndamento">
         <h2>📋 Tabelas em Andamento <span id="contadorTabelas" class="contador"></span></h2>
@@ -35,7 +121,6 @@
             <option value="">-- Nova Tabela --</option>
         </select>
         <div class="tabelas-andamento-acoes">
-            <button type="button" onclick="salvarTabelaInicio()" class="btn-salvar">💾 Salvar Início</button>
             <button type="button" onclick="excluirTabelaAndamento()" class="btn-limpar">🗑️ Excluir Selecionada</button>
         </div>
         <div id="infoTabelaSelecionada" class="info-tabela-selecionada" style="display: none;"></div>
@@ -431,7 +516,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
-        Criado por Allan De Melo Correa – Matrícula MIP0048, Mecânica Corretiva Turno A<br>
+        Criado por Allan Correa – Mecânica Corretiva Turno A<br>
         Todos os direitos reservados
     </div>
 
