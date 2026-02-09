@@ -1,9 +1,3 @@
-/**
- * ======================================
- * REGISTRO OPERACIONAL - JAVASCRIPT
- * Organizado por Allan De Melo Correa
- * ======================================
- */
 
 /* ======================================
    CONFIGURAÇÕES E CONSTANTES
@@ -626,7 +620,6 @@ async function carregarTabelaAssuncao() {
     verificarMostrarBotaoSalvar();
     
     alert(`✅ Tabela "${tabela.prefixo}" carregada para assunção!\n\nAgora preencha seus dados pessoais obrigatórios e a situação atual da tabela.`);
-}
 }
 
 /**
