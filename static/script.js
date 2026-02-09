@@ -17,6 +17,8 @@ const RECUPERADORAS_CARVAO = ["R5", "R1A"];
 // Chaves de armazenamento
 const STORAGE_KEY = "registro_operacional_dados";
 const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
+const STORAGE_KEY_TURNO_DATA = "registro_operacional_turno_data";
+const STORAGE_KEY_TIPO_OPERACAO = "registro_operacional_tipo_operacao";
 
 // Campos do formulário para persistência
 const CAMPOS_FORMULARIO = [
@@ -91,8 +93,125 @@ function formatarTempo(minutos) {
 }
 
 /* ======================================
-   CONTROLES DE EQUIPAMENTO/PRODUTO
+   CONTROLES DE TURNO E HORÁRIO
 ====================================== */
+
+/**
+ * Verifica se deve mostrar o select de tipo de operação baseado no horário
+ */
+function verificarMostrarTipoOperacao() {
+    const agora = new Date();
+    const horaAtual = agora.getHours();
+    const cardAssuncao = document.getElementById("cardAssuncao");
+    
+    // Verificar se já foi selecionado hoje
+    const tipoOperacaoSalvo = localStorage.getItem(STORAGE_KEY_TIPO_OPERACAO);
+    if (tipoOperacaoSalvo) {
+        const dataSalva = JSON.parse(tipoOperacaoSalvo).data;
+        const hoje = agora.toDateString();
+        if (dataSalva === hoje) {
+            // Já foi selecionado hoje, ocultar o card
+            cardAssuncao.style.display = "none";
+            return;
+        }
+    }
+    
+    // Turnos do dia (A, B): trabalham das 6h às 18h, select some após 7h
+    // Turnos da noite (C, D): trabalham das 18h às 6h, select some após 19h
+    
+    if ((horaAtual >= 7 && horaAtual < 18) || (horaAtual >= 19 || horaAtual < 6)) {
+        // Está no período onde o select deve estar oculto
+        cardAssuncao.style.display = "none";
+    } else {
+        // Está no período inicial do turno, mostrar o select
+        cardAssuncao.style.display = "block";
+    }
+}
+
+/**
+ * Salva a seleção de tipo de operação
+ */
+function salvarTipoOperacao(tipo) {
+    const dados = {
+        tipo: tipo,
+        data: new Date().toDateString(),
+        timestamp: new Date().getTime()
+    };
+    localStorage.setItem(STORAGE_KEY_TIPO_OPERACAO, JSON.stringify(dados));
+}
+
+/**
+ * Verifica se turno e data já foram preenchidos hoje
+ */
+function verificarTurnoDataSalvos() {
+    const turnoDataSalvo = localStorage.getItem(STORAGE_KEY_TURNO_DATA);
+    if (!turnoDataSalvo) return false;
+    
+    const dados = JSON.parse(turnoDataSalvo);
+    const hoje = new Date().toDateString();
+    
+    // Verificar se é o mesmo dia
+    if (dados.data !== hoje) return false;
+    
+    // Verificar se ainda está no mesmo turno
+    const agora = new Date();
+    const horaAtual = agora.getHours();
+    const turnoAtual = dados.turno;
+    
+    // Lógica de turnos:
+    // A: 6h-18h, B: 6h-18h (alternado)
+    // C: 18h-6h, D: 18h-6h (alternado)
+    
+    if ((turnoAtual === 'TURNO A' || turnoAtual === 'TURNO B') && (horaAtual >= 6 && horaAtual < 18)) {
+        return true; // Ainda no turno do dia
+    }
+    
+    if ((turnoAtual === 'TURNO C' || turnoAtual === 'TURNO D') && (horaAtual >= 18 || horaAtual < 6)) {
+        return true; // Ainda no turno da noite
+    }
+    
+    return false; // Mudou de turno
+}
+
+/**
+ * Salva turno e data
+ */
+function salvarTurnoData(turno, data) {
+    const dados = {
+        turno: turno,
+        data: data,
+        timestamp: new Date().getTime()
+    };
+    localStorage.setItem(STORAGE_KEY_TURNO_DATA, JSON.stringify(dados));
+    
+    // Preencher automaticamente nos campos
+    const campoTurno = document.getElementById("turno");
+    const campoData = document.getElementById("data");
+    
+    if (campoTurno && turno) campoTurno.value = turno;
+    if (campoData && data) campoData.value = data;
+}
+
+/**
+ * Carrega turno e data salvos se ainda válidos
+ */
+function carregarTurnoDataSalvos() {
+    if (verificarTurnoDataSalvos()) {
+        const dados = JSON.parse(localStorage.getItem(STORAGE_KEY_TURNO_DATA));
+        salvarTurnoData(dados.turno, dados.data);
+        
+        // Ocultar campos de turno e data se já preenchidos
+        const campoTurno = document.getElementById("turno");
+        const campoData = document.getElementById("data");
+        
+        if (campoTurno) campoTurno.style.display = "none";
+        if (campoData) campoData.style.display = "none";
+        
+        // Ocultar labels também
+        const labels = document.querySelectorAll('label[for="turno"], label[for="data"]');
+        labels.forEach(label => label.style.display = "none");
+    }
+}
 
 /**
  * Atualiza lista de equipamentos baseado no produto
@@ -357,6 +476,9 @@ function controleAssuncao() {
     const divSalvar = document.getElementById("divSalvar");
     
     if (assumindo === "NAO") {
+        // Salvar seleção
+        salvarTipoOperacao("NAO");
+        
         // Iniciando nova tabela - mostrar fluxo normal mas sem botão salvar ainda
         assuncaoExtra.style.display = "none";
         cardTabelasAndamento.style.display = "block";
@@ -369,10 +491,16 @@ function controleAssuncao() {
         document.getElementById("seletorTabelasAssuncao").value = "";
         document.getElementById("dadosAssuncao").style.display = "none";
         
+        // Carregar turno e data salvos
+        carregarTurnoDataSalvos();
+        
         // Verificar se deve mostrar botão salvar
         verificarMostrarBotaoSalvar();
         
     } else if (assumindo === "SIM") {
+        // Salvar seleção
+        salvarTipoOperacao("SIM");
+        
         // Assumindo tabela - mostrar seção de assunção
         assuncaoExtra.style.display = "block";
         cardTabelasAndamento.style.display = "none";
@@ -1345,6 +1473,8 @@ function restaurarDadosFormulario() {
  */
 function limparDadosSalvos() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY_TURNO_DATA);
+    localStorage.removeItem(STORAGE_KEY_TIPO_OPERACAO);
 }
 
 /* ======================================
@@ -2265,15 +2395,36 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     if (turnoField) {
         turnoField.addEventListener("change", verificarTabelaOutroTurno);
+        turnoField.addEventListener("change", function() {
+            const dataField = document.getElementById("data");
+            const data = dataField ? dataField.value : new Date().toISOString().split('T')[0];
+            salvarTurnoData(this.value, data);
+        });
     }
     if (operadorField) {
         operadorField.addEventListener("input", verificarTabelaOutroTurno);
         operadorField.addEventListener("blur", verificarTabelaOutroTurno);
     }
     
+    // Listener para campo de data
+    const dataField = document.getElementById("data");
+    if (dataField) {
+        dataField.addEventListener("change", function() {
+            const turnoField = document.getElementById("turno");
+            const turno = turnoField ? turnoField.value : "";
+            salvarTurnoData(turno, this.value);
+        });
+    }
+    
     // Inicializar equipamentos e controles
     atualizarEquipamentos();
     controleProduto();
+    
+    // Verificar se deve mostrar select de tipo de operação
+    verificarMostrarTipoOperacao();
+    
+    // Carregar turno e data salvos
+    carregarTurnoDataSalvos();
     
     // Carregar tabelas do servidor
     await atualizarSeletorTabelas();
