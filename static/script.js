@@ -92,9 +92,31 @@ function formatarTempo(minutos) {
     return `${minutos} min`;
 }
 
-/* ======================================
-   CONTROLES DE TURNO E HORÁRIO
-====================================== */
+/**
+ * Atualiza seletor de tabelas para assunção
+ */
+async function atualizarSeletorTabelasAssuncao() {
+    const select = document.getElementById("seletorTabelasAssuncao");
+    const tabelas = await obterTabelasAndamentoServidor();
+    
+    select.innerHTML = '<option value="">-- Selecione uma tabela --</option>';
+    
+    // Filtrar tabelas que podem ser assumidas (todas as em andamento)
+    tabelas.forEach(tabela => {
+        const option = document.createElement("option");
+        option.value = tabela.id;
+        
+        let dataFormatada = "";
+        if (tabela.data) {
+            const [ano, mes, dia] = tabela.data.split("-");
+            dataFormatada = `${dia}/${mes}`;
+        }
+        
+        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
+        option.textContent = `${icone} ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
+        select.appendChild(option);
+    });
+}
 
 /**
  * Verifica se deve mostrar o select de tipo de operação baseado no horário
@@ -116,16 +138,9 @@ function verificarMostrarTipoOperacao() {
         }
     }
     
-    // Turnos do dia (A, B): trabalham das 6h às 18h, select some após 7h
-    // Turnos da noite (C, D): trabalham das 18h às 6h, select some após 19h
-    
-    if ((horaAtual >= 7 && horaAtual < 18) || (horaAtual >= 19 || horaAtual < 6)) {
-        // Está no período onde o select deve estar oculto
-        cardAssuncao.style.display = "none";
-    } else {
-        // Está no período inicial do turno, mostrar o select
-        cardAssuncao.style.display = "block";
-    }
+    // Se não foi selecionado hoje, mostrar sempre o select independente do horário
+    // (para permitir que o usuário possa usar o sistema mesmo fora do horário "oficial")
+    cardAssuncao.style.display = "block";
 }
 
 /**
@@ -504,7 +519,7 @@ function controleAssuncao() {
         // Assumindo tabela - mostrar seção de assunção
         assuncaoExtra.style.display = "block";
         cardTabelasAndamento.style.display = "none";
-        // Ocultar outros cards até selecionar tabela
+        // Manter cards de dados ocultos até selecionar tabela específica
         cardsDados.forEach(card => card.style.display = "none");
         // Esconder botão salvar até selecionar tabela e preencher dados
         divSalvar.style.display = "none";
