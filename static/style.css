@@ -60,6 +60,50 @@ body {
         width: 100%;
         margin: 0;
     }
+}
+
+/* ===== TURNO INFO ===== */
+.turno-info {
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#relogio {
+    font-family: monospace;
+    color: #00ff88;
+}
+
+/* ===== BOTÃO FINALIZAR TURNO ===== */
+.btn-finalizar-turno {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-finalizar-turno:hover {
+    background: linear-gradient(45deg, #ee5a52, #dc4545);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(238, 90, 82, 0.3);
+}
+
+@media (max-width: 600px) {
+    .btn-finalizar-turno {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
     
     .impacto-row, .material-carvao-row {
         padding: 10px;

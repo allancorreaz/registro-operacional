@@ -8,11 +8,20 @@ const EQUIPAMENTOS_MINERIO = ["VV1", "VV2", "VV3"];
 const EQUIPAMENTOS_CARVAO = ["ECV"];
 const RECUPERADORAS_CARVAO = ["R5", "R1A"];
 
+// Configuração de turnos
+const TURNOS = {
+    A: { inicio: 6, fim: 18, nome: "A" },
+    B: { inicio: 6, fim: 18, nome: "B" },
+    C: { inicio: 18, fim: 6, nome: "C" },
+    D: { inicio: 18, fim: 6, nome: "D" }
+};
+
 // Chaves de armazenamento
 const STORAGE_KEY = "registro_operacional_dados";
 const STORAGE_KEY_TABELAS = "registro_operacional_tabelas_andamento";
 const STORAGE_KEY_TURNO_DATA = "registro_operacional_turno_data";
 const STORAGE_KEY_TIPO_OPERACAO = "registro_operacional_tipo_operacao";
+const STORAGE_KEY_TURNO_ATUAL = "registro_operacional_turno_atual";
 
 // Campos do formulário para persistência
 const CAMPOS_FORMULARIO = [
@@ -84,6 +93,139 @@ function formatarTempo(minutos) {
         return m > 0 ? `${h}h ${m}min` : `${h}h`;
     }
     return `${minutos} min`;
+}
+
+/* ======================================
+   SISTEMA DE TURNOS E TEMPO
+====================================== */
+
+/**
+ * Obtém a hora atual em Brasília
+ */
+function getHoraBrasilia() {
+    const now = new Date();
+    // Brasília é UTC-3
+    const brasiliaTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
+    return brasiliaTime;
+}
+
+/**
+ * Determina o turno atual baseado na hora
+ */
+function getTurnoAtual() {
+    const hora = getHoraBrasilia().getHours();
+    
+    if (hora >= 6 && hora < 18) {
+        // Turno diurno: A ou B (alternando por dia)
+        const dia = getHoraBrasilia().getDate();
+        return dia % 2 === 0 ? 'A' : 'B';
+    } else {
+        // Turno noturno: C ou D (alternando por dia)
+        const dia = getHoraBrasilia().getDate();
+        return dia % 2 === 0 ? 'C' : 'D';
+    }
+}
+
+/**
+ * Verifica se está próximo do fim do turno (30 min antes)
+ */
+function isProximoFimTurno() {
+    const agora = getHoraBrasilia();
+    const hora = agora.getHours();
+    const turno = getTurnoAtual();
+    
+    if (turno === 'A' || turno === 'B') {
+        // Fim às 18h, mostrar botão a partir das 17:30
+        return hora === 17 && agora.getMinutes() >= 30;
+    } else {
+        // Fim às 6h, mostrar botão a partir das 5:30
+        return hora === 5 && agora.getMinutes() >= 30;
+    }
+}
+
+/**
+ * Verifica se passou 1 hora do início do turno
+ */
+function passouUmaHoraInicioTurno() {
+    const agora = getHoraBrasilia();
+    const hora = agora.getHours();
+    const turno = getTurnoAtual();
+    
+    if (turno === 'A' || turno === 'B') {
+        // Início às 6h, ocultar após 7h
+        return hora >= 7;
+    } else {
+        // Início às 18h, ocultar após 19h
+        return hora >= 19 || hora < 6;
+    }
+}
+
+/**
+ * Atualiza o relógio em tempo real
+ */
+function atualizarRelogio() {
+    const agora = getHoraBrasilia();
+    const horas = String(agora.getHours()).padStart(2, '0');
+    const minutos = String(agora.getMinutes()).padStart(2, '0');
+    const segundos = String(agora.getSeconds()).padStart(2, '0');
+    
+    const relogioEl = document.getElementById('relogio');
+    if (relogioEl) {
+        relogioEl.textContent = `${horas}:${minutos}:${segundos}`;
+    }
+}
+
+/**
+ * Atualiza informações do turno
+ */
+function atualizarTurnoInfo() {
+    const turno = getTurnoAtual();
+    const turnoEl = document.getElementById('turno-atual');
+    if (turnoEl) {
+        turnoEl.textContent = `Turno ${turno}`;
+    }
+    
+    // Salvar turno atual
+    localStorage.setItem(STORAGE_KEY_TURNO_ATUAL, turno);
+    
+    // Mostrar/ocultar botão finalizar turno
+    const btnFinalizar = document.getElementById('btnFinalizarTurno');
+    if (btnFinalizar) {
+        btnFinalizar.style.display = isProximoFimTurno() ? 'inline-block' : 'none';
+    }
+    
+    // Ocultar assumiu tabela se passou 1 hora
+    const cardAssuncao = document.getElementById('cardAssuncao');
+    if (cardAssuncao && passouUmaHoraInicioTurno()) {
+        cardAssuncao.style.display = 'none';
+    }
+}
+
+/**
+ * Carrega turno salvo ou determina atual
+ */
+function carregarTurnoSalvo() {
+    const turnoSalvo = localStorage.getItem(STORAGE_KEY_TURNO_ATUAL);
+    return turnoSalvo || getTurnoAtual();
+}
+
+/**
+ * Preenche automaticamente data e turno nos campos
+ */
+function preencherDataTurnoAutomatico() {
+    const agora = getHoraBrasilia();
+    const dataStr = agora.toISOString().split('T')[0]; // YYYY-MM-DD
+    const turno = carregarTurnoSalvo();
+    
+    const dataField = document.getElementById('data');
+    const turnoField = document.getElementById('turno');
+    
+    if (dataField && !dataField.value) {
+        dataField.value = dataStr;
+    }
+    if (turnoField && !turnoField.value) {
+        turnoField.value = turno;
+    }
 }
 
 /**
@@ -247,7 +389,6 @@ function atualizarEquipamentos() {
     }
     
     controleEquipamento();
-}
 
 /**
  * Controla visibilidade do campo de sinal
@@ -604,6 +745,11 @@ async function confirmarPassagemTurno() {
         btnConfirmar.textContent = textoOriginal;
     }
 }
+
+/**
+ * Atualiza descrição do impacto quando a descrição da falha recebida muda
+ */
+function atualizarDescricaoImpactoFalha() {
     const falhaDesc = document.getElementById("falha_recebida_desc").value;
     const impactosExistentes = document.querySelectorAll(".impacto-row");
     
@@ -672,7 +818,6 @@ function controleAssuncao() {
         // Esconder botão salvar até seleção ser feita
         divSalvar.style.display = "none";
     }
-}
 }
 
 /**
@@ -1117,8 +1262,10 @@ function coletarDadosFormulario() {
             anterior: row.querySelector(".fluxo-anterior")?.value || "",
             novo: row.querySelector(".fluxo-novo")?.value || "",
             cco: row.querySelector(".fluxo-cco")?.checked || false,
-            mecanica: row.querySelector(".fluxo-mecanica")?.checked || false,
-            eletrica: row.querySelector(".fluxo-eletrica")?.checked || false,
+            mecanica_corretiva: row.querySelector(".fluxo-mecanica-corretiva")?.checked || false,
+            mecanica_preventiva: row.querySelector(".fluxo-mecanica-preventiva")?.checked || false,
+            eletrica_corretiva: row.querySelector(".fluxo-eletrica-corretiva")?.checked || false,
+            eletrica_preventiva: row.querySelector(".fluxo-eletrica-preventiva")?.checked || false,
             operacao: row.querySelector(".fluxo-operacao")?.checked || false,
             motivo: row.querySelector(".fluxo-motivo")?.value || ""
         });
@@ -1394,7 +1541,10 @@ function carregarTabelaAndamento() {
                 if (lastRow.querySelector(".fluxo-anterior")) lastRow.querySelector(".fluxo-anterior").value = fluxo.anterior;
                 if (lastRow.querySelector(".fluxo-novo")) lastRow.querySelector(".fluxo-novo").value = fluxo.novo;
                 if (lastRow.querySelector(".fluxo-cco")) lastRow.querySelector(".fluxo-cco").checked = fluxo.cco;
-                if (lastRow.querySelector(".fluxo-mecanica")) lastRow.querySelector(".fluxo-mecanica").checked = fluxo.mecanica;
+                if (lastRow.querySelector(".fluxo-mecanica-corretiva")) lastRow.querySelector(".fluxo-mecanica-corretiva").checked = fluxo.mecanica_corretiva;
+                if (lastRow.querySelector(".fluxo-mecanica-preventiva")) lastRow.querySelector(".fluxo-mecanica-preventiva").checked = fluxo.mecanica_preventiva;
+                if (lastRow.querySelector(".fluxo-eletrica-corretiva")) lastRow.querySelector(".fluxo-eletrica-corretiva").checked = fluxo.eletrica_corretiva;
+                if (lastRow.querySelector(".fluxo-eletrica-preventiva")) lastRow.querySelector(".fluxo-eletrica-preventiva").checked = fluxo.eletrica_preventiva;
                 if (lastRow.querySelector(".fluxo-eletrica")) lastRow.querySelector(".fluxo-eletrica").checked = fluxo.eletrica;
                 if (lastRow.querySelector(".fluxo-operacao")) lastRow.querySelector(".fluxo-operacao").checked = fluxo.operacao;
                 if (lastRow.querySelector(".fluxo-motivo")) lastRow.querySelector(".fluxo-motivo").value = fluxo.motivo;
@@ -1654,7 +1804,10 @@ function restaurarDadosFormulario() {
                 if (lastRow.querySelector(".fluxo-anterior")) lastRow.querySelector(".fluxo-anterior").value = fluxo.anterior;
                 if (lastRow.querySelector(".fluxo-novo")) lastRow.querySelector(".fluxo-novo").value = fluxo.novo;
                 if (lastRow.querySelector(".fluxo-cco")) lastRow.querySelector(".fluxo-cco").checked = fluxo.cco;
-                if (lastRow.querySelector(".fluxo-mecanica")) lastRow.querySelector(".fluxo-mecanica").checked = fluxo.mecanica;
+                if (lastRow.querySelector(".fluxo-mecanica-corretiva")) lastRow.querySelector(".fluxo-mecanica-corretiva").checked = fluxo.mecanica_corretiva;
+                if (lastRow.querySelector(".fluxo-mecanica-preventiva")) lastRow.querySelector(".fluxo-mecanica-preventiva").checked = fluxo.mecanica_preventiva;
+                if (lastRow.querySelector(".fluxo-eletrica-corretiva")) lastRow.querySelector(".fluxo-eletrica-corretiva").checked = fluxo.eletrica_corretiva;
+                if (lastRow.querySelector(".fluxo-eletrica-preventiva")) lastRow.querySelector(".fluxo-eletrica-preventiva").checked = fluxo.eletrica_preventiva;
                 if (lastRow.querySelector(".fluxo-eletrica")) lastRow.querySelector(".fluxo-eletrica").checked = fluxo.eletrica;
                 if (lastRow.querySelector(".fluxo-operacao")) lastRow.querySelector(".fluxo-operacao").checked = fluxo.operacao;
                 if (lastRow.querySelector(".fluxo-motivo")) lastRow.querySelector(".fluxo-motivo").value = fluxo.motivo;
@@ -1702,8 +1855,10 @@ function adicionarMudancaFluxo() {
             <label class="solicitante-label">Quem solicitou?</label>
             <div class="solicitante-checkboxes">
                 <label><input type="checkbox" class="fluxo-cco" value="CCO"> CCO</label>
-                <label><input type="checkbox" class="fluxo-mecanica" value="MECANICA"> Mecânica</label>
-                <label><input type="checkbox" class="fluxo-eletrica" value="ELETRICA"> Elétrica</label>
+                <label><input type="checkbox" class="fluxo-mecanica-corretiva" value="MECANICA_CORRETIVA"> Mecânica Corretiva</label>
+                <label><input type="checkbox" class="fluxo-mecanica-preventiva" value="MECANICA_PREVENTIVA"> Mecânica Preventiva</label>
+                <label><input type="checkbox" class="fluxo-eletrica-corretiva" value="ELETRICA_CORRETIVA"> Elétrica Corretiva</label>
+                <label><input type="checkbox" class="fluxo-eletrica-preventiva" value="ELETRICA_PREVENTIVA"> Elétrica Preventiva</label>
                 <label><input type="checkbox" class="fluxo-operacao" value="OPERACAO"> Operação</label>
             </div>
         </div>
@@ -2536,6 +2691,141 @@ function toggleDarkMode() {
 }
 
 /**
+ * Inicia processo de finalização do turno
+ */
+function iniciarFinalizacaoTurno() {
+    const resposta = confirm("🏁 Você está finalizando o turno?\n\nSelecione OK para continuar ou Cancelar para voltar.");
+    
+    if (!resposta) return;
+    
+    const emFalha = confirm("❓ Está finalizando em falha?\n\nSelecione OK se SIM (será obrigatório preencher os dados da falha) ou Cancelar se NÃO.");
+    
+    if (emFalha) {
+        // Mostrar modal ou campos para preencher falha
+        mostrarCamposFalhaFinalizacao();
+    } else {
+        // Finalizar turno normalmente
+        finalizarTurnoNormal();
+    }
+}
+
+/**
+ * Mostra campos para preencher falha na finalização
+ */
+function mostrarCamposFalhaFinalizacao() {
+    // Criar modal ou usar campos existentes
+    const modal = document.createElement('div');
+    modal.id = 'modalFalhaFinalizacao';
+    modal.innerHTML = `
+        <div class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+            <div class="modal-content" style="background: white; color: black; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%;">
+                <h3>📋 Preencher Dados da Falha</h3>
+                <p><strong>Obrigatório preencher para finalizar o turno:</strong></p>
+                
+                <label>Horário da Falha:</label>
+                <input type="time" id="horarioFalhaFinalizacao" required>
+                
+                <label>Tipo de Falha:</label>
+                <select id="tipoFalhaFinalizacao" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="MECANICA_CORRETIVA">Mecânica Corretiva</option>
+                    <option value="MECANICA_PREVENTIVA">Mecânica Preventiva</option>
+                    <option value="ELETRICA_CORRETIVA">Elétrica Corretiva</option>
+                    <option value="ELETRICA_PREVENTIVA">Elétrica Preventiva</option>
+                    <option value="OPERACAO">Operação</option>
+                    <option value="CCO">CCO</option>
+                    <option value="OUTROS">Outros</option>
+                </select>
+                
+                <label>Descrição da Falha:</label>
+                <textarea id="descricaoFalhaFinalizacao" placeholder="Descreva a falha..." required></textarea>
+                
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="cancelarFalhaFinalizacao()" style="margin-right: 10px;">Cancelar</button>
+                    <button onclick="confirmarFalhaFinalizacao()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px;">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+/**
+ * Cancela preenchimento da falha
+ */
+function cancelarFalhaFinalizacao() {
+    const modal = document.getElementById('modalFalhaFinalizacao');
+    if (modal) modal.remove();
+}
+
+/**
+ * Confirma falha e finaliza turno
+ */
+function confirmarFalhaFinalizacao() {
+    const horario = document.getElementById('horarioFalhaFinalizacao').value;
+    const tipo = document.getElementById('tipoFalhaFinalizacao').value;
+    const descricao = document.getElementById('descricaoFalhaFinalizacao').value;
+    
+    if (!horario || !tipo || !descricao.trim()) {
+        alert('❌ Todos os campos são obrigatórios!');
+        return;
+    }
+    
+    // Salvar dados da falha para o próximo turno
+    const dadosFalha = {
+        horario: horario,
+        tipo: tipo,
+        descricao: descricao,
+        timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('falha_turno_anterior', JSON.stringify(dadosFalha));
+    
+    // Remover modal
+    cancelarFalhaFinalizacao();
+    
+    // Finalizar turno
+    finalizarTurnoComFalha(dadosFalha);
+}
+
+/**
+ * Finaliza turno normalmente
+ */
+function finalizarTurnoNormal() {
+    alert('✅ Turno finalizado com sucesso!');
+    // Aqui poderia enviar dados para o servidor
+    limparFormulario();
+}
+
+/**
+ * Finaliza turno com falha
+ */
+function finalizarTurnoComFalha(dadosFalha) {
+    alert('✅ Turno finalizado com falha registrada!\n\nPróximo turno poderá assumir com os dados preenchidos.');
+    // Aqui poderia enviar dados para o servidor
+    limparFormulario();
+}
+
+/**
+ * Carrega falha do turno anterior se existir
+ */
+function carregarFalhaTurnoAnterior() {
+    const dadosFalha = localStorage.getItem('falha_turno_anterior');
+    if (dadosFalha) {
+        const falha = JSON.parse(dadosFalha);
+        
+        // Preencher campos de impacto automaticamente
+        // Isso seria feito quando carregar uma tabela ou iniciar nova
+        
+        // Mostrar notificação
+        console.log('Falha do turno anterior carregada:', falha);
+        
+        // Remover após carregar (ou manter para histórico)
+        // localStorage.removeItem('falha_turno_anterior');
+    }
+}
+
+/**
  * Limpa formulário
  */
 function limparFormulario() {
@@ -2553,6 +2843,18 @@ function limparFormulario() {
 ====================================== */
 
 document.addEventListener("DOMContentLoaded", async function() {
+    // Inicializar sistema de turnos e relógio
+    atualizarTurnoInfo();
+    atualizarRelogio();
+    preencherDataTurnoAutomatico();
+    
+    // Iniciar relógio em tempo real
+    setInterval(atualizarRelogio, 1000);
+    setInterval(atualizarTurnoInfo, 60000); // Atualizar turno a cada minuto
+    
+    // Carregar falha do turno anterior
+    carregarFalhaTurnoAnterior();
+    
     // Listeners para controles de falha
     const assumiuFalha = document.getElementById("assumiu_em_falha");
     if (assumiuFalha) {
@@ -2659,3 +2961,5 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     console.log("✅ Sistema de tabelas compartilhadas inicializado!");
 });
+} 
+ 
