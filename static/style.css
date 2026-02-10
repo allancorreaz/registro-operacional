@@ -194,22 +194,33 @@ body {
 
 /* ===== RESPONSIVIDADE TURNO ===== */
 @media (max-width: 600px) {
+    .selecao-turno-modal {
+        width: 95%;
+        margin: 0 auto;
+    }
+    
     .turnos-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
+        margin: 15px 0;
     }
     
     .btn-turno {
-        padding: 15px;
-        min-height: 80px;
+        padding: 12px;
+        min-height: 70px;
+        font-size: 1em;
     }
     
     .turno-nome {
-        font-size: 1.2em;
+        font-size: 1.1em;
     }
     
-    .selecao-turno-modal {
-        width: 95%;
+    .turno-horario {
+        font-size: 0.85em;
+    }
+    
+    .turno-info-extra {
+        font-size: 0.75em;
     }
 }
     
