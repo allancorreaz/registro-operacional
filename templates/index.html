@@ -52,12 +52,12 @@
         <span id="indicadorSincronizacao" class="status">Sincronizando...</span>
     </div>
 
-    <!-- ASSUNÇÃO DE TABELA - OBRIGATÓRIA -->
+    <!-- ASSUNÇÃO DE TABELA -->
     <div class="card" id="cardAssuncao">
-        <h2>🔄 Tipo de Operação <span class="obrigatorio">*</span></h2>
+        <h2>🔄 Tipo de Operação</h2>
         
         <label>Como você vai iniciar esta operação?</label>
-        <select id="assumindo_tabela" onchange="controleAssuncao()" required>
+        <select id="assumindo_tabela" onchange="controleAssuncao()">
             <option value="">-- Selecione --</option>
             <option value="NAO">Iniciar nova tabela do zero</option>
             <option value="SIM">Assumir tabela de outro turno</option>
@@ -135,6 +135,9 @@
     <div class="botoes-controle" id="divSalvar" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; display: none;">
         <button type="button" onclick="salvarTabelaInicio()" class="btn-salvar" id="btnSalvarGlobal">
             💾 Salvar Tabela
+        </button>
+        <button type="button" onclick="finalizarTurno()" class="btn-finalizar-turno" id="btnFinalizarTurno" style="display: none;">
+            ⏰ Finalizar Turno
         </button>
     </div>
 

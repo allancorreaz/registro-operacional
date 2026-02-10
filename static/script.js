@@ -409,9 +409,32 @@ function verificarTabelaOutroTurno() {
         const turnosDiferentes = turnoOriginal && turnoAtual && turnoOriginal !== turnoAtual;
         const operadoresDiferentes = operadorOriginal && operadorAtual && operadorOriginal !== operadorAtual;
         
-        if (turnosDiferentes || operadoresDiferentes) {
+        // Verificar se houve passagem de turno
+        const dados = tabelaCarregadaInfo.dados || {};
+        const houvePassagem = dados.houve_passagem === "SIM";
+        
+        if (turnosDiferentes || operadoresDiferentes || houvePassagem) {
             secaoRecebeu.style.display = "block";
             tornarCamposRecebimentoObrigatorios(true);
+            
+            // Se houve passagem, preencher campos automaticamente
+            if (houvePassagem) {
+                document.getElementById("turno_passou_tabela").value = turnoOriginal;
+                document.getElementById("operador_passou_tabela").value = operadorOriginal;
+                document.getElementById("matricula_passou_tabela").value = dados.matricula_assumiu_passagem || "";
+                document.getElementById("hora_assumiu_tabela").value = dados.hora_rendicao || "";
+                document.getElementById("vagoes_faltavam_assumir").value = dados.vagoes_proximo_turno || "";
+                document.getElementById("recebeu_em_falha").value = dados.assumiu_em_falha || "NAO";
+                
+                if (dados.assumiu_em_falha === "SIM") {
+                    document.getElementById("falha_recebida_desc").value = dados.descricao_falha_assumida || "";
+                    document.getElementById("hora_inicio_falha_recebida").value = dados.hora_falha_passagem || "";
+                    // Preencher outros campos se necessário
+                }
+                
+                controleRecebeuEmFalha();
+            }
+            
             return;
         }
     }
@@ -475,6 +498,124 @@ function controleRecebeuEmFalha() {
 ====================================== */
 
 /**
+ * Inicia o processo de finalizar turno (passagem de tabela)
+ */
+function finalizarTurno() {
+    // Verificar se tabela foi salva
+    if (!tabelaSalva) {
+        alert("⚠️ Você deve salvar a tabela antes de finalizar o turno!\n\nClique em '💾 Salvar Tabela' primeiro.");
+        return;
+    }
+    
+    // Setar houve passagem como SIM
+    document.getElementById("houve_passagem").value = "SIM";
+    controlePassagem();
+    
+    // Scroll para a seção de passagem
+    document.getElementById("passagemExtra").scrollIntoView({ behavior: 'smooth' });
+    
+    // Alterar o botão para confirmar passagem
+    const btnFinalizarTurno = document.getElementById("btnFinalizarTurno");
+    btnFinalizarTurno.textContent = "✅ Confirmar Passagem de Turno";
+    btnFinalizarTurno.onclick = confirmarPassagemTurno;
+}
+
+/**
+ * Confirma e salva a passagem de turno
+ */
+async function confirmarPassagemTurno() {
+    // Validar campos obrigatórios de passagem
+    const vagoesMeuTurno = document.getElementById("vagoes_meu_turno").value;
+    const turnoAssumiu = document.getElementById("turno_assumiu").value;
+    const operadorAssumiu = document.getElementById("operador_assumiu").value;
+    const matriculaAssumiu = document.getElementById("matricula_assumiu").value;
+    const horaRendicao = document.getElementById("hora_rendicao").value;
+    const vagoesProximoTurno = document.getElementById("vagoes_proximo_turno").value;
+    const assumiuEmFalha = document.getElementById("assumiu_em_falha").value;
+    
+    if (!vagoesMeuTurno || !turnoAssumiu || !operadorAssumiu || !matriculaAssumiu || !horaRendicao || !vagoesProximoTurno || !assumiuEmFalha) {
+        alert("⚠️ Preencha todos os campos obrigatórios da passagem de turno!");
+        return;
+    }
+    
+    if (assumiuEmFalha === "SIM") {
+        const descricaoFalha = document.getElementById("descricao_falha_assumida").value;
+        const horaFalha = document.getElementById("hora_falha_passagem").value;
+        if (!descricaoFalha || !horaFalha) {
+            alert("⚠️ Preencha os detalhes da falha passada!");
+            return;
+        }
+    }
+    
+    // Coletar dados
+    const dadosFormulario = coletarDadosFormulario();
+    
+    // Adicionar dados de passagem
+    dadosFormulario.houve_passagem = "SIM";
+    dadosFormulario.vagoes_meu_turno = vagoesMeuTurno;
+    dadosFormulario.turno_assumiu = turnoAssumiu;
+    dadosFormulario.operador_assumiu_passagem = operadorAssumiu; // Renomear para evitar conflito
+    dadosFormulario.matricula_assumiu_passagem = matriculaAssumiu;
+    dadosFormulario.hora_rendicao = horaRendicao;
+    dadosFormulario.vagoes_proximo_turno = vagoesProximoTurno;
+    dadosFormulario.assumiu_em_falha = assumiuEmFalha;
+    if (assumiuEmFalha === "SIM") {
+        dadosFormulario.descricao_falha_assumida = document.getElementById("descricao_falha_assumida").value;
+        dadosFormulario.hora_falha_passagem = document.getElementById("hora_falha_passagem").value;
+    }
+    
+    const dadosTabela = {
+        prefixo: document.getElementById("prefixo").value,
+        data: document.getElementById("data").value,
+        turno: document.getElementById("turno").value,
+        produto: document.getElementById("produto").value,
+        operador: document.getElementById("operador").value,
+        inicio: document.getElementById("inicio").value,
+        dados: dadosFormulario
+    };
+    
+    // Mostrar indicador de salvamento
+    const btnConfirmar = document.getElementById("btnFinalizarTurno");
+    const textoOriginal = btnConfirmar.textContent;
+    btnConfirmar.disabled = true;
+    btnConfirmar.textContent = '⏳ Salvando Passagem...';
+    
+    try {
+        const resultado = await salvarTabelaServidor(dadosTabela);
+        
+        if (resultado.success) {
+            alert(`✅ Passagem de turno registrada!\n\nA tabela "${dadosTabela.prefixo}" foi passada para o ${turnoAssumiu}.\n\nO próximo turno poderá assumir e finalizar esta tabela.`);
+            
+            // Resetar botão
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = textoOriginal;
+            btnConfirmar.onclick = finalizarTurno;
+            
+            // Atualizar lista
+            await atualizarSeletorTabelas();
+        } else {
+            alert(`❌ Erro ao salvar passagem: ${resultado.error || 'Erro desconhecido'}`);
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = textoOriginal;
+        }
+    } catch (error) {
+        alert(`❌ Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = textoOriginal;
+    }
+}
+    const falhaDesc = document.getElementById("falha_recebida_desc").value;
+    const impactosExistentes = document.querySelectorAll(".impacto-row");
+    
+    impactosExistentes.forEach(row => {
+        const descField = row.querySelector(".impacto-desc");
+        if (descField && descField.value.toLowerCase().includes("iniciou o turno com falha")) {
+            descField.value = falhaDesc ? `Iniciou o turno com falha: ${falhaDesc}` : "Iniciou o turno com falha";
+        }
+    });
+}
+
+/**
  * Controla visibilidade da seção de assunção
  */
 function controleAssuncao() {
@@ -484,9 +625,11 @@ function controleAssuncao() {
     const cardsDados = document.querySelectorAll('.card:not(#cardAssuncao):not(#cardTabelasAndamento):not(#cardTabelasFinalizadas)');
     const divSalvar = document.getElementById("divSalvar");
     
-    if (assumindo === "NAO") {
+    if (assumindo === "NAO" || !assumindo) {
         // Salvar seleção
-        salvarTipoOperacao("NAO");
+        if (assumindo === "NAO") {
+            salvarTipoOperacao("NAO");
+        }
         
         // Iniciando nova tabela - mostrar fluxo normal mas sem botão salvar ainda
         assuncaoExtra.style.display = "none";
@@ -530,6 +673,7 @@ function controleAssuncao() {
         divSalvar.style.display = "none";
     }
 }
+}
 
 /**
  * Controla visibilidade de falha recebida na assunção
@@ -539,6 +683,41 @@ function controleFalhaRecebida() {
     const falhaExtra = document.getElementById("falhaRecebidaExtra");
     
     falhaExtra.style.display = recebeu === "SIM" ? "block" : "none";
+    
+    // Se recebeu em falha, automaticamente adicionar impacto/falha
+    if (recebeu === "SIM") {
+        // Verificar se já existe um impacto para "iniciou o turno com falha"
+        const impactosExistentes = document.querySelectorAll(".impacto-row");
+        let jaExiste = false;
+        let impactoExistente = null;
+        impactosExistentes.forEach(row => {
+            const desc = row.querySelector(".impacto-desc")?.value || "";
+            if (desc.toLowerCase().includes("iniciou o turno com falha")) {
+                jaExiste = true;
+                impactoExistente = row;
+            }
+        });
+        
+        if (!jaExiste) {
+            // Adicionar impacto automaticamente
+            adicionarImpacto();
+            const novoImpacto = document.querySelector(".impacto-row:last-child");
+            if (novoImpacto) {
+                const descField = novoImpacto.querySelector(".impacto-desc");
+                const falhaDesc = document.getElementById("falha_recebida_desc").value;
+                if (descField) {
+                    descField.value = falhaDesc ? `Iniciou o turno com falha: ${falhaDesc}` : "Iniciou o turno com falha";
+                }
+            }
+        } else if (impactoExistente) {
+            // Atualizar descrição existente
+            const descField = impactoExistente.querySelector(".impacto-desc");
+            const falhaDesc = document.getElementById("falha_recebida_desc").value;
+            if (descField) {
+                descField.value = falhaDesc ? `Iniciou o turno com falha: ${falhaDesc}` : "Iniciou o turno com falha";
+            }
+        }
+    }
 }
 
 /**
@@ -628,8 +807,9 @@ async function carregarTabelaAssuncao() {
 function verificarMostrarBotaoSalvar() {
     const assumindo = document.getElementById("assumindo_tabela").value;
     const divSalvar = document.getElementById("divSalvar");
+    const btnFinalizarTurno = document.getElementById("btnFinalizarTurno");
     
-    if (assumindo === "NAO") {
+    if (assumindo === "NAO" || !assumindo) {
         // Para nova tabela, verificar campos básicos
         const prefixo = document.getElementById("prefixo").value;
         const inicio = document.getElementById("inicio").value;
@@ -638,8 +818,11 @@ function verificarMostrarBotaoSalvar() {
         
         if (prefixo && inicio && produto && equipamento) {
             divSalvar.style.display = "block";
+            // Mostrar finalizar turno apenas se tabela já foi salva
+            btnFinalizarTurno.style.display = tabelaSalva ? "inline-block" : "none";
         } else {
             divSalvar.style.display = "none";
+            btnFinalizarTurno.style.display = "none";
         }
         
     } else if (assumindo === "SIM") {
@@ -651,8 +834,11 @@ function verificarMostrarBotaoSalvar() {
         
         if (operadorAssumiu && matriculaAssumiu && turnoAssumiu && vagoesFaltavam) {
             divSalvar.style.display = "block";
+            // Mostrar finalizar turno apenas se tabela já foi salva
+            btnFinalizarTurno.style.display = tabelaSalva ? "inline-block" : "none";
         } else {
             divSalvar.style.display = "none";
+            btnFinalizarTurno.style.display = "none";
         }
     }
 }
@@ -944,12 +1130,11 @@ function coletarDadosFormulario() {
  * Salvar tabela como início (em andamento)
  */
 async function salvarTabelaInicio() {
-    const assumindo = document.getElementById("assumindo_tabela").value;
+    let assumindo = document.getElementById("assumindo_tabela").value;
     
+    // Se não selecionou, assumir como nova tabela
     if (!assumindo) {
-        alert("⚠️ Selecione o tipo de operação primeiro!");
-        document.getElementById("assumindo_tabela").focus();
-        return;
+        assumindo = "NAO";
     }
     
     const prefixo = document.getElementById("prefixo").value;
@@ -1222,7 +1407,8 @@ function carregarTabelaAndamento() {
     tabelaCarregadaInfo = {
         turno: tabela.turno,
         operador: tabela.operador,
-        prefixo: tabela.prefixo
+        prefixo: tabela.prefixo,
+        dados: dados
     };
     
     // Verificar se está finalizando tabela de outro turno
@@ -2385,6 +2571,12 @@ document.addEventListener("DOMContentLoaded", async function() {
     const recebeuEmFalhaAssuncao = document.getElementById("recebeu_em_falha_assuncao");
     if (recebeuEmFalhaAssuncao) {
         recebeuEmFalhaAssuncao.addEventListener("change", controleFalhaRecebida);
+    }
+    
+    // Listener para atualizar descrição da falha no impacto
+    const falhaRecebidaDesc = document.getElementById("falha_recebida_desc");
+    if (falhaRecebidaDesc) {
+        falhaRecebidaDesc.addEventListener("input", atualizarDescricaoImpactoFalha);
     }
     
     // Listeners para mostrar/esconder botão salvar

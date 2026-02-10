@@ -133,6 +133,30 @@ button:hover {
     background: #1976d2;
 }
 
+.btn-finalizar-turno {
+    background: #ff9800;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-finalizar-turno:hover {
+    background: #f57c00;
+    transform: translateY(-2px);
+}
+
+.btn-finalizar-turno:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* ===== ÁREA DE RESULTADO ===== */
 .resultado {
     background: #0f2027;
