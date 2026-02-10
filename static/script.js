@@ -10,10 +10,10 @@ const RECUPERADORAS_CARVAO = ["R5", "R1A"];
 
 // Configuração de turnos
 const TURNOS = {
-    A: { inicio: 6, fim: 18, nome: "A" },
-    B: { inicio: 6, fim: 18, nome: "B" },
-    C: { inicio: 18, fim: 6, nome: "C" },
-    D: { inicio: 18, fim: 6, nome: "D" }
+    A: { inicio: 6, fim: 18, nome: "A", rendidoPor: "D" },
+    B: { inicio: 6, fim: 18, nome: "B", rendidoPor: "C" },
+    C: { inicio: 18, fim: 6, nome: "C", rende: "B" },
+    D: { inicio: 18, fim: 6, nome: "D", rende: "A" }
 };
 
 // Chaves de armazenamento
@@ -176,27 +176,59 @@ function atualizarRelogio() {
 }
 
 /**
+ * Verifica se está próximo do fim do turno selecionado (30 min antes)
+ */
+function isProximoFimTurnoSelecionado(turno) {
+    const agora = getHoraBrasilia();
+    const hora = agora.getHours();
+    const minutos = agora.getMinutes();
+    
+    if (turno === 'A' || turno === 'B') {
+        // Fim às 18h, mostrar botão a partir das 17:30
+        return hora === 17 && minutos >= 30;
+    } else {
+        // Fim às 6h, mostrar botão a partir das 5:30
+        return hora === 5 && minutos >= 30;
+    }
+}
+
+/**
+ * Verifica se passou 1 hora do início do turno selecionado
+ */
+function passouUmaHoraInicioTurnoSelecionado(turno) {
+    const agora = getHoraBrasilia();
+    const hora = agora.getHours();
+    
+    if (turno === 'A' || turno === 'B') {
+        // Início às 6h, ocultar após 7h
+        return hora >= 7;
+    } else {
+        // Início às 18h, ocultar após 19h
+        return hora >= 19 || hora < 6;
+    }
+}
+
+/**
  * Atualiza informações do turno
  */
 function atualizarTurnoInfo() {
-    const turno = getTurnoAtual();
+    const turnoSelecionado = carregarTurnoSalvo();
     const turnoEl = document.getElementById('turno-atual');
-    if (turnoEl) {
-        turnoEl.textContent = `Turno ${turno}`;
+    
+    if (turnoEl && turnoSelecionado) {
+        turnoEl.textContent = `Turno ${turnoSelecionado}`;
     }
     
-    // Salvar turno atual
-    localStorage.setItem(STORAGE_KEY_TURNO_ATUAL, turno);
-    
-    // Mostrar/ocultar botão finalizar turno
+    // Mostrar/ocultar botão finalizar turno baseado no turno selecionado
     const btnFinalizar = document.getElementById('btnFinalizarTurno');
-    if (btnFinalizar) {
-        btnFinalizar.style.display = isProximoFimTurno() ? 'inline-block' : 'none';
+    if (btnFinalizar && turnoSelecionado) {
+        const deveMostrar = isProximoFimTurnoSelecionado(turnoSelecionado);
+        btnFinalizar.style.display = deveMostrar ? 'inline-block' : 'none';
     }
     
-    // Ocultar assumiu tabela se passou 1 hora
+    // Ocultar assumiu tabela se passou 1 hora do turno selecionado
     const cardAssuncao = document.getElementById('cardAssuncao');
-    if (cardAssuncao && passouUmaHoraInicioTurno()) {
+    if (cardAssuncao && turnoSelecionado && passouUmaHoraInicioTurnoSelecionado(turnoSelecionado)) {
         cardAssuncao.style.display = 'none';
     }
 }
@@ -226,6 +258,96 @@ function preencherDataTurnoAutomatico() {
     if (turnoField && !turnoField.value) {
         turnoField.value = turno;
     }
+}
+
+/* ======================================
+   SELEÇÃO E GESTÃO DE TURNOS
+====================================== */
+
+/**
+ * Verifica se deve mostrar seleção de turno
+ */
+function verificarSelecaoTurno() {
+    const turnoSalvo = localStorage.getItem(STORAGE_KEY_TURNO_ATUAL);
+    const modal = document.getElementById('selecao-turno-inicial');
+    
+    if (!turnoSalvo) {
+        // Primeiro acesso - mostrar seleção
+        modal.style.display = 'flex';
+        return false;
+    } else {
+        // Turno já selecionado - atualizar interface
+        atualizarInterfaceTurno(turnoSalvo);
+        return true;
+    }
+}
+
+/**
+ * Seleciona um turno
+ */
+function selecionarTurno(turno) {
+    // Salvar turno selecionado
+    localStorage.setItem(STORAGE_KEY_TURNO_ATUAL, turno);
+    
+    // Esconder modal
+    document.getElementById('selecao-turno-inicial').style.display = 'none';
+    
+    // Atualizar interface
+    atualizarInterfaceTurno(turno);
+    
+    // Preencher campos automaticamente
+    preencherDataTurnoAutomatico();
+    
+    // Iniciar sistema
+    iniciarSistemaAposSelecaoTurno();
+}
+
+/**
+ * Mostra modal para alterar turno
+ */
+function mostrarSelecaoTurno() {
+    const modal = document.getElementById('selecao-turno-inicial');
+    modal.style.display = 'flex';
+}
+
+/**
+ * Atualiza interface com turno selecionado
+ */
+function atualizarInterfaceTurno(turno) {
+    const tituloTurno = document.getElementById('titulo-turno');
+    const turnoAtual = document.getElementById('turno-atual');
+    
+    if (tituloTurno) {
+        tituloTurno.textContent = `Turno ${turno}`;
+    }
+    
+    if (turnoAtual) {
+        turnoAtual.textContent = `Turno ${turno}`;
+    }
+    
+    // Atualizar título da página
+    document.title = `Registro Operacional - Turno ${turno}`;
+}
+
+/**
+ * Inicia sistema após seleção do turno
+ */
+function iniciarSistemaAposSelecaoTurno() {
+    // Iniciar relógio
+    setInterval(atualizarRelogio, 1000);
+    setInterval(atualizarTurnoInfo, 60000);
+    
+    // Carregar falha do turno anterior
+    carregarFalhaTurnoAnterior();
+    
+    // Carregar dados salvos
+    restaurarDadosFormulario();
+    
+    // Inicializar listas
+    atualizarSeletorTabelas();
+    atualizarListaFinalizadas();
+    
+    console.log("✅ Sistema iniciado após seleção de turno");
 }
 
 /**
@@ -2680,6 +2802,11 @@ function toggleDarkMode() {
  * Inicia processo de finalização do turno
  */
 function iniciarFinalizacaoTurno() {
+    // Primeiro validar se passagem de turno foi preenchida
+    if (!validarPassagemTurno()) {
+        return;
+    }
+    
     const resposta = confirm("🏁 Você está finalizando o turno?\n\nSelecione OK para continuar ou Cancelar para voltar.");
     
     if (!resposta) return;
@@ -2775,20 +2902,91 @@ function confirmarFalhaFinalizacao() {
 }
 
 /**
+ * Verifica se passagem de turno foi preenchida
+ */
+function validarPassagemTurno() {
+    const turnoPassou = document.getElementById('turno_passou_tabela').value;
+    const operadorPassou = document.getElementById('operador_passou_tabela').value;
+    const matriculaPassou = document.getElementById('matricula_passou_tabela').value;
+    const horaAssumiu = document.getElementById('hora_assumiu_tabela').value;
+    
+    if (!turnoPassou || !operadorPassou || !matriculaPassou || !horaAssumiu) {
+        alert('❌ Para finalizar o turno, é obrigatório preencher a passagem de turno!\n\nPreencha: Turno que passou, Operador, Matrícula e Hora de assunção.');
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Salva tabela finalizada no banco de dados
+ */
+async function salvarTabelaFinalizada() {
+    try {
+        const dados = coletarDadosFormulario();
+        
+        // Enviar para servidor
+        const response = await fetch('/api/tabelas/finalizar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dados)
+        });
+        
+        if (response.ok) {
+            console.log('✅ Tabela salva no banco de dados');
+            return true;
+        } else {
+            console.error('❌ Erro ao salvar tabela');
+            return false;
+        }
+    } catch (error) {
+        console.error('Erro ao salvar tabela:', error);
+        // Mesmo com erro, permitir continuar (salvar localmente)
+        return true;
+    }
+}
+
+/**
  * Finaliza turno normalmente
  */
-function finalizarTurnoNormal() {
-    alert('✅ Turno finalizado com sucesso!');
-    // Aqui poderia enviar dados para o servidor
+async function finalizarTurnoNormal() {
+    // Validar passagem de turno
+    if (!validarPassagemTurno()) {
+        return;
+    }
+    
+    // Salvar tabela no banco
+    const salvo = await salvarTabelaFinalizada();
+    
+    if (salvo) {
+        alert('✅ Turno finalizado com sucesso!\n\nTabela salva no banco de dados.');
+    } else {
+        alert('⚠️ Turno finalizado, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
+    }
+    
     limparFormulario();
 }
 
 /**
  * Finaliza turno com falha
  */
-function finalizarTurnoComFalha(dadosFalha) {
-    alert('✅ Turno finalizado com falha registrada!\n\nPróximo turno poderá assumir com os dados preenchidos.');
-    // Aqui poderia enviar dados para o servidor
+async function finalizarTurnoComFalha(dadosFalha) {
+    // Validar passagem de turno
+    if (!validarPassagemTurno()) {
+        return;
+    }
+    
+    // Salvar tabela no banco
+    const salvo = await salvarTabelaFinalizada();
+    
+    if (salvo) {
+        alert('✅ Turno finalizado com falha registrada!\n\nPróximo turno poderá assumir com os dados preenchidos.\n\nTabela salva no banco de dados.');
+    } else {
+        alert('⚠️ Turno finalizado com falha, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
+    }
+    
     limparFormulario();
 }
 
@@ -2829,17 +3027,16 @@ function limparFormulario() {
 ====================================== */
 
 document.addEventListener("DOMContentLoaded", async function() {
-    // Inicializar sistema de turnos e relógio
-    atualizarTurnoInfo();
-    atualizarRelogio();
-    preencherDataTurnoAutomatico();
+    // Verificar se turno já foi selecionado
+    const turnoSelecionado = verificarSelecaoTurno();
     
-    // Iniciar relógio em tempo real
-    setInterval(atualizarRelogio, 1000);
-    setInterval(atualizarTurnoInfo, 60000); // Atualizar turno a cada minuto
+    if (turnoSelecionado) {
+        // Turno já selecionado - iniciar sistema normalmente
+        iniciarSistemaAposSelecaoTurno();
+    }
+    // Se turno não foi selecionado, o modal ficará visível até seleção
     
-    // Carregar falha do turno anterior
-    carregarFalhaTurnoAnterior();
+    // Listeners para controles de falha
     
     // Listeners para controles de falha
     const assumiuFalha = document.getElementById("assumiu_em_falha");

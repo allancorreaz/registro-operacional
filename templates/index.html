@@ -10,9 +10,47 @@
 <body>
 
 <div class="container">
-    <h1>🚆 Registro Operacional Virador de Vagões</h1>
+    <h1>🚆 Registro Operacional Virador de Vagões <span id="titulo-turno"></span></h1>
     <div id="turno-info" class="turno-info">
         <span id="turno-atual">Carregando turno...</span> | <span id="relogio">00:00:00</span>
+    </div>
+    
+    <!-- SELEÇÃO DE TURNO INICIAL -->
+    <div id="selecao-turno-inicial" class="modal-overlay" style="display: none;">
+        <div class="modal-content selecao-turno-modal">
+            <h2>🎯 Selecionar Turno</h2>
+            <p>Selecione seu turno para iniciar o trabalho:</p>
+            
+            <div class="turnos-grid">
+                <button onclick="selecionarTurno('A')" class="btn-turno turno-a">
+                    <div class="turno-nome">TURNO A</div>
+                    <div class="turno-horario">06:00 - 18:00</div>
+                    <div class="turno-info-extra">Rendido por: Turno D</div>
+                </button>
+                
+                <button onclick="selecionarTurno('B')" class="btn-turno turno-b">
+                    <div class="turno-nome">TURNO B</div>
+                    <div class="turno-horario">06:00 - 18:00</div>
+                    <div class="turno-info-extra">Rendido por: Turno C</div>
+                </button>
+                
+                <button onclick="selecionarTurno('C')" class="btn-turno turno-c">
+                    <div class="turno-nome">TURNO C</div>
+                    <div class="turno-horario">18:00 - 06:00</div>
+                    <div class="turno-info-extra">Rende: Turno B</div>
+                </button>
+                
+                <button onclick="selecionarTurno('D')" class="btn-turno turno-d">
+                    <div class="turno-nome">TURNO D</div>
+                    <div class="turno-horario">18:00 - 06:00</div>
+                    <div class="turno-info-extra">Rende: Turno A</div>
+                </button>
+            </div>
+            
+            <div class="turno-instrucoes">
+                <p><strong>⚠️ Importante:</strong> Selecione o turno correto. Esta informação será salva e usada automaticamente em todas as operações.</p>
+            </div>
+        </div>
     </div>
     
     <!-- BOTÕES DE CONTROLE -->
@@ -21,6 +59,7 @@
         <button onclick="limparFormulario()" class="btn-limpar">🗑️ Limpar Tudo</button>
         <button id="btnAtualizarTabelas" onclick="atualizarListaTabelas()" class="btn-atualizar">🔄 Atualizar Lista</button>
         <button id="btnFinalizarTurno" onclick="iniciarFinalizacaoTurno()" class="btn-finalizar-turno" style="display: none;">🏁 Finalizar Turno</button>
+        <button id="btnAlterarTurno" onclick="mostrarSelecaoTurno()" class="btn-alterar-turno">🔄 Alterar Turno</button>
     </div>
 
 
