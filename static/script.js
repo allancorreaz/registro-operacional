@@ -1352,7 +1352,7 @@ function carregarTabelaAndamento() {
                 if (lastRow.querySelector(".impacto-m")) lastRow.querySelector(".impacto-m").value = imp.m || "";
                 if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
                 if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
-                if (lastRow.querySelector(".impacto-atend-mecanica")) lastRow.querySelector(".impacto-atend-mecanica").checked = imp.atend_mecanica;
+                if (lastRow.querySelector(".impacto-atend-mecanica-prev")) lastRow.querySelector(".impacto-atend-mecanica-prev").checked = imp.atend_mecanica_prev;
                 if (lastRow.querySelector(".impacto-atend-eletrica")) lastRow.querySelector(".impacto-atend-eletrica").checked = imp.atend_eletrica;
                 if (lastRow.querySelector(".impacto-atend-operacional")) lastRow.querySelector(".impacto-atend-operacional").checked = imp.atend_operacional;
                 if (lastRow.querySelector(".impacto-atend-outro")) lastRow.querySelector(".impacto-atend-outro").checked = imp.atend_outro;
@@ -1612,7 +1612,7 @@ function restaurarDadosFormulario() {
                 if (lastRow.querySelector(".impacto-m")) lastRow.querySelector(".impacto-m").value = imp.m || "";
                 if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
                 if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
-                if (lastRow.querySelector(".impacto-atend-mecanica")) lastRow.querySelector(".impacto-atend-mecanica").checked = imp.atend_mecanica;
+                if (lastRow.querySelector(".impacto-atend-mecanica-prev")) lastRow.querySelector(".impacto-atend-mecanica-prev").checked = imp.atend_mecanica_prev;
                 if (lastRow.querySelector(".impacto-atend-eletrica")) lastRow.querySelector(".impacto-atend-eletrica").checked = imp.atend_eletrica;
                 if (lastRow.querySelector(".impacto-atend-operacional")) lastRow.querySelector(".impacto-atend-operacional").checked = imp.atend_operacional;
                 if (lastRow.querySelector(".impacto-atend-outro")) lastRow.querySelector(".impacto-atend-outro").checked = imp.atend_outro;
