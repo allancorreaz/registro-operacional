@@ -389,6 +389,7 @@ function atualizarEquipamentos() {
     }
     
     controleEquipamento();
+}
 
 /**
  * Controla visibilidade do campo de sinal
@@ -744,21 +745,6 @@ async function confirmarPassagemTurno() {
         btnConfirmar.disabled = false;
         btnConfirmar.textContent = textoOriginal;
     }
-}
-
-/**
- * Atualiza descrição do impacto quando a descrição da falha recebida muda
- */
-function atualizarDescricaoImpactoFalha() {
-    const falhaDesc = document.getElementById("falha_recebida_desc").value;
-    const impactosExistentes = document.querySelectorAll(".impacto-row");
-    
-    impactosExistentes.forEach(row => {
-        const descField = row.querySelector(".impacto-desc");
-        if (descField && descField.value.toLowerCase().includes("iniciou o turno com falha")) {
-            descField.value = falhaDesc ? `Iniciou o turno com falha: ${falhaDesc}` : "Iniciou o turno com falha";
-        }
-    });
 }
 
 /**
@@ -2961,5 +2947,3 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     console.log("✅ Sistema de tabelas compartilhadas inicializado!");
 });
-} 
- 
