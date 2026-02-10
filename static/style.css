@@ -23,6 +23,55 @@ body {
     padding: 20px;
 }
 
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+        max-width: 100%;
+    }
+    
+    .card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    h1 {
+        font-size: 1.5em;
+    }
+    
+    h2 {
+        font-size: 1.2em;
+    }
+    
+    label {
+        font-size: 13px;
+    }
+    
+    input, select, textarea, button {
+        font-size: 16px; /* Previne zoom no iOS */
+    }
+    
+    .botoes-controle {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .botoes-controle button {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .impacto-row, .material-carvao-row {
+        padding: 10px;
+    }
+    
+    .checkboxes-falha-recebida, .atendimento-checkboxes {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
 /* ===== TIPOGRAFIA ===== */
 h1 {
     text-align: center;

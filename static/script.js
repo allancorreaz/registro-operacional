@@ -1082,10 +1082,11 @@ function coletarDadosFormulario() {
             m: m,
             hora_inicio: row.querySelector(".impacto-hora-inicio")?.value || "",
             hora_fim: row.querySelector(".impacto-hora-fim")?.value || "",
-            atend_mecanica: row.querySelector(".impacto-atend-mecanica")?.checked || false,
-            atend_eletrica: row.querySelector(".impacto-atend-eletrica")?.checked || false,
+            atend_mecanica_prev: row.querySelector(".impacto-atend-mecanica-prev")?.checked || false,
+            atend_mecanica_corr: row.querySelector(".impacto-atend-mecanica-corr")?.checked || false,
+            atend_eletrica_prev: row.querySelector(".impacto-atend-eletrica-prev")?.checked || false,
+            atend_eletrica_corr: row.querySelector(".impacto-atend-eletrica-corr")?.checked || false,
             atend_operacional: row.querySelector(".impacto-atend-operacional")?.checked || false,
-            atend_outro: row.querySelector(".impacto-atend-outro")?.checked || false,
             acao: row.querySelector(".impacto-acao")?.value || ""
         });
     });
@@ -1739,7 +1740,7 @@ function adicionarMaterialCarvao() {
         <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvão) ou CCM, KL (coque)">
         
         <label>Pátio de origem</label>
-        <select class="carvao-patio">
+        <select class="carvao-patio" onchange="atualizarRecuperadora(this)">
             <option value="">Selecione</option>
             <option value="PATIO 0">Pátio 0</option>
             <option value="PATIO 1">Pátio 1</option>
@@ -1795,19 +1796,20 @@ function adicionarImpacto() {
     row.className = "impacto-row";
 
     row.innerHTML = `
-        <input type="text" class="impacto-desc" placeholder="Descrição do impacto/falha (Ex: Subvelocidade AS101)">
+        <input type="text" class="impacto-desc" placeholder="Descrição do impacto/falha">
         
         <div class="impacto-atendimento-grupo">
             <label class="atendimento-label">Quem atendeu a falha?</label>
             <div class="atendimento-checkboxes">
-                <label><input type="checkbox" class="impacto-atend-mecanica" value="MECANICA"> Mecânica</label>
-                <label><input type="checkbox" class="impacto-atend-eletrica" value="ELETRICA"> Elétrica</label>
+                <label><input type="checkbox" class="impacto-atend-mecanica-prev" value="MECANICA_PREVENTIVA"> Mecânica Preventiva</label>
+                <label><input type="checkbox" class="impacto-atend-mecanica-corr" value="MECANICA_CORRETIVA"> Mecânica Corretiva</label>
+                <label><input type="checkbox" class="impacto-atend-eletrica-prev" value="ELETRICA_PREVENTIVA"> Elétrica Preventiva</label>
+                <label><input type="checkbox" class="impacto-atend-eletrica-corr" value="ELETRICA_CORRETIVA"> Elétrica Corretiva</label>
                 <label><input type="checkbox" class="impacto-atend-operacional" value="OPERACIONAL"> Operacional</label>
-                <label><input type="checkbox" class="impacto-atend-outro" value="OUTRO"> Outro</label>
             </div>
         </div>
         
-        <input type="text" class="impacto-acao" placeholder="O que foi feito para resolver? (Ex: Comando local após inspeção)">
+        <input type="text" class="impacto-acao" placeholder="O que foi feito para resolver?">
         
         <div class="impacto-tempo-grupo">
             <input type="time" class="impacto-hora-inicio" title="Hora que iniciou o impacto">
@@ -2573,10 +2575,22 @@ document.addEventListener("DOMContentLoaded", async function() {
         recebeuEmFalhaAssuncao.addEventListener("change", controleFalhaRecebida);
     }
     
-    // Listener para atualizar descrição da falha no impacto
-    const falhaRecebidaDesc = document.getElementById("falha_recebida_desc");
-    if (falhaRecebidaDesc) {
-        falhaRecebidaDesc.addEventListener("input", atualizarDescricaoImpactoFalha);
+    // Listener para produto
+    const produtoField = document.getElementById("produto");
+    if (produtoField) {
+        produtoField.addEventListener("change", controleProduto);
+    }
+    
+    // Listener para destino
+    const destinoField = document.getElementById("destino");
+    if (destinoField) {
+        destinoField.addEventListener("change", controleDestino);
+    }
+    
+    // Listener para mudança de fluxo
+    const mudancaFluxoField = document.getElementById("houve_mudanca_fluxo");
+    if (mudancaFluxoField) {
+        mudancaFluxoField.addEventListener("change", controleMudancaFluxo);
     }
     
     // Listeners para mostrar/esconder botão salvar
