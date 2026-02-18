@@ -100,13 +100,26 @@ function formatarTempo(minutos) {
 ====================================== */
 
 /**
- * Obtém a hora atual em Brasília
+ * Obtém a hora atual em Brasília (UTC-3)
+ * Usa a API Intl para conversão correta de timezone
  */
 function getHoraBrasilia() {
     const now = new Date();
-    // Brasília é UTC-3
-    const brasiliaTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
-    return brasiliaTime;
+    // Converter para horário de Brasília usando toLocaleString
+    const brasiliaDateString = now.toLocaleString('pt-BR', { 
+        timeZone: 'America/Sao_Paulo'
+    });
+    
+    // Parse the formatted string back to Date object
+    // Format: "DD/MM/YYYY HH:MM:SS"
+    const parts = brasiliaDateString.match(/(\d+)\/(\d+)\/(\d+)[,\s]+(\d+):(\d+):(\d+)/);
+    if (parts) {
+        const [, day, month, year, hour, minute, second] = parts;
+        return new Date(year, month - 1, day, hour, minute, second);
+    }
+    
+    // Fallback: use device local time if parsing fails
+    return now;
 }
 
 /**
@@ -1456,9 +1469,9 @@ async function salvarTabelaInicio() {
             tabelaSalva = true; // Marcar que tabela foi salva
             
             if (resultado.atualizado) {
-                alert(`✅ Tabela "${prefixo}" atualizada no servidor!\n\n👥 Outros usuários podem ver esta tabela.`);
+                alert(`✅ Início da tabela "${prefixo}" atualizado no servidor!\n\n👥 Outros usuários podem ver esta tabela.\n\n💡 Os dados preenchidos continuam salvos localmente mesmo que você recarregue a página.`);
             } else {
-                alert(`✅ Tabela "${prefixo}" salva no servidor!\n\n👥 Outros usuários podem ver e finalizar esta tabela.\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".`);
+                alert(`✅ Início da tabela "${prefixo}" salvo no servidor!\n\n👥 Outros usuários podem ver e finalizar esta tabela.\n\n💡 Quando quiser finalizar, selecione-a na lista "Tabelas em Andamento".\n\n🔄 Seus dados ficam salvos localmente e persistem após recarregar a página.`);
             }
             
             await atualizarSeletorTabelas();
