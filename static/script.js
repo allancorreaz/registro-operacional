@@ -111,7 +111,7 @@ function getHoraBrasilia() {
     });
     
     // Parse the formatted string back to Date object
-    // Format: "DD/MM/YYYY HH:MM:SS"
+    // Format: "DD/MM/YYYY, HH:MM:SS"
     const parts = brasiliaDateString.match(/(\d+)\/(\d+)\/(\d+)[,\s]+(\d+):(\d+):(\d+)/);
     if (parts) {
         const [, day, month, year, hour, minute, second] = parts;
@@ -119,6 +119,7 @@ function getHoraBrasilia() {
     }
     
     // Fallback: use device local time if parsing fails
+    console.warn('⚠️ Falha ao converter para horário de Brasília, usando horário local do dispositivo:', brasiliaDateString);
     return now;
 }
 
