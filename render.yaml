@@ -7,3 +7,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
+    # Persistent disk for SQLite database
+    disk:
+      name: registro-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1
