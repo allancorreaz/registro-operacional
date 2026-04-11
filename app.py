@@ -1,17 +1,39 @@
 from flask import Flask, render_template, request, jsonify
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import cm
 from datetime import datetime, timedelta
 import os
 import uuid
 import sqlite3
 import json
 
-app = Flask(__name__)
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RUNTIME_DIR = "/tmp" if os.environ.get("VERCEL") else BASE_DIR
+
+
+def get_runtime_dir():
+    """Resolve um diretorio com permissao de escrita para arquivos de runtime."""
+    candidatos = ["/tmp", BASE_DIR]
+
+    for pasta in candidatos:
+        try:
+            os.makedirs(pasta, exist_ok=True)
+            probe = os.path.join(pasta, ".write_test")
+            with open(probe, "w", encoding="utf-8") as f:
+                f.write("ok")
+            os.remove(probe)
+            return pasta
+        except OSError:
+            continue
+
+    return BASE_DIR
+
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+    static_url_path="/static",
+)
+
+RUNTIME_DIR = get_runtime_dir()
 REPORT_DIR = os.path.join(RUNTIME_DIR, "reports")
 DATABASE = os.path.join(RUNTIME_DIR, "tabelas.db")
 os.makedirs(REPORT_DIR, exist_ok=True)
@@ -69,8 +91,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Inicializar banco ao iniciar a aplicação
-init_db()
+# Inicializar banco ao iniciar a aplicação.
+# Em ambiente serverless, nunca derrubar a função por erro pontual de I/O.
+try:
+    init_db()
+except sqlite3.Error as exc:
+    print(f"[WARN] Falha ao inicializar banco SQLite: {exc}")
 
 @app.route("/")
 def index():
@@ -568,6 +594,14 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
     return "\n".join(linhas)
 
 def gerar_pdf(texto):
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.units import cm
+    except Exception as exc:
+        print(f"[WARN] ReportLab indisponivel para gerar PDF: {exc}")
+        return ""
+
     nome = f"relatorio_{uuid.uuid4().hex}.pdf"
     caminho = os.path.join(REPORT_DIR, nome)
 
