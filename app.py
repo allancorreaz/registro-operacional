@@ -11,8 +11,9 @@ import json
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-REPORT_DIR = os.path.join(BASE_DIR, "reports")
-DATABASE = os.path.join(BASE_DIR, "tabelas.db")
+RUNTIME_DIR = "/tmp" if os.environ.get("VERCEL") else BASE_DIR
+REPORT_DIR = os.path.join(RUNTIME_DIR, "reports")
+DATABASE = os.path.join(RUNTIME_DIR, "tabelas.db")
 os.makedirs(REPORT_DIR, exist_ok=True)
 
 # ===== BANCO DE DADOS =====
