@@ -1,6 +1,6 @@
-# Registro Operacional - Virador de Vagoes
+# Sistema de Registro Operacional - Virador de Vagoes
 
-Aplicacao web interna para registro operacional de descarregamento/carregamento, com suporte a tabelas em andamento, finalizacao, relatorios e sincronizacao entre usuarios via banco SQLite.
+Aplicacao web interna para registro de operacoes portuarias, com tabelas em andamento, finalizacao, relatorios e compartilhamento entre usuarios pela mesma instancia do servidor.
 
 ## Objetivo
 
@@ -12,6 +12,28 @@ Este sistema permite que operadores de turno:
 - consultem tabelas finalizadas;
 - compartilhem os dados com outros usuarios conectados.
 
+## Funcionalidades Principais
+
+### 1) Salvamento automatico
+
+- **Persistencia local**: os dados do formulario sao salvos automaticamente no navegador.
+- **Persistencia no servidor**: ao salvar inicio/finalizar, os dados ficam no banco e visiveis aos demais usuarios.
+- **Protecao contra perda**: recarregar a pagina nao elimina o preenchimento local.
+
+### 2) Tabelas compartilhadas
+
+- Tabelas em andamento visiveis para todos os usuarios.
+- Tabelas finalizadas armazenadas e consultaveis.
+- Fluxo de colaboracao entre turnos.
+
+### 3) Calculos operacionais
+
+- TMD/TMC
+- impactos
+- hora efetiva
+- taxa efetiva
+- geracao de relatorio textual e PDF
+
 ## Tecnologias
 
 - Backend: Flask
@@ -19,6 +41,7 @@ Este sistema permite que operadores de turno:
 - Relatorios: ReportLab (PDF)
 - Frontend: HTML, CSS, JavaScript (vanilla)
 - Servidor de producao: Gunicorn
+- Hospedagem: Render
 
 ## Estrutura do Projeto
 
@@ -40,43 +63,22 @@ reports/               # Relatorios gerados (runtime)
 tabelas.db             # Banco SQLite local (runtime)
 ```
 
-## Funcionalidades Principais
+## Endpoints Principais
 
-### 1) Tabelas em andamento (compartilhadas)
-
-- Criar nova tabela
-- Atualizar tabela existente
-- Listar tabelas em andamento para todos os usuarios
-- Excluir tabela em andamento
-
-Endpoints:
+### Tabelas em andamento
 
 - `GET /api/tabelas/andamento`
 - `POST /api/tabelas/andamento`
 - `GET /api/tabelas/andamento/<id>`
 - `DELETE /api/tabelas/andamento/<id>`
 
-### 2) Tabelas finalizadas
-
-- Finalizar tabela em andamento
-- Listar ultimas finalizadas
-- Excluir finalizada
-
-Endpoints:
+### Tabelas finalizadas
 
 - `POST /api/tabelas/finalizar/<id>`
 - `GET /api/tabelas/finalizadas`
 - `DELETE /api/tabelas/finalizadas/<id>`
 
-### 3) Calculo operacional
-
-- TMD/TMC
-- Impactos
-- Hora efetiva
-- Taxa efetiva
-- Geracao de relatorio textual e PDF
-
-Endpoint:
+### Calculo
 
 - `POST /calcular`
 
@@ -105,34 +107,35 @@ Aplicacao disponivel em:
 
 - `http://127.0.0.1:5000`
 
-## Como Rodar em Producao
+## Deploy no Render
 
-Com Gunicorn (Linux/Render):
+Comando de inicio:
 
 ```bash
 gunicorn app:app --bind 0.0.0.0:$PORT
 ```
 
+Configuracao recomendada de disco persistente em `render.yaml` para preservar `tabelas.db` entre deploys.
+
 ## Regras Importantes de Dados
 
-- O banco `tabelas.db` e local ao servidor que esta rodando a aplicacao.
-- Para todos os usuarios verem os mesmos dados, todos devem acessar a mesma instancia do servidor.
-- Arquivos de banco local e relatorios gerados nao devem ser versionados no Git.
+- O banco `tabelas.db` e local ao servidor da aplicacao.
+- Para todos os usuarios verem os mesmos dados, todos devem acessar a mesma instancia.
+- Banco local e relatorios gerados nao devem ser versionados no Git.
 
 ## Seguranca e Versionamento
 
-O `.gitignore` foi configurado para evitar commit de:
+O `.gitignore` evita commit de:
 
-- segredos (`.env`, certificados/chaves)
-- ambiente virtual (`.venv`)
-- cache Python (`__pycache__`)
-- banco local (`*.db`) e arquivos temporarios SQLite
-- relatorios gerados em runtime (`reports/*.pdf`)
-- relatorios de manutencao interna (pastas e arquivos com nome de manutencao/maintenance)
+- segredos (`.env`, chaves e certificados);
+- ambiente virtual e caches;
+- banco local SQLite e arquivos temporarios;
+- relatorios gerados em runtime;
+- relatorios de manutencao interna.
 
 ## Relatorios de Manutencao (Ocultos no Git)
 
-Para facilitar manutencao interna sem expor arquivos operacionais no repositorio, os relatorios de manutencao estao ocultos pelo `.gitignore`.
+Para manter a manutencao interna organizada sem expor dados operacionais no repositorio, os relatorios de manutencao sao ignorados pelo Git.
 
 Padroes ignorados:
 
@@ -145,14 +148,14 @@ Recomendacao de uso:
 
 1. Salvar relatorios tecnicos internos em uma das pastas acima.
 2. Nao versionar relatorios com dados operacionais sensiveis.
-3. Versionar apenas codigo e documentacao funcional (como este README).
+3. Versionar apenas codigo e documentacao funcional.
 
 ## Manutencao (Guia Rapido)
 
 ### Onde ajustar regras de negocio
 
 - Backend/API: `app.py`
-- Fluxo de UI e salvamento automatico: `static/script.js`
+- Fluxo de UI e autosave: `static/script.js`
 - Tema/layout responsivo: `static/style.css`
 - Estrutura da tela: `templates/index.html`
 
@@ -166,7 +169,7 @@ Recomendacao de uso:
    - finalizar tabela;
    - verificar lista de finalizadas.
 4. Revisar se nenhum arquivo sensivel entrou no commit.
-5. Abrir PR com descricao dos cenarios testados.
+5. Abrir PR com cenarios testados.
 
 ### Checklist antes de commit
 
@@ -176,19 +179,11 @@ Recomendacao de uso:
 - [ ] Finalizacao move para lista de finalizadas
 - [ ] Sem arquivos sensiveis no `git status`
 
-## Possiveis Melhorias Futuras
-
-- Migrar de SQLite para PostgreSQL em ambiente multi-instancia
-- Autenticacao de usuarios
-- Auditoria por usuario/turno
-- Testes automatizados (API e frontend)
-- Exportacao de indicadores em dashboard
-
 ## Suporte
 
 Se houver comportamento inesperado:
 
-1. Validar se todos os usuarios estao no mesmo servidor;
-2. Verificar logs de erro do backend;
-3. Confirmar permissao de escrita no diretorio do banco;
-4. Revisar mudancas recentes em `app.py` e `static/script.js`.
+1. validar se todos os usuarios estao no mesmo servidor;
+2. verificar logs do backend;
+3. confirmar permissao de escrita no diretorio do banco;
+4. revisar mudancas recentes em `app.py` e `static/script.js`.

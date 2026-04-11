@@ -104,6 +104,15 @@
         <span>👥 <strong>Tabelas compartilhadas</strong> - Todos os usuários veem as mesmas tabelas</span>
         <span id="indicadorSincronizacao" class="status">Sincronizando...</span>
     </div>
+    
+    <!-- INFORMAÇÃO SOBRE PERSISTÊNCIA -->
+    <div class="info-persistencia" style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+        <p style="margin: 0; font-size: 0.95em;">
+            <strong>💾 Salvamento Automático:</strong> Seus dados são salvos automaticamente no navegador enquanto você preenche. 
+            Mesmo que a página seja recarregada, os dados preenchidos permanecem disponíveis. 
+            Use o botão "Salvar Início" quando quiser compartilhar a operação com outros usuários.
+        </p>
+    </div>
 
     <!-- ASSUNÇÃO DE TABELA -->
     <div class="card" id="cardAssuncao">
@@ -184,11 +193,14 @@
         </div>
     </div>
 
-    <!-- BOTÃO DE SALVAR - APARECERÁ APÓS PREENCHIMENTO -->
+    <!-- BOTÃO DE SALVAR INÍCIO - APARECERÁ APÓS PREENCHIMENTO -->
     <div class="botoes-controle" id="divSalvar" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; display: none;">
         <button type="button" onclick="salvarTabelaInicio()" class="btn-salvar" id="btnSalvarGlobal">
-            💾 Salvar Tabela
+            💾 Salvar Início
         </button>
+        <p class="info-salvar" style="font-size: 0.9em; color: #666; margin: 10px 0 0 0;">
+            ℹ️ Os dados preenchidos são salvos automaticamente no seu navegador. Use este botão para compartilhar o início da operação com outros usuários.
+        </p>
         <button type="button" onclick="finalizarTurno()" class="btn-finalizar-turno" id="btnFinalizarTurno" style="display: none;">
             ⏰ Finalizar Turno
         </button>
