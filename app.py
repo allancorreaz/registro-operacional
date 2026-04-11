@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from werkzeug.exceptions import HTTPException
 from datetime import datetime, timedelta
 import os
 import uuid
@@ -106,6 +107,26 @@ def index():
         equipamentos=["VV1", "VV2", "VV3", "ECV"],
         produtos=["Minério", "Carvão"]
     )
+
+
+@app.route("/api/health", methods=["GET"])
+def healthcheck():
+    """Endpoint simples para validar se a função subiu sem erro."""
+    return jsonify({"ok": True, "runtime": "vercel" if os.environ.get("VERCEL") else "local"})
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(err):
+    """Evita resposta opaca da Vercel e retorna erro rastreavel."""
+    if isinstance(err, HTTPException):
+        return err
+
+    print(f"[ERROR] Excecao nao tratada: {repr(err)}")
+    return jsonify({
+        "success": False,
+        "error": "Erro interno no servidor",
+        "details": str(err),
+    }), 500
 
 # ===== APIs PARA TABELAS COMPARTILHADAS =====
 
