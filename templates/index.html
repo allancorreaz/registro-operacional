@@ -4,15 +4,25 @@
     <meta charset="UTF-8">
     <title>Taxa Efetiva - Operação Portuária</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚆 Registro Operacional Virador de Vagões <span id="titulo-turno"></span></h1>
+    <div class="hero">
+        <div class="hero-topline">OPERACAO PORTUARIA - USO INTERNO</div>
+        <h1>Registro Operacional Virador de Vagoes <span id="titulo-turno"></span></h1>
+        <p class="hero-subtitle">Painel compartilhado para registrar, acompanhar e finalizar tabelas em tempo real.</p>
+    </div>
+
     <div id="turno-info" class="turno-info">
-        <span id="turno-atual">Carregando turno...</span> | <span id="relogio">00:00:00</span>
+        <span id="turno-atual">Carregando turno...</span>
+        <span class="turno-separador">|</span>
+        <span id="relogio">00:00:00</span>
     </div>
     
     <!-- SELEÇÃO DE TURNO INICIAL -->
@@ -58,7 +68,7 @@
         <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
         <button onclick="limparFormulario()" class="btn-limpar">🗑️ Limpar Tudo</button>
         <button id="btnAtualizarTabelas" onclick="atualizarListaTabelas()" class="btn-atualizar">🔄 Atualizar Lista</button>
-        <button id="btnFinalizarTurno" onclick="iniciarFinalizacaoTurno()" class="btn-finalizar-turno" style="display: none;">🏁 Finalizar Turno</button>
+        <button id="btnFinalizarTurnoHeader" onclick="iniciarFinalizacaoTurno()" class="btn-finalizar-turno" style="display: none;">🏁 Finalizar Turno</button>
         <button id="btnAlterarTurno" onclick="mostrarSelecaoTurno()" class="btn-alterar-turno">🔄 Alterar Turno</button>
     </div>
 
@@ -119,13 +129,13 @@
                 <h3>👤 Dados do Novo Operador (Você)</h3>
                 
                 <label>Nome do Operador <span class="obrigatorio">*</span></label>
-                <input type="text" id="operador_assumiu" placeholder="Ex: João Silva" required>
+                <input type="text" id="operador_assumiu_assuncao" placeholder="Ex: João Silva" required>
                 
                 <label>Matrícula <span class="obrigatorio">*</span></label>
-                <input type="text" id="matricula_assumiu" placeholder="Ex: MIP0048" required>
+                <input type="text" id="matricula_assumiu_assuncao" placeholder="Ex: MIP0048" required>
                 
                 <label>Turno Atual <span class="obrigatorio">*</span></label>
-                <select id="turno_assumiu" required>
+                <select id="turno_assumiu_assuncao" required>
                     <option value="">Selecione</option>
                     {% for t in turnos %}
                     <option>{{ t }}</option>
@@ -138,7 +148,7 @@
                 <h3>📊 Situação da Tabela Assumida</h3>
                 
                 <label>Vagões que ainda faltam descarregar <span class="obrigatorio">*</span></label>
-                <input type="number" id="vagoes_faltavam_assumir" min="0" placeholder="Ex: 15" required>
+                <input type="number" id="vagoes_faltavam_assumir_assuncao" min="0" placeholder="Ex: 15" required>
                 
                 <label>Você recebeu a tabela em falha?</label>
                 <select id="recebeu_em_falha_assuncao" onchange="controleFalhaRecebida()">
@@ -148,27 +158,27 @@
                 
                 <div id="falhaRecebidaExtra" style="display:none;">
                     <label>Descrição da falha recebida</label>
-                    <textarea id="falha_recebida_desc" rows="2" placeholder="Descreva a falha que você assumiu..."></textarea>
+                    <textarea id="falha_recebida_desc_assuncao" rows="2" placeholder="Descreva a falha que você assumiu..."></textarea>
                     
                     <label>Hora que iniciou a falha (turno anterior)</label>
-                    <input type="time" id="hora_inicio_falha_recebida">
+                    <input type="time" id="hora_inicio_falha_recebida_assuncao">
                     
                     <label>Tempo já parado quando assumiu</label>
                     <div class="tempo-container">
-                        <input type="number" id="tempo_parado_h" min="0" placeholder="Horas">
-                        <input type="number" id="tempo_parado_m" min="0" max="59" placeholder="Minutos">
+                        <input type="number" id="tempo_parado_h_assuncao" min="0" placeholder="Horas">
+                        <input type="number" id="tempo_parado_m_assuncao" min="0" max="59" placeholder="Minutos">
                     </div>
                     
                     <label>Tipo de atendimento em andamento</label>
                     <div class="checkbox-group">
-                        <label><input type="checkbox" id="falha_recebida_mecanica"> Mecânica</label>
-                        <label><input type="checkbox" id="falha_recebida_eletrica"> Elétrica</label>
-                        <label><input type="checkbox" id="falha_recebida_operacional"> Operacional</label>
-                        <label><input type="checkbox" id="falha_recebida_outro"> Outro</label>
+                        <label><input type="checkbox" id="falha_recebida_mecanica_assuncao"> Mecânica</label>
+                        <label><input type="checkbox" id="falha_recebida_eletrica_assuncao"> Elétrica</label>
+                        <label><input type="checkbox" id="falha_recebida_operacional_assuncao"> Operacional</label>
+                        <label><input type="checkbox" id="falha_recebida_outro_assuncao"> Outro</label>
                     </div>
                     
                     <label>Ação que estava sendo tomada</label>
-                    <textarea id="acao_falha_recebida" rows="2" placeholder="Descreva a ação em andamento..."></textarea>
+                    <textarea id="acao_falha_recebida_assuncao" rows="2" placeholder="Descreva a ação em andamento..."></textarea>
                 </div>
             </div>
         </div>

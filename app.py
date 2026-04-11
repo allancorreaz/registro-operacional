@@ -10,14 +10,15 @@ import json
 
 app = Flask(__name__)
 
-REPORT_DIR = "reports"
-DATABASE = "tabelas.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPORT_DIR = os.path.join(BASE_DIR, "reports")
+DATABASE = os.path.join(BASE_DIR, "tabelas.db")
 os.makedirs(REPORT_DIR, exist_ok=True)
 
 # ===== BANCO DE DADOS =====
 def get_db():
     """Conecta ao banco de dados SQLite"""
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect(DATABASE, timeout=30)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -25,6 +26,8 @@ def init_db():
     """Inicializa o banco de dados com as tabelas necessárias"""
     conn = get_db()
     cursor = conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
     
     # Tabela para registros em andamento (iniciados)
     cursor.execute('''
@@ -94,6 +97,11 @@ def listar_tabelas_andamento():
     
     tabelas = []
     for row in rows:
+        try:
+            dados_row = json.loads(row["dados"]) if row["dados"] else {}
+        except json.JSONDecodeError:
+            dados_row = {}
+
         tabela = {
             "id": row["id"],
             "prefixo": row["prefixo"],
@@ -103,7 +111,7 @@ def listar_tabelas_andamento():
             "operador": row["operador"],
             "inicio": row["inicio"],
             "salvoEm": row["salvo_em"],
-            "dados": json.loads(row["dados"]) if row["dados"] else {}
+            "dados": dados_row
         }
         tabelas.append(tabela)
     
@@ -122,6 +130,9 @@ def salvar_tabela_andamento():
     inicio = data.get("inicio", "")
     dados = json.dumps(data.get("dados", {}))
     salvo_em = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+    if not prefixo or not data_tabela or not turno:
+        return jsonify({"success": False, "error": "Prefixo, data e turno são obrigatórios."}), 400
     
     conn = get_db()
     cursor = conn.cursor()
@@ -176,6 +187,11 @@ def obter_tabela_andamento(tabela_id):
     
     if not row:
         return jsonify({"error": "Tabela não encontrada"}), 404
+
+    try:
+        dados_row = json.loads(row["dados"]) if row["dados"] else {}
+    except json.JSONDecodeError:
+        dados_row = {}
     
     tabela = {
         "id": row["id"],
@@ -186,7 +202,7 @@ def obter_tabela_andamento(tabela_id):
         "operador": row["operador"],
         "inicio": row["inicio"],
         "salvoEm": row["salvo_em"],
-        "dados": json.loads(row["dados"]) if row["dados"] else {}
+        "dados": dados_row
     }
     
     return jsonify(tabela)

@@ -52,6 +52,7 @@ let tabelasFinalizadasCache = [];
 let atualizacaoAutomaticaInterval = null;
 let tabelaCarregadaInfo = null;
 let tabelaSalva = false; // Flag para controlar se tabela foi salva
+let autoSaveTimeout = null;
 
 /* ======================================
    FUNÇÕES DE FORMATAÇÃO
@@ -220,7 +221,7 @@ function atualizarTurnoInfo() {
     }
     
     // Mostrar/ocultar botão finalizar turno baseado no turno selecionado
-    const btnFinalizar = document.getElementById('btnFinalizarTurno');
+    const btnFinalizar = document.getElementById('btnFinalizarTurnoHeader');
     if (btnFinalizar && turnoSelecionado) {
         const deveMostrar = isProximoFimTurnoSelecionado(turnoSelecionado);
         btnFinalizar.style.display = deveMostrar ? 'inline-block' : 'none';
@@ -957,7 +958,7 @@ function controleFalhaRecebida() {
             const novoImpacto = document.querySelector(".impacto-row:last-child");
             if (novoImpacto) {
                 const descField = novoImpacto.querySelector(".impacto-desc");
-                const falhaDesc = document.getElementById("falha_recebida_desc").value;
+                const falhaDesc = document.getElementById("falha_recebida_desc_assuncao").value;
                 if (descField) {
                     descField.value = falhaDesc ? `Iniciou o turno com falha: ${falhaDesc}` : "Iniciou o turno com falha";
                 }
@@ -965,7 +966,7 @@ function controleFalhaRecebida() {
         } else if (impactoExistente) {
             // Atualizar descrição existente
             const descField = impactoExistente.querySelector(".impacto-desc");
-            const falhaDesc = document.getElementById("falha_recebida_desc").value;
+            const falhaDesc = document.getElementById("falha_recebida_desc_assuncao").value;
             if (descField) {
                 descField.value = falhaDesc ? `Iniciou o turno com falha: ${falhaDesc}` : "Iniciou o turno com falha";
             }
@@ -1080,10 +1081,10 @@ function verificarMostrarBotaoSalvar() {
         
     } else if (assumindo === "SIM") {
         // Para assunção, verificar campos obrigatórios de assunção
-        const operadorAssumiu = document.getElementById("operador_assumiu").value;
-        const matriculaAssumiu = document.getElementById("matricula_assumiu").value;
-        const turnoAssumiu = document.getElementById("turno_assumiu").value;
-        const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir").value;
+        const operadorAssumiu = document.getElementById("operador_assumiu_assuncao").value;
+        const matriculaAssumiu = document.getElementById("matricula_assumiu_assuncao").value;
+        const turnoAssumiu = document.getElementById("turno_assumiu_assuncao").value;
+        const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir_assuncao").value;
         
         if (operadorAssumiu && matriculaAssumiu && turnoAssumiu && vagoesFaltavam) {
             divSalvar.style.display = "block";
@@ -1414,18 +1415,17 @@ async function salvarTabelaInicio() {
     
     // Se está assumindo tabela, validar campos obrigatórios
     if (assumindo === "SIM") {
-        const operadorAssumiu = document.getElementById("operador_assumiu").value;
-        const matriculaAssumiu = document.getElementById("matricula_assumiu").value;
-        const turnoAssumiu = document.getElementById("turno_assumiu").value;
-        const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir").value;
+        const operadorAssumiu = document.getElementById("operador_assumiu_assuncao").value;
+        const matriculaAssumiu = document.getElementById("matricula_assumiu_assuncao").value;
+        const turnoAssumiu = document.getElementById("turno_assumiu_assuncao").value;
+        const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir_assuncao").value;
         
         if (!operadorAssumiu || !matriculaAssumiu || !turnoAssumiu || !vagoesFaltavam) {
             alert("⚠️ Preencha todos os dados obrigatórios da assunção!");
             return;
         }
         
-        // Preencher campos de recebimento automaticamente
-        document.getElementById("recebeu_de_outro_turno").value = "true";
+        // Preencher referência de recebimento automaticamente
         document.getElementById("hora_assumiu_tabela").value = new Date().toTimeString().slice(0, 5);
     }
     
@@ -1608,9 +1608,10 @@ function carregarTabelaAndamento() {
                 if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
                 if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
                 if (lastRow.querySelector(".impacto-atend-mecanica-prev")) lastRow.querySelector(".impacto-atend-mecanica-prev").checked = imp.atend_mecanica_prev;
-                if (lastRow.querySelector(".impacto-atend-eletrica")) lastRow.querySelector(".impacto-atend-eletrica").checked = imp.atend_eletrica;
+                if (lastRow.querySelector(".impacto-atend-mecanica-corr")) lastRow.querySelector(".impacto-atend-mecanica-corr").checked = imp.atend_mecanica_corr;
+                if (lastRow.querySelector(".impacto-atend-eletrica-prev")) lastRow.querySelector(".impacto-atend-eletrica-prev").checked = imp.atend_eletrica_prev;
+                if (lastRow.querySelector(".impacto-atend-eletrica-corr")) lastRow.querySelector(".impacto-atend-eletrica-corr").checked = imp.atend_eletrica_corr;
                 if (lastRow.querySelector(".impacto-atend-operacional")) lastRow.querySelector(".impacto-atend-operacional").checked = imp.atend_operacional;
-                if (lastRow.querySelector(".impacto-atend-outro")) lastRow.querySelector(".impacto-atend-outro").checked = imp.atend_outro;
                 if (lastRow.querySelector(".impacto-acao")) lastRow.querySelector(".impacto-acao").value = imp.acao;
             }
         });
@@ -1653,7 +1654,6 @@ function carregarTabelaAndamento() {
                 if (lastRow.querySelector(".fluxo-mecanica-preventiva")) lastRow.querySelector(".fluxo-mecanica-preventiva").checked = fluxo.mecanica_preventiva;
                 if (lastRow.querySelector(".fluxo-eletrica-corretiva")) lastRow.querySelector(".fluxo-eletrica-corretiva").checked = fluxo.eletrica_corretiva;
                 if (lastRow.querySelector(".fluxo-eletrica-preventiva")) lastRow.querySelector(".fluxo-eletrica-preventiva").checked = fluxo.eletrica_preventiva;
-                if (lastRow.querySelector(".fluxo-eletrica")) lastRow.querySelector(".fluxo-eletrica").checked = fluxo.eletrica;
                 if (lastRow.querySelector(".fluxo-operacao")) lastRow.querySelector(".fluxo-operacao").checked = fluxo.operacao;
                 if (lastRow.querySelector(".fluxo-motivo")) lastRow.querySelector(".fluxo-motivo").value = fluxo.motivo;
             }
@@ -1830,6 +1830,41 @@ async function excluirTabelaFinalizada(tabelaId) {
 function salvarDadosFormulario() {
     const dados = coletarDadosFormulario();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+    agendarAutoSaveServidor();
+}
+
+function agendarAutoSaveServidor() {
+    if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+    }
+
+    autoSaveTimeout = setTimeout(async () => {
+        const prefixo = document.getElementById("prefixo")?.value?.trim();
+        const data = document.getElementById("data")?.value;
+        const turno = document.getElementById("turno")?.value;
+        const inicio = document.getElementById("inicio")?.value;
+
+        // Só auto-salva quando já existe identificação mínima da tabela.
+        if (!prefixo || !data || !turno || !inicio) {
+            return;
+        }
+
+        const dadosTabela = {
+            prefixo: prefixo,
+            data: data,
+            turno: turno,
+            produto: document.getElementById("produto")?.value || "",
+            operador: document.getElementById("operador")?.value || "",
+            inicio: inicio,
+            dados: coletarDadosFormulario()
+        };
+
+        const resultado = await salvarTabelaServidor(dadosTabela);
+        if (resultado && resultado.success) {
+            tabelaSalva = true;
+            atualizarIndicadorSincronizacao();
+        }
+    }, 1200);
 }
 
 /**
@@ -1871,9 +1906,10 @@ function restaurarDadosFormulario() {
                 if (lastRow.querySelector(".impacto-hora-inicio")) lastRow.querySelector(".impacto-hora-inicio").value = imp.hora_inicio;
                 if (lastRow.querySelector(".impacto-hora-fim")) lastRow.querySelector(".impacto-hora-fim").value = imp.hora_fim;
                 if (lastRow.querySelector(".impacto-atend-mecanica-prev")) lastRow.querySelector(".impacto-atend-mecanica-prev").checked = imp.atend_mecanica_prev;
-                if (lastRow.querySelector(".impacto-atend-eletrica")) lastRow.querySelector(".impacto-atend-eletrica").checked = imp.atend_eletrica;
+                if (lastRow.querySelector(".impacto-atend-mecanica-corr")) lastRow.querySelector(".impacto-atend-mecanica-corr").checked = imp.atend_mecanica_corr;
+                if (lastRow.querySelector(".impacto-atend-eletrica-prev")) lastRow.querySelector(".impacto-atend-eletrica-prev").checked = imp.atend_eletrica_prev;
+                if (lastRow.querySelector(".impacto-atend-eletrica-corr")) lastRow.querySelector(".impacto-atend-eletrica-corr").checked = imp.atend_eletrica_corr;
                 if (lastRow.querySelector(".impacto-atend-operacional")) lastRow.querySelector(".impacto-atend-operacional").checked = imp.atend_operacional;
-                if (lastRow.querySelector(".impacto-atend-outro")) lastRow.querySelector(".impacto-atend-outro").checked = imp.atend_outro;
                 if (lastRow.querySelector(".impacto-acao")) lastRow.querySelector(".impacto-acao").value = imp.acao;
             }
         });
@@ -1916,7 +1952,6 @@ function restaurarDadosFormulario() {
                 if (lastRow.querySelector(".fluxo-mecanica-preventiva")) lastRow.querySelector(".fluxo-mecanica-preventiva").checked = fluxo.mecanica_preventiva;
                 if (lastRow.querySelector(".fluxo-eletrica-corretiva")) lastRow.querySelector(".fluxo-eletrica-corretiva").checked = fluxo.eletrica_corretiva;
                 if (lastRow.querySelector(".fluxo-eletrica-preventiva")) lastRow.querySelector(".fluxo-eletrica-preventiva").checked = fluxo.eletrica_preventiva;
-                if (lastRow.querySelector(".fluxo-eletrica")) lastRow.querySelector(".fluxo-eletrica").checked = fluxo.eletrica;
                 if (lastRow.querySelector(".fluxo-operacao")) lastRow.querySelector(".fluxo-operacao").checked = fluxo.operacao;
                 if (lastRow.querySelector(".fluxo-motivo")) lastRow.querySelector(".fluxo-motivo").value = fluxo.motivo;
             }
@@ -2152,10 +2187,11 @@ function calcular() {
         impactosHoraFim.push(row.querySelector(".impacto-hora-fim")?.value || "");
         
         const atendimentos = [];
-        if (row.querySelector(".impacto-atend-mecanica")?.checked) atendimentos.push("MECANICA");
-        if (row.querySelector(".impacto-atend-eletrica")?.checked) atendimentos.push("ELETRICA");
+        if (row.querySelector(".impacto-atend-mecanica-prev")?.checked) atendimentos.push("MECANICA_PREVENTIVA");
+        if (row.querySelector(".impacto-atend-mecanica-corr")?.checked) atendimentos.push("MECANICA_CORRETIVA");
+        if (row.querySelector(".impacto-atend-eletrica-prev")?.checked) atendimentos.push("ELETRICA_PREVENTIVA");
+        if (row.querySelector(".impacto-atend-eletrica-corr")?.checked) atendimentos.push("ELETRICA_CORRETIVA");
         if (row.querySelector(".impacto-atend-operacional")?.checked) atendimentos.push("OPERACIONAL");
-        if (row.querySelector(".impacto-atend-outro")?.checked) atendimentos.push("OUTRO");
         impactosTipoAtendimento.push(atendimentos.join(" / "));
         
         impactosAcao.push(capitalizarFrases(row.querySelector(".impacto-acao")?.value || ""));
@@ -2166,8 +2202,10 @@ function calcular() {
     document.querySelectorAll(".fluxo-row").forEach(row => {
         const solicitantes = [];
         if (row.querySelector(".fluxo-cco")?.checked) solicitantes.push("CCO");
-        if (row.querySelector(".fluxo-mecanica")?.checked) solicitantes.push("MECANICA");
-        if (row.querySelector(".fluxo-eletrica")?.checked) solicitantes.push("ELETRICA");
+        if (row.querySelector(".fluxo-mecanica-corretiva")?.checked) solicitantes.push("MECANICA_CORRETIVA");
+        if (row.querySelector(".fluxo-mecanica-preventiva")?.checked) solicitantes.push("MECANICA_PREVENTIVA");
+        if (row.querySelector(".fluxo-eletrica-corretiva")?.checked) solicitantes.push("ELETRICA_CORRETIVA");
+        if (row.querySelector(".fluxo-eletrica-preventiva")?.checked) solicitantes.push("ELETRICA_PREVENTIVA");
         if (row.querySelector(".fluxo-operacao")?.checked) solicitantes.push("OPERACAO");
         
         mudancasFluxo.push({
@@ -2923,28 +2961,71 @@ function validarPassagemTurno() {
  */
 async function salvarTabelaFinalizada() {
     try {
-        const dados = coletarDadosFormulario();
-        
-        // Enviar para servidor
-        const response = await fetch('/api/tabelas/finalizar', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dados)
+        const tabelaId = document.getElementById("seletorTabelasAndamento")?.value;
+        const dadosFormulario = coletarDadosFormulario();
+        const dadosTabela = {
+            prefixo: document.getElementById("prefixo")?.value || "",
+            data: document.getElementById("data")?.value || "",
+            turno: document.getElementById("turno")?.value || "",
+            produto: document.getElementById("produto")?.value || "",
+            operador: document.getElementById("operador")?.value || "",
+            inicio: document.getElementById("inicio")?.value || "",
+            dados: dadosFormulario
+        };
+
+        // Sem término, apenas manter em andamento para compartilhar com outros usuários.
+        const termino = document.getElementById("termino")?.value || "";
+        if (!termino) {
+            const resultadoAndamento = await salvarTabelaServidor(dadosTabela);
+            return !!resultadoAndamento.success;
+        }
+
+        // Com término, finalizar no banco de dados.
+        if (!tabelaId) {
+            const resultadoAndamento = await salvarTabelaServidor(dadosTabela);
+            if (!resultadoAndamento.success) {
+                return false;
+            }
+            document.getElementById("seletorTabelasAndamento").value = resultadoAndamento.id;
+        }
+
+        const responseCalculo = await fetch("/calcular", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                ...dadosTabela,
+                termino: termino,
+                peso: parseFloat(document.getElementById("peso")?.value || 0),
+                impactos: (dadosFormulario.impactos || []).map(imp => ((parseInt(imp.h || 0) * 60) + parseInt(imp.m || 0)))
+            })
         });
-        
-        if (response.ok) {
-            console.log('✅ Tabela salva no banco de dados');
-            return true;
-        } else {
-            console.error('❌ Erro ao salvar tabela');
+
+        if (!responseCalculo.ok) {
             return false;
         }
+
+        const calculo = await responseCalculo.json();
+        const resultadoFinalizar = await finalizarTabelaServidor(
+            document.getElementById("seletorTabelasAndamento").value,
+            {
+                termino: termino,
+                peso: parseFloat(document.getElementById("peso")?.value || 0),
+                taxa_efetiva: calculo.taxa_efetiva,
+                relatorio: calculo.relatorio,
+                pdf_path: calculo.pdf,
+                dados: dadosFormulario
+            }
+        );
+
+        if (resultadoFinalizar.success) {
+            await atualizarListaTabelas();
+            return true;
+        }
+
+        return false;
     } catch (error) {
         console.error('Erro ao salvar tabela:', error);
-        // Mesmo com erro, permitir continuar (salvar localmente)
-        return true;
+        return false;
     }
 }
 
@@ -3079,7 +3160,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
     
     // Listeners para mostrar/esconder botão salvar
-    const camposSalvar = ["prefixo", "inicio", "produto", "equipamento", "operador_assumiu", "matricula_assumiu", "turno_assumiu", "vagoes_faltavam_assumir"];
+    const camposSalvar = ["prefixo", "inicio", "produto", "equipamento", "operador_assumiu_assuncao", "matricula_assumiu_assuncao", "turno_assumiu_assuncao", "vagoes_faltavam_assumir_assuncao"];
     camposSalvar.forEach(id => {
         const campo = document.getElementById(id);
         if (campo) {

@@ -1,0 +1,64 @@
+# =============================
+# Python
+# =============================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =============================
+# Environment and secrets
+# =============================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# =============================
+# Local database and runtime data
+# =============================
+*.db
+*.sqlite
+*.sqlite3
+
+# SQLite temporary/lock files
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Generated reports
+reports/*.pdf
+reports/*.txt
+
+# Maintenance reports (internal operational notes)
+reports/manutencao/
+reports/maintenance/
+maintenance_reports/
+**/*manutencao*.pdf
+**/*manutencao*.txt
+**/*maintenance*.pdf
+**/*maintenance*.txt
+
+# =============================
+# OS / Editor
+# =============================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =============================
+# Project docs (keep tracked)
+# =============================
+!README.md
