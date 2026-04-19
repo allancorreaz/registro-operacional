@@ -54,6 +54,47 @@ let tabelaCarregadaInfo = null;
 let tabelaSalva = false; // Flag para controlar se tabela foi salva
 let autoSaveTimeout = null;
 
+const EMOJI_REGEX = /\p{Extended_Pictographic}/gu;
+
+function removerEmojis(texto) {
+    if (typeof texto !== "string") {
+        return texto;
+    }
+
+    return texto
+        .replace(EMOJI_REGEX, "")
+        .replace(/\uFE0F/g, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+}
+
+function sanitizarTextoUI() {
+    const root = document.body;
+    if (!root) return;
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let current;
+    while ((current = walker.nextNode())) {
+        const limpo = removerEmojis(current.nodeValue || "");
+        if (limpo !== current.nodeValue) {
+            current.nodeValue = limpo;
+        }
+    }
+}
+
+function instalarSanitizadorMensagens() {
+    const nativeAlert = window.alert.bind(window);
+    const nativeConfirm = window.confirm.bind(window);
+
+    window.alert = function(message) {
+        nativeAlert(removerEmojis(String(message ?? "")));
+    };
+
+    window.confirm = function(message) {
+        return nativeConfirm(removerEmojis(String(message ?? "")));
+    };
+}
+
 /* ======================================
    FUNÇÕES DE FORMATAÇÃO
 ====================================== */
@@ -120,7 +161,7 @@ function getHoraBrasilia() {
     }
     
     // Fallback: use device local time if parsing fails
-    console.warn('⚠️ Falha ao converter para horário de Brasília, usando horário local do dispositivo:', brasiliaDateString);
+    console.warn('Falha ao converter para horário de Brasília, usando horário local do dispositivo:', brasiliaDateString);
     return now;
 }
 
@@ -362,7 +403,7 @@ function iniciarSistemaAposSelecaoTurno() {
     atualizarSeletorTabelas();
     atualizarListaFinalizadas();
     
-    console.log("✅ Sistema iniciado após seleção de turno");
+    console.log("Sistema iniciado após seleção de turno");
 }
 
 /**
@@ -385,8 +426,8 @@ async function atualizarSeletorTabelasAssuncao() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
-        option.textContent = `${icone} ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
+        const produtoLabel = tabela.produto === "Carvão" ? "CARVAO" : "MINERIO";
+        option.textContent = `${produtoLabel} | ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
 }
@@ -782,7 +823,7 @@ function controleRecebeuEmFalha() {
 function finalizarTurno() {
     // Verificar se tabela foi salva
     if (!tabelaSalva) {
-        alert("⚠️ Você deve salvar a tabela antes de finalizar o turno!\n\nClique em '💾 Salvar Tabela' primeiro.");
+        alert("Você deve salvar a tabela antes de finalizar o turno.\n\nClique em 'Salvar Tabela' primeiro.");
         return;
     }
     
@@ -795,7 +836,7 @@ function finalizarTurno() {
     
     // Alterar o botão para confirmar passagem
     const btnFinalizarTurno = document.getElementById("btnFinalizarTurno");
-    btnFinalizarTurno.textContent = "✅ Confirmar Passagem de Turno";
+    btnFinalizarTurno.textContent = "Confirmar Passagem de Turno";
     btnFinalizarTurno.onclick = confirmarPassagemTurno;
 }
 
@@ -813,7 +854,7 @@ async function confirmarPassagemTurno() {
     const assumiuEmFalha = document.getElementById("assumiu_em_falha").value;
     
     if (!vagoesMeuTurno || !turnoAssumiu || !operadorAssumiu || !matriculaAssumiu || !horaRendicao || !vagoesProximoTurno || !assumiuEmFalha) {
-        alert("⚠️ Preencha todos os campos obrigatórios da passagem de turno!");
+        alert("Preencha todos os campos obrigatórios da passagem de turno.");
         return;
     }
     
@@ -821,7 +862,7 @@ async function confirmarPassagemTurno() {
         const descricaoFalha = document.getElementById("descricao_falha_assumida").value;
         const horaFalha = document.getElementById("hora_falha_passagem").value;
         if (!descricaoFalha || !horaFalha) {
-            alert("⚠️ Preencha os detalhes da falha passada!");
+            alert("Preencha os detalhes da falha passada.");
             return;
         }
     }
@@ -857,13 +898,13 @@ async function confirmarPassagemTurno() {
     const btnConfirmar = document.getElementById("btnFinalizarTurno");
     const textoOriginal = btnConfirmar.textContent;
     btnConfirmar.disabled = true;
-    btnConfirmar.textContent = '⏳ Salvando Passagem...';
+    btnConfirmar.textContent = 'Salvando Passagem...';
     
     try {
         const resultado = await salvarTabelaServidor(dadosTabela);
         
         if (resultado.success) {
-            alert(`✅ Passagem de turno registrada!\n\nA tabela "${dadosTabela.prefixo}" foi passada para o ${turnoAssumiu}.\n\nO próximo turno poderá assumir e finalizar esta tabela.`);
+            alert(`Passagem de turno registrada.\n\nA tabela "${dadosTabela.prefixo}" foi passada para o ${turnoAssumiu}.\n\nO próximo turno poderá assumir e finalizar esta tabela.`);
             
             // Resetar botão
             btnConfirmar.disabled = false;
@@ -873,12 +914,12 @@ async function confirmarPassagemTurno() {
             // Atualizar lista
             await atualizarSeletorTabelas();
         } else {
-            alert(`❌ Erro ao salvar passagem: ${resultado.error || 'Erro desconhecido'}`);
+            alert(`Erro ao salvar passagem: ${resultado.error || 'Erro desconhecido'}`);
             btnConfirmar.disabled = false;
             btnConfirmar.textContent = textoOriginal;
         }
     } catch (error) {
-        alert(`❌ Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
+        alert(`Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
         btnConfirmar.disabled = false;
         btnConfirmar.textContent = textoOriginal;
     }
@@ -1005,14 +1046,14 @@ async function carregarTabelaAssuncao() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("⚠️ Tabela não encontrada!");
+        alert("Tabela não encontrada.");
         return;
     }
     
     // Mostrar dados da tabela selecionada
     const infoTabela = `
         <div class="info-tabela-assuncao">
-            <h4>📋 Tabela Selecionada: ${tabela.prefixo}</h4>
+            <h4>Tabela Selecionada: ${tabela.prefixo}</h4>
             <p><strong>Data:</strong> ${tabela.data}</p>
             <p><strong>Turno Anterior:</strong> ${tabela.turno}</p>
             <p><strong>Operador Anterior:</strong> ${tabela.operador}</p>
@@ -1066,7 +1107,7 @@ async function carregarTabelaAssuncao() {
     // Verificar se deve mostrar botão salvar
     verificarMostrarBotaoSalvar();
     
-    alert(`✅ Tabela "${tabela.prefixo}" carregada para assunção!\n\nAgora preencha seus dados pessoais obrigatórios e a situação atual da tabela.`);
+    alert(`Tabela "${tabela.prefixo}" carregada para assunção.\n\nAgora preencha seus dados pessoais obrigatórios e a situação atual da tabela.`);
 }
 
 /**
@@ -1078,13 +1119,8 @@ function verificarMostrarBotaoSalvar() {
     const btnFinalizarTurno = document.getElementById("btnFinalizarTurno");
     
     if (assumindo === "NAO" || !assumindo) {
-        // Para nova tabela, verificar campos básicos
-        const prefixo = document.getElementById("prefixo").value;
-        const inicio = document.getElementById("inicio").value;
-        const produto = document.getElementById("produto").value;
-        const equipamento = document.getElementById("equipamento").value;
-        
-        if (prefixo && inicio && produto && equipamento) {
+        // Para nova tabela, exigir dados iniciais completos antes de salvar início.
+        if (validarCamposIniciaisNovaTabela(false).valido) {
             divSalvar.style.display = "block";
             // Mostrar finalizar turno apenas se tabela já foi salva
             btnFinalizarTurno.style.display = tabelaSalva ? "inline-block" : "none";
@@ -1111,6 +1147,55 @@ function verificarMostrarBotaoSalvar() {
     }
 }
 
+function estaElementoVisivel(el) {
+    return !!(el && el.offsetParent !== null);
+}
+
+function valorCampo(id) {
+    const el = document.getElementById(id);
+    if (!el) return "";
+    return (el.value || "").trim();
+}
+
+function validarCamposIniciaisNovaTabela(mostrarMensagem = true) {
+    const campos = [
+        { id: "maquinista", nome: "Nome do Maquinista" },
+        { id: "loc1", nome: "Numeração da 1ª Locomotiva" },
+        { id: "horas_maquinista", nome: "Hora de contato com Maquinista" },
+        { id: "ponto_b", nome: "Passagem pelo Ponto B" },
+        { id: "tabela_posicionada", nome: "Tabela Posicionada" },
+        { id: "data", nome: "Data" },
+        { id: "turno", nome: "Turno" },
+        { id: "operador", nome: "Nome do Operador" },
+        { id: "matricula", nome: "Matrícula" },
+        { id: "prefixo", nome: "Prefixo / Trem" },
+        { id: "inicio", nome: "Início" }
+    ];
+
+    for (const campo of campos) {
+        if (!valorCampo(campo.id)) {
+            if (mostrarMensagem) {
+                alert(`Preencha o campo obrigatório: ${campo.nome}.`);
+                const el = document.getElementById(campo.id);
+                if (el) el.focus();
+            }
+            return { valido: false, campo: campo.id };
+        }
+    }
+
+    const sinalContainer = document.getElementById("sinalContainer");
+    if (estaElementoVisivel(sinalContainer) && !valorCampo("sinal")) {
+        if (mostrarMensagem) {
+            alert("Preencha o campo obrigatório: Passagem pelo Sinal.");
+            const el = document.getElementById("sinal");
+            if (el) el.focus();
+        }
+        return { valido: false, campo: "sinal" };
+    }
+
+    return { valido: true };
+}
+
 /**
  * Valida campos de recebimento antes de gerar resultado
  */
@@ -1134,7 +1219,7 @@ function validarCamposRecebimento() {
         if (!elemento || !elemento.value) {
             return { 
                 valido: false, 
-                mensagem: `⚠️ Campo obrigatório: ${campo.nome}\n\nComo você está finalizando uma tabela de outro turno, é necessário preencher todos os dados de como recebeu a tabela.`
+                mensagem: `Campo obrigatório: ${campo.nome}\n\nComo você está finalizando uma tabela de outro turno, é necessário preencher todos os dados de como recebeu a tabela.`
             };
         }
     }
@@ -1151,7 +1236,7 @@ function validarCamposRecebimento() {
             if (!elemento || !elemento.value) {
                 return { 
                     valido: false, 
-                    mensagem: `⚠️ Campo obrigatório: ${campo.nome}\n\nComo você recebeu a tabela em falha, é necessário informar os detalhes.`
+                    mensagem: `Campo obrigatório: ${campo.nome}\n\nComo você recebeu a tabela em falha, é necessário informar os detalhes.`
                 };
             }
         }
@@ -1269,7 +1354,7 @@ async function atualizarListaTabelas() {
     const btnAtualizar = document.getElementById("btnAtualizarTabelas");
     if (btnAtualizar) {
         btnAtualizar.disabled = true;
-        btnAtualizar.textContent = "🔄 Atualizando...";
+        btnAtualizar.textContent = "Atualizando...";
     }
     
     try {
@@ -1280,7 +1365,7 @@ async function atualizarListaTabelas() {
     } finally {
         if (btnAtualizar) {
             btnAtualizar.disabled = false;
-            btnAtualizar.textContent = "🔄 Atualizar Lista";
+            btnAtualizar.textContent = "Atualizar Lista";
         }
     }
 }
@@ -1414,17 +1499,12 @@ async function salvarTabelaInicio() {
     const turno = document.getElementById("turno").value;
     const produto = document.getElementById("produto").value;
     const operador = document.getElementById("operador").value;
-    
-    if (!prefixo) {
-        alert("⚠️ Preencha o Prefixo/Trem para salvar a tabela!");
-        document.getElementById("prefixo").focus();
-        return;
-    }
-    
-    if (!inicio) {
-        alert("⚠️ Preencha o horário de Início para salvar a tabela!");
-        document.getElementById("inicio").focus();
-        return;
+
+    if (assumindo === "NAO") {
+        const validacaoInicial = validarCamposIniciaisNovaTabela(true);
+        if (!validacaoInicial.valido) {
+            return;
+        }
     }
     
     // Se está assumindo tabela, validar campos obrigatórios
@@ -1435,7 +1515,7 @@ async function salvarTabelaInicio() {
         const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir_assuncao").value;
         
         if (!operadorAssumiu || !matriculaAssumiu || !turnoAssumiu || !vagoesFaltavam) {
-            alert("⚠️ Preencha todos os dados obrigatórios da assunção!");
+            alert("Preencha todos os dados obrigatórios da assunção.");
             return;
         }
         
@@ -1460,7 +1540,7 @@ async function salvarTabelaInicio() {
     const textoOriginal = btnSalvar ? btnSalvar.textContent : '';
     if (btnSalvar) {
         btnSalvar.disabled = true;
-        btnSalvar.textContent = '⏳ Salvando...';
+        btnSalvar.textContent = 'Salvando...';
     }
     
     try {
@@ -1470,9 +1550,9 @@ async function salvarTabelaInicio() {
             tabelaSalva = true; // Marcar que tabela foi salva
             
             if (resultado.atualizado) {
-                alert(`✅ Início da tabela "${prefixo}" atualizado no servidor!\n\n👥 Outros usuários podem ver esta tabela.\n\n💡 Os dados preenchidos continuam salvos localmente mesmo que você recarregue a página.`);
+                alert(`Início da tabela "${prefixo}" atualizado no servidor.\n\nOutros usuários podem ver esta tabela.\n\nOs dados preenchidos continuam salvos localmente mesmo que você recarregue a página.`);
             } else {
-                alert(`✅ Início da tabela "${prefixo}" salvo no servidor!\n\n👥 Outros usuários podem ver e finalizar esta tabela.\n\n💡 Quando quiser finalizar, selecione-a na lista "Tabelas em Andamento".\n\n🔄 Seus dados ficam salvos localmente e persistem após recarregar a página.`);
+                alert(`Início da tabela "${prefixo}" salvo no servidor.\n\nOutros usuários podem ver e finalizar esta tabela.\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".\n\nSeus dados ficam salvos localmente e persistem após recarregar a página.`);
             }
             
             await atualizarSeletorTabelas();
@@ -1483,10 +1563,10 @@ async function salvarTabelaInicio() {
                 mostrarInfoTabelaSelecionada(tabela);
             }
         } else {
-            alert(`❌ Erro ao salvar tabela: ${resultado.error || 'Erro desconhecido'}`);
+            alert(`Erro ao salvar tabela: ${resultado.error || 'Erro desconhecido'}`);
         }
     } catch (error) {
-        alert(`❌ Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
+        alert(`Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
     } finally {
         if (btnSalvar) {
             btnSalvar.disabled = false;
@@ -1514,8 +1594,8 @@ async function atualizarSeletorTabelas() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
-        option.textContent = `${icone} ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
+        const produtoLabel = tabela.produto === "Carvão" ? "CARVAO" : "MINERIO";
+        option.textContent = `${produtoLabel} | ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
     
@@ -1543,13 +1623,13 @@ function mostrarInfoTabelaSelecionada(tabela) {
     }
     
     info.innerHTML = `
-        <strong>📋 Tabela Carregada:</strong><br>
-        🚆 Prefixo: ${tabela.prefixo}<br>
-        📅 Data: ${dataFormatada}<br>
-        🕒 Turno: ${tabela.turno}<br>
-        ⏳ Início: ${tabela.inicio}<br>
-        👷 Operador: ${tabela.operador || '-'}<br>
-        <small>💾 Salvo em: ${tabela.salvoEm}</small>
+        <strong>Tabela Carregada:</strong><br>
+        Prefixo: ${tabela.prefixo}<br>
+        Data: ${dataFormatada}<br>
+        Turno: ${tabela.turno}<br>
+        Início: ${tabela.inicio}<br>
+        Operador: ${tabela.operador || '-'}<br>
+        <small>Salvo em: ${tabela.salvoEm}</small>
     `;
     info.style.display = "block";
 }
@@ -1570,7 +1650,7 @@ function carregarTabelaAndamento() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("⚠️ Tabela não encontrada!");
+        alert("Tabela não encontrada.");
         return;
     }
     
@@ -1693,7 +1773,7 @@ function carregarTabelaAndamento() {
     document.getElementById("termino").scrollIntoView({ behavior: 'smooth', block: 'center' });
     document.getElementById("termino").focus();
     
-    alert(`✅ Tabela "${tabela.prefixo}" carregada!\n\nAgora preencha o Término e gere o resultado.\n\n⚠️ Se você é de outro turno/operador, preencha os dados de como recebeu a tabela.`);
+    alert(`Tabela "${tabela.prefixo}" carregada.\n\nAgora preencha o Término e gere o resultado.\n\nSe você é de outro turno/operador, preencha os dados de como recebeu a tabela.`);
 }
 
 /**
@@ -1704,7 +1784,7 @@ async function excluirTabelaAndamento() {
     const tabelaId = select.value;
     
     if (!tabelaId) {
-        alert("⚠️ Selecione uma tabela para excluir!");
+        alert("Selecione uma tabela para excluir.");
         return;
     }
     
@@ -1712,11 +1792,11 @@ async function excluirTabelaAndamento() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("⚠️ Tabela não encontrada!");
+        alert("Tabela não encontrada.");
         return;
     }
     
-    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\n⚠️ Esta ação não pode ser desfeita e afetará todos os usuários.`)) {
+    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\nEsta ação não pode ser desfeita e afetará todos os usuários.`)) {
         return;
     }
     
@@ -1726,12 +1806,12 @@ async function excluirTabelaAndamento() {
         if (resultado.success) {
             await atualizarSeletorTabelas();
             document.getElementById("infoTabelaSelecionada").style.display = "none";
-            alert(`✅ Tabela "${tabela.prefixo}" excluída do servidor!`);
+            alert(`Tabela "${tabela.prefixo}" excluída do servidor.`);
         } else {
-            alert(`❌ Erro ao excluir: ${resultado.error || 'Erro desconhecido'}`);
+            alert(`Erro ao excluir: ${resultado.error || 'Erro desconhecido'}`);
         }
     } catch (error) {
-        alert(`❌ Erro de conexão: ${error.message}`);
+        alert(`Erro de conexão: ${error.message}`);
     }
 }
 
@@ -1758,20 +1838,20 @@ async function atualizarListaFinalizadas() {
             dataFormatada = `${dia}/${mes}/${ano}`;
         }
         
-        const icone = tabela.produto === "Carvão" ? "⚫" : "🔶";
+        const produtoLabel = tabela.produto === "Carvão" ? "CARVAO" : "MINERIO";
         
         html += `
             <div class="tabela-finalizada-item" data-id="${tabela.id}">
                 <div class="tabela-finalizada-info">
-                    <strong>${icone} ${tabela.prefixo}</strong>
+                    <strong>${produtoLabel} | ${tabela.prefixo}</strong>
                     <span>${dataFormatada} | ${tabela.turno}</span>
                     <span>Início: ${tabela.inicio} → Término: ${tabela.termino || '-'}</span>
                     <span>Operador: ${tabela.operador || '-'}</span>
                     <span>Taxa: ${tabela.taxaEfetiva ? tabela.taxaEfetiva + ' t/h' : '-'}</span>
                 </div>
                 <div class="tabela-finalizada-acoes">
-                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">📄</button>
-                    <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" class="btn-limpar">🗑️</button>
+                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">Ver</button>
+                    <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" class="btn-limpar">Excluir</button>
                 </div>
             </div>
         `;
@@ -1799,7 +1879,7 @@ function verRelatorioFinalizado(tabelaId) {
     const resultadoDiv = document.getElementById("resultado");
     if (resultadoDiv) {
         resultadoDiv.innerHTML = `
-            <h3>📋 Relatório - ${tabela.prefixo}</h3>
+            <h3>Relatório - ${tabela.prefixo}</h3>
             <pre class="relatorio-pre">${tabela.relatorio}</pre>
         `;
         resultadoDiv.style.display = "block";
@@ -1817,7 +1897,7 @@ async function excluirTabelaFinalizada(tabelaId) {
         return;
     }
     
-    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\n⚠️ Esta ação não pode ser desfeita!`)) {
+    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\nEsta ação não pode ser desfeita.`)) {
         return;
     }
     
@@ -1825,12 +1905,12 @@ async function excluirTabelaFinalizada(tabelaId) {
         const resultado = await excluirTabelaFinalizadaServidor(tabelaId);
         if (resultado.success) {
             await atualizarListaFinalizadas();
-            alert(`✅ Tabela "${tabela.prefixo}" excluída!`);
+            alert(`Tabela "${tabela.prefixo}" excluída.`);
         } else {
-            alert(`❌ Erro ao excluir: ${resultado.error}`);
+            alert(`Erro ao excluir: ${resultado.error}`);
         }
     } catch (error) {
-        alert(`❌ Erro de conexão: ${error.message}`);
+        alert(`Erro de conexão: ${error.message}`);
     }
 }
 
@@ -2174,7 +2254,7 @@ function adicionarImpacto() {
 function calcular() {
     // Verificar se tabela foi salva
     if (!tabelaSalva) {
-        alert("⚠️ Você deve salvar a tabela antes de gerar o resultado!\n\nClique em '💾 Salvar Início' primeiro.");
+        alert("Você deve salvar a tabela antes de gerar o resultado.\n\nClique em 'Salvar Início' primeiro.");
         return;
     }
     
@@ -2412,7 +2492,7 @@ function calcular() {
                         document.getElementById("seletorTabelasAndamento").value = "";
                         document.getElementById("infoTabelaSelecionada").style.display = "none";
                         await atualizarListaTabelas();
-                        console.log("✅ Tabela movida para finalizadas!");
+                        console.log("Tabela movida para finalizadas.");
                     }
                 }
             } catch (error) {
@@ -2453,7 +2533,7 @@ function gerarResultadoMinerio(dados, data) {
     if (dados.destino === "PARTIDA") {
         if (dados.tipo_divisao === "PATIO_PATIO") {
             tabelaPartidaHTML = `
-<strong>📊 TABELA DIVIDIDA (PÁTIO + PÁTIO):</strong><br>
+<strong>TABELA DIVIDIDA (PÁTIO + PÁTIO):</strong><br>
 <strong>1º Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
 Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br><br>
 <strong>2º Pátio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "—"}<br>
@@ -2461,7 +2541,7 @@ Vagões: ${dados.vagoes_patio2 || "—"} (${dados.hora_inicio_patio2 || "—"} �
 <br>`;
         } else {
             tabelaPartidaHTML = `
-<strong>📊 TABELA DIVIDIDA (PÁTIO + BORDO):</strong><br>
+<strong>TABELA DIVIDIDA (PÁTIO + BORDO):</strong><br>
 <strong>Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
 Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br><br>
 <strong>Bordo:</strong><br>
@@ -2471,35 +2551,35 @@ Vagões: ${dados.vagoes_bordo || "—"} (${dados.hora_inicio_bordo || "—"} →
     }
 
     return `
-📅 <strong>Data da Operação:</strong> ${dataFormatada}<br>
-🕒 <strong>Turno:</strong> ${dados.turno || "—"}<br>
+<strong>Data da Operação:</strong> ${dataFormatada}<br>
+<strong>Turno:</strong> ${dados.turno || "—"}<br>
 <hr>
 
-<strong>🚆 ${dados.prefixo}</strong><br>
+<strong>${dados.prefixo}</strong><br>
 ${dados.oferta}<br><br>
 
-👷 Operador: ${dados.operador} | Mat: ${dados.matricula}<br>
-👨‍✈️ Maquinista: ${dados.maquinista}<br>
-🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
-🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>
-📍 Passagem Ponto B: ${dados.ponto_b}<br>
-🚦 Passagem pelo Sinal: ${dados.sinal}<br>
-📋 Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
+Operador: ${dados.operador} | Mat: ${dados.matricula}<br>
+Maquinista: ${dados.maquinista}<br>
+Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
+Contato com Maquinista: ${dados.horas_maquinista}<br>
+Passagem Ponto B: ${dados.ponto_b}<br>
+Passagem pelo Sinal: ${dados.sinal}<br>
+Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
 
-⚙️ Equipamento: ${dados.equipamento}<br>
-📦 Produto: ${dados.produto} (${dados.tipo_material})<br>
-📍 Destino: ${destinoTexto}<br><br>
+Equipamento: ${dados.equipamento}<br>
+Produto: ${dados.produto} (${dados.tipo_material})<br>
+Destino: ${destinoTexto}<br><br>
 
 ${tabelaPartidaHTML}
 <br>
-⏳ <strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
-⌛ <strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
-⏱ <strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
-⛔ Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
-✅ Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
+<strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
+<strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
+<strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
+Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
+Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
 
-⚖️ Peso Total: ${dados.peso} t<br>
-📈 <strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
+Peso Total: ${dados.peso} t<br>
+<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
 
 ${mudancaFluxoHTML}
 ${passagemHTML}
@@ -2529,49 +2609,49 @@ function gerarResultadoCarvao(dados, data) {
                 const categoriaNome = mat.categoria === "COQUE" ? "Coque" : "Carvão";
                 materiaisHTML += `
 <div style="border-left: 3px solid #ffa500; padding-left: 10px; margin: 15px 0;">
-📍 ${mat.patio} - ${mat.baliza}<br>
-📍 ${mat.recuperadora}<br><br>
+${mat.patio} - ${mat.baliza}<br>
+${mat.recuperadora}<br><br>
 
-📦 ${categoriaNome}: ${mat.tipo_material} (${mat.acao})<br><br>
+${categoriaNome}: ${mat.tipo_material} (${mat.acao})<br><br>
 
-⚖️ <strong>Peso ECV:</strong> ${mat.peso_ecv || "—"} t<br>
-⚖️ <strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "—"} t<br>
-🚃 Vagões: ${mat.vagoes || "—"}<br>
-${mat.hora_inicio ? `⏳ ${mat.hora_inicio} → ${mat.hora_fim || "—"}<br><br>` : ""}
+<strong>Peso ECV:</strong> ${mat.peso_ecv || "—"} t<br>
+<strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "—"} t<br>
+Vagões: ${mat.vagoes || "—"}<br>
+${mat.hora_inicio ? `${mat.hora_inicio} → ${mat.hora_fim || "—"}<br><br>` : ""}
 </div>`;
             }
         });
     }
 
     return `
-📅 <strong>Data da Operação:</strong> ${dataFormatada}<br>
-🕒 <strong>Turno:</strong> ${dados.turno || "—"}<br>
+<strong>Data da Operação:</strong> ${dataFormatada}<br>
+<strong>Turno:</strong> ${dados.turno || "—"}<br>
 <hr>
 
-<strong>⚫ ECV</strong><br><br>
+<strong>ECV</strong><br><br>
 
 <strong>${dados.oferta}</strong><br><br>
 
-🚆 <strong>${dados.prefixo}</strong><br><br>
+<strong>${dados.prefixo}</strong><br><br>
 
-👷 Operador: ${dados.operador} | Mat: ${dados.matricula}<br>
-👨‍✈️ Maquinista: ${dados.maquinista}<br>
-🚂 Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
-🕐 Contato com Maquinista: ${dados.horas_maquinista}<br>
-📍 Passagem Ponto B: ${dados.ponto_b}<br>
-📋 Tabela Posicionada: ${dados.tabela_posicionada}<br>
-🚃 1º Vagão: ${dados.primeiro_vagao || "—"}<br><br>
+Operador: ${dados.operador} | Mat: ${dados.matricula}<br>
+Maquinista: ${dados.maquinista}<br>
+Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
+Contato com Maquinista: ${dados.horas_maquinista}<br>
+Passagem Ponto B: ${dados.ponto_b}<br>
+Tabela Posicionada: ${dados.tabela_posicionada}<br>
+1º Vagão: ${dados.primeiro_vagao || "—"}<br><br>
 
 ${materiaisHTML}
 <br>
-⏳ <strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
-⌛ <strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
-⏱ <strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
-⛔ Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
-✅ Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
+<strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
+<strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
+<strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
+Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
+Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
 
-⚖️ Peso Total: ${dados.peso} t<br>
-📈 <strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
+Peso Total: ${dados.peso} t<br>
+<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
 
 ${mudancaFluxoHTML}
 ${passagemHTML}
@@ -2607,16 +2687,16 @@ function gerarPassagemHTML(dados) {
     if (dados.houve_passagem === "SIM") {
         let falhaTexto = "";
         if (dados.assumiu_em_falha === "SIM") {
-            falhaTexto = `⚠️ Passou em FALHA: ${dados.descricao_falha_assumida} (às ${dados.hora_falha_passagem || "—"})<br>`;
+            falhaTexto = `Passou em FALHA: ${dados.descricao_falha_assumida} (às ${dados.hora_falha_passagem || "—"})<br>`;
         }
         
         return `
-<strong>🔄 PASSAGEM DE TURNO:</strong><br>
-🕐 Hora da rendição: ${dados.hora_rendicao || "—"}<br>
-🚃 Vagões descarregados no meu turno: ${dados.vagoes_meu_turno || "—"}<br>
-🚃 Vagões restantes p/ próximo turno: ${dados.vagoes_proximo_turno || "—"}<br>
-👷 Turno que assumiu: ${dados.turno_assumiu || "—"}<br>
-👷 Operador que assumiu: ${dados.operador_assumiu || "—"} | Mat: ${dados.matricula_assumiu || "—"}<br>
+<strong>PASSAGEM DE TURNO:</strong><br>
+Hora da rendição: ${dados.hora_rendicao || "—"}<br>
+Vagões descarregados no meu turno: ${dados.vagoes_meu_turno || "—"}<br>
+Vagões restantes p/ próximo turno: ${dados.vagoes_proximo_turno || "—"}<br>
+Turno que assumiu: ${dados.turno_assumiu || "—"}<br>
+Operador que assumiu: ${dados.operador_assumiu || "—"} | Mat: ${dados.matricula_assumiu || "—"}<br>
 ${falhaTexto}
 <br>`;
     }
@@ -2628,7 +2708,7 @@ ${falhaTexto}
  */
 function gerarMudancaFluxoHTML(dados) {
     if (dados.houve_mudanca_fluxo === "SIM" && dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
-        let html = "<strong>🔄 MUDANÇAS DE FLUXO:</strong><br>";
+        let html = "<strong>MUDANÇAS DE FLUXO:</strong><br>";
         dados.mudancas_fluxo.forEach((fluxo, i) => {
             if (fluxo.hora || fluxo.fluxo_anterior || fluxo.fluxo_novo) {
                 html += `• ${fluxo.hora || "—"}: ${fluxo.fluxo_anterior} → ${fluxo.fluxo_novo}`;
@@ -2660,7 +2740,7 @@ function gerarPDF() {
         .replace(/\[DATA\]\s*/g, "")
         .replace(/\[TURNO\]\s*/g, "")
         .replace(/\[TREM\]\s*/g, "")
-        .replace(/📅|🕒|🚆|👷|👨‍✈️|🚂|🕐|📍|🚦|📋|⚙️|📦|🕚|⏱|⛔|✅|⚖️|📈|🔄|⚠️|⏳|⌛|🚃/g, "")
+        .replace(/\p{Extended_Pictographic}/gu, "")
         .replace(/•/g, "-")
         .replace(/→/g, "->")
         .replace(/—/g, "-")
@@ -2791,7 +2871,7 @@ function copiarWhatsApp() {
 
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(texto)
-            .then(() => alert("📲 Texto copiado!"));
+            .then(() => alert("Texto copiado."));
     } else {
         const textarea = document.createElement("textarea");
         textarea.value = texto;
@@ -2799,7 +2879,7 @@ function copiarWhatsApp() {
         textarea.select();
         document.execCommand("copy");
         document.body.removeChild(textarea);
-        alert("📲 Texto copiado!");
+        alert("Texto copiado.");
     }
 }
 
@@ -2810,13 +2890,13 @@ function enviarEmail() {
     const resultado = document.getElementById("resultado");
     
     if (resultado.style.display === "none" || !resultado.innerText.trim()) {
-        alert("⚠️ Gere o resultado primeiro!");
+        alert("Gere o resultado primeiro.");
         return;
     }
     
     const emailDestino = document.getElementById("email").value;
     if (!emailDestino) {
-        alert("⚠️ Preencha o email de destino!");
+        alert("Preencha o email de destino.");
         document.getElementById("email").focus();
         return;
     }
@@ -2840,15 +2920,8 @@ function enviarEmail() {
 }
 
 /* ======================================
-   DARK MODE E UTILITÁRIOS
+    UTILITÁRIOS
 ====================================== */
-
-/**
- * Alterna dark mode
- */
-function toggleDarkMode() {
-    document.documentElement.classList.toggle("dark-mode");
-}
 
 /**
  * Inicia processo de finalização do turno
@@ -2859,11 +2932,11 @@ function iniciarFinalizacaoTurno() {
         return;
     }
     
-    const resposta = confirm("🏁 Você está finalizando o turno?\n\nSelecione OK para continuar ou Cancelar para voltar.");
+    const resposta = confirm("Você está finalizando o turno?\n\nSelecione OK para continuar ou Cancelar para voltar.");
     
     if (!resposta) return;
     
-    const emFalha = confirm("❓ Está finalizando em falha?\n\nSelecione OK se SIM (será obrigatório preencher os dados da falha) ou Cancelar se NÃO.");
+    const emFalha = confirm("Está finalizando em falha?\n\nSelecione OK se SIM (será obrigatório preencher os dados da falha) ou Cancelar se NÃO.");
     
     if (emFalha) {
         // Mostrar modal ou campos para preencher falha
@@ -2884,7 +2957,7 @@ function mostrarCamposFalhaFinalizacao() {
     modal.innerHTML = `
         <div class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
             <div class="modal-content" style="background: white; color: black; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%;">
-                <h3>📋 Preencher Dados da Falha</h3>
+                <h3>Preencher Dados da Falha</h3>
                 <p><strong>Obrigatório preencher para finalizar o turno:</strong></p>
                 
                 <label>Horário da Falha:</label>
@@ -2932,7 +3005,7 @@ function confirmarFalhaFinalizacao() {
     const descricao = document.getElementById('descricaoFalhaFinalizacao').value;
     
     if (!horario || !tipo || !descricao.trim()) {
-        alert('❌ Todos os campos são obrigatórios!');
+        alert('Todos os campos são obrigatórios.');
         return;
     }
     
@@ -2963,7 +3036,7 @@ function validarPassagemTurno() {
     const horaAssumiu = document.getElementById('hora_assumiu_tabela').value;
     
     if (!turnoPassou || !operadorPassou || !matriculaPassou || !horaAssumiu) {
-        alert('❌ Para finalizar o turno, é obrigatório preencher a passagem de turno!\n\nPreencha: Turno que passou, Operador, Matrícula e Hora de assunção.');
+        alert('Para finalizar o turno, é obrigatório preencher a passagem de turno.\n\nPreencha: Turno que passou, Operador, Matrícula e Hora de assunção.');
         return false;
     }
     
@@ -3056,9 +3129,9 @@ async function finalizarTurnoNormal() {
     const salvo = await salvarTabelaFinalizada();
     
     if (salvo) {
-        alert('✅ Turno finalizado com sucesso!\n\nTabela salva no banco de dados.');
+        alert('Turno finalizado com sucesso.\n\nTabela salva no banco de dados.');
     } else {
-        alert('⚠️ Turno finalizado, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
+        alert('Turno finalizado, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
     }
     
     limparFormulario();
@@ -3077,9 +3150,9 @@ async function finalizarTurnoComFalha(dadosFalha) {
     const salvo = await salvarTabelaFinalizada();
     
     if (salvo) {
-        alert('✅ Turno finalizado com falha registrada!\n\nPróximo turno poderá assumir com os dados preenchidos.\n\nTabela salva no banco de dados.');
+        alert('Turno finalizado com falha registrada.\n\nPróximo turno poderá assumir com os dados preenchidos.\n\nTabela salva no banco de dados.');
     } else {
-        alert('⚠️ Turno finalizado com falha, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
+        alert('Turno finalizado com falha, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
     }
     
     limparFormulario();
@@ -3108,7 +3181,7 @@ function carregarFalhaTurnoAnterior() {
  * Limpa formulário
  */
 function limparFormulario() {
-    if (!confirm("⚠️ Tem certeza que deseja limpar todos os dados?")) {
+    if (!confirm("Tem certeza que deseja limpar todos os dados?")) {
         return;
     }
     
@@ -3122,6 +3195,8 @@ function limparFormulario() {
 ====================================== */
 
 document.addEventListener("DOMContentLoaded", async function() {
+    document.documentElement.classList.add("dark-mode");
+
     // Verificar se turno já foi selecionado
     const turnoSelecionado = verificarSelecaoTurno();
     
@@ -3174,7 +3249,26 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
     
     // Listeners para mostrar/esconder botão salvar
-    const camposSalvar = ["prefixo", "inicio", "produto", "equipamento", "operador_assumiu_assuncao", "matricula_assumiu_assuncao", "turno_assumiu_assuncao", "vagoes_faltavam_assumir_assuncao"];
+    const camposSalvar = [
+        "maquinista",
+        "loc1",
+        "horas_maquinista",
+        "ponto_b",
+        "sinal",
+        "tabela_posicionada",
+        "data",
+        "turno",
+        "operador",
+        "matricula",
+        "prefixo",
+        "inicio",
+        "produto",
+        "equipamento",
+        "operador_assumiu_assuncao",
+        "matricula_assumiu_assuncao",
+        "turno_assumiu_assuncao",
+        "vagoes_faltavam_assumir_assuncao"
+    ];
     camposSalvar.forEach(id => {
         const campo = document.getElementById(id);
         if (campo) {
@@ -3237,5 +3331,11 @@ document.addEventListener("DOMContentLoaded", async function() {
     document.addEventListener("input", salvarDadosFormulario);
     document.addEventListener("change", salvarDadosFormulario);
     
-    console.log("✅ Sistema de tabelas compartilhadas inicializado!");
+    instalarSanitizadorMensagens();
+    sanitizarTextoUI();
+
+    const observer = new MutationObserver(() => sanitizarTextoUI());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log("Sistema de tabelas compartilhadas inicializado.");
 });
