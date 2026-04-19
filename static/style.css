@@ -2023,3 +2023,189 @@ button:hover {
 .dark-mode #contadorFinalizadas {
     color: #ffffff !important;
 }
+
+/* ======================================
+   RESPONSIVE ORGANIZATION (MOBILE/TABLET/DESKTOP)
+====================================== */
+
+.container {
+    width: min(100%, 1180px);
+}
+
+.hero,
+.card,
+.resultado {
+    width: 100%;
+}
+
+button {
+    min-height: 44px;
+}
+
+.tempo-container,
+.tempo-parado-grupo,
+.carvao-pesos,
+.fluxo-campos {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.checkbox-group,
+.checkboxes-falha-recebida,
+.atendimento-checkboxes,
+.solicitante-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.botoes-controle,
+.acoes,
+.tabelas-andamento-acoes {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.botoes-controle button,
+.acoes button,
+.tabelas-andamento-acoes button {
+    width: 100%;
+    margin: 0;
+}
+
+/* Celular */
+@media (max-width: 767px) {
+    .container {
+        padding: 12px 10px 26px;
+    }
+
+    .hero {
+        padding: 16px 14px;
+        border-radius: 16px;
+    }
+
+    .hero h1 {
+        font-size: 1.4rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.92rem;
+    }
+
+    .turno-info {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .turnos-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .btn-turno {
+        min-height: 78px;
+        padding: 10px;
+    }
+
+    .tabela-finalizada-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tabela-finalizada-acoes {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .tabela-finalizada-acoes button {
+        width: 100%;
+    }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .container {
+        max-width: 960px;
+        padding: 18px;
+    }
+
+    .hero {
+        padding: 22px 20px;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .botoes-controle {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .acoes {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .tabelas-andamento-acoes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tempo-container,
+    .tempo-parado-grupo,
+    .carvao-pesos,
+    .fluxo-campos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .checkbox-group,
+    .checkboxes-falha-recebida,
+    .atendimento-checkboxes,
+    .solicitante-checkboxes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    .container {
+        max-width: 1180px;
+        padding: 24px 24px 36px;
+    }
+
+    .hero {
+        padding: 26px 24px;
+    }
+
+    .botoes-controle {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .acoes {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .tabelas-andamento-acoes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .turnos-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .tempo-container,
+    .tempo-parado-grupo,
+    .carvao-pesos,
+    .fluxo-campos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .checkbox-group,
+    .checkboxes-falha-recebida,
+    .atendimento-checkboxes,
+    .solicitante-checkboxes {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
