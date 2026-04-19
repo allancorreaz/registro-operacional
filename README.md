@@ -117,6 +117,15 @@ gunicorn app:app --bind 0.0.0.0:$PORT
 
 Configuracao recomendada de disco persistente em `render.yaml` para preservar `tabelas.db` entre deploys.
 
+## Segredos na Vercel (sem expor no GitHub)
+
+1. Mantenha apenas placeholders no arquivo `.env.example`.
+2. Nunca suba `.env` real para o repositorio.
+3. Configure os valores reais em **Vercel Dashboard > Project > Settings > Environment Variables**.
+4. Use essas variaveis no codigo via `os.environ.get("NOME_DA_VARIAVEL")`.
+
+Com isso, o projeto continua online na Vercel e nenhum segredo fica exposto no GitHub.
+
 ## Regras Importantes de Dados
 
 - O banco `tabelas.db` e local ao servidor da aplicacao.

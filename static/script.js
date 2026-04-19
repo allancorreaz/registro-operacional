@@ -1,14 +1,11 @@
-
-/* ======================================
-   CONFIGURAÇÕES E CONSTANTES
-====================================== */
+﻿
 
 // Equipamentos por produto
 const EQUIPAMENTOS_MINERIO = ["VV1", "VV2", "VV3"];
 const EQUIPAMENTOS_CARVAO = ["ECV"];
 const RECUPERADORAS_CARVAO = ["R5", "R1A"];
 
-// Configuração de turnos
+// ConfiguraÃ§Ã£o de turnos
 const TURNOS = {
     A: { inicio: 6, fim: 18, nome: "A", rendidoPor: "D" },
     B: { inicio: 6, fim: 18, nome: "B", rendidoPor: "C" },
@@ -23,7 +20,7 @@ const STORAGE_KEY_TURNO_DATA = "registro_operacional_turno_data";
 const STORAGE_KEY_TIPO_OPERACAO = "registro_operacional_tipo_operacao";
 const STORAGE_KEY_TURNO_ATUAL = "registro_operacional_turno_atual";
 
-// Campos do formulário para persistência
+// Campos do formulÃ¡rio para persistÃªncia
 const CAMPOS_FORMULARIO = [
     "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
     "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
@@ -95,39 +92,24 @@ function instalarSanitizadorMensagens() {
     };
 }
 
-/* ======================================
-   FUNÇÕES DE FORMATAÇÃO
-====================================== */
 
-/**
- * Capitaliza primeira letra e após pontos
- */
 function capitalizarFrases(texto) {
     if (!texto) return texto;
     return texto
         .toLowerCase()
-        .replace(/(^|[.!?]\s*)([a-záàâãéèêíïóôõöúçñ])/gi, (match, p1, p2) => p1 + p2.toUpperCase());
+        .replace(/(^|[.!?]\s*)([a-zÃ¡Ã Ã¢Ã£Ã©Ã¨ÃªÃ­Ã¯Ã³Ã´ÃµÃ¶ÃºÃ§Ã±])/gi, (match, p1, p2) => p1 + p2.toUpperCase());
 }
 
-/**
- * Aplica capitalização em tempo real nos campos de impacto
- */
 function aplicarCapitalizacaoImpacto(input) {
     input.addEventListener('blur', function() {
         this.value = capitalizarFrases(this.value);
     });
 }
 
-/**
- * Converte para maiúsculas (para envio ao servidor)
- */
 function toUpperSafe(valor) {
     return valor ? valor.toUpperCase() : valor;
 }
 
-/**
- * Formata tempo em horas e minutos
- */
 function formatarTempo(minutos) {
     if (minutos >= 60) {
         const h = Math.floor(minutos / 60);
@@ -137,17 +119,10 @@ function formatarTempo(minutos) {
     return `${minutos} min`;
 }
 
-/* ======================================
-   SISTEMA DE TURNOS E TEMPO
-====================================== */
 
-/**
- * Obtém a hora atual em Brasília (UTC-3)
- * Usa a API Intl para conversão correta de timezone
- */
 function getHoraBrasilia() {
     const now = new Date();
-    // Converter para horário de Brasília usando toLocaleString
+    // Converter para horÃ¡rio de BrasÃ­lia usando toLocaleString
     const brasiliaDateString = now.toLocaleString('pt-BR', { 
         timeZone: 'America/Sao_Paulo'
     });
@@ -161,13 +136,10 @@ function getHoraBrasilia() {
     }
     
     // Fallback: use device local time if parsing fails
-    console.warn('Falha ao converter para horário de Brasília, usando horário local do dispositivo:', brasiliaDateString);
+    console.warn('Falha ao converter para horÃ¡rio de BrasÃ­lia, usando horÃ¡rio local do dispositivo:', brasiliaDateString);
     return now;
 }
 
-/**
- * Determina o turno atual baseado na hora
- */
 function getTurnoAtual() {
     const hora = getHoraBrasilia().getHours();
     
@@ -182,43 +154,34 @@ function getTurnoAtual() {
     }
 }
 
-/**
- * Verifica se está próximo do fim do turno (30 min antes)
- */
 function isProximoFimTurno() {
     const agora = getHoraBrasilia();
     const hora = agora.getHours();
     const turno = getTurnoAtual();
     
     if (turno === 'A' || turno === 'B') {
-        // Fim às 18h, mostrar botão a partir das 17:30
+        // Fim Ã s 18h, mostrar botÃ£o a partir das 17:30
         return hora === 17 && agora.getMinutes() >= 30;
     } else {
-        // Fim às 6h, mostrar botão a partir das 5:30
+        // Fim Ã s 6h, mostrar botÃ£o a partir das 5:30
         return hora === 5 && agora.getMinutes() >= 30;
     }
 }
 
-/**
- * Verifica se passou 1 hora do início do turno
- */
 function passouUmaHoraInicioTurno() {
     const agora = getHoraBrasilia();
     const hora = agora.getHours();
     const turno = getTurnoAtual();
     
     if (turno === 'A' || turno === 'B') {
-        // Início às 6h, ocultar após 7h
+        // InÃ­cio Ã s 6h, ocultar apÃ³s 7h
         return hora >= 7;
     } else {
-        // Início às 18h, ocultar após 19h
+        // InÃ­cio Ã s 18h, ocultar apÃ³s 19h
         return hora >= 19 || hora < 6;
     }
 }
 
-/**
- * Atualiza o relógio em tempo real
- */
 function atualizarRelogio() {
     const agora = getHoraBrasilia();
     const horas = String(agora.getHours()).padStart(2, '0');
@@ -231,42 +194,33 @@ function atualizarRelogio() {
     }
 }
 
-/**
- * Verifica se está próximo do fim do turno selecionado (30 min antes)
- */
 function isProximoFimTurnoSelecionado(turno) {
     const agora = getHoraBrasilia();
     const hora = agora.getHours();
     const minutos = agora.getMinutes();
     
     if (turno === 'A' || turno === 'B') {
-        // Fim às 18h, mostrar botão a partir das 17:30
+        // Fim Ã s 18h, mostrar botÃ£o a partir das 17:30
         return hora === 17 && minutos >= 30;
     } else {
-        // Fim às 6h, mostrar botão a partir das 5:30
+        // Fim Ã s 6h, mostrar botÃ£o a partir das 5:30
         return hora === 5 && minutos >= 30;
     }
 }
 
-/**
- * Verifica se passou 1 hora do início do turno selecionado
- */
 function passouUmaHoraInicioTurnoSelecionado(turno) {
     const agora = getHoraBrasilia();
     const hora = agora.getHours();
     
     if (turno === 'A' || turno === 'B') {
-        // Início às 6h, ocultar após 7h
+        // InÃ­cio Ã s 6h, ocultar apÃ³s 7h
         return hora >= 7;
     } else {
-        // Início às 18h, ocultar após 19h
+        // InÃ­cio Ã s 18h, ocultar apÃ³s 19h
         return hora >= 19 || hora < 6;
     }
 }
 
-/**
- * Atualiza informações do turno
- */
 function atualizarTurnoInfo() {
     const turnoSelecionado = carregarTurnoSalvo();
     const turnoEl = document.getElementById('turno-atual');
@@ -275,7 +229,7 @@ function atualizarTurnoInfo() {
         turnoEl.textContent = `Turno ${turnoSelecionado}`;
     }
     
-    // Mostrar/ocultar botão finalizar turno baseado no turno selecionado
+    // Mostrar/ocultar botÃ£o finalizar turno baseado no turno selecionado
     const btnFinalizar = document.getElementById('btnFinalizarTurnoHeader');
     if (btnFinalizar && turnoSelecionado) {
         const deveMostrar = isProximoFimTurnoSelecionado(turnoSelecionado);
@@ -289,17 +243,11 @@ function atualizarTurnoInfo() {
     }
 }
 
-/**
- * Carrega turno salvo ou determina atual
- */
 function carregarTurnoSalvo() {
     const turnoSalvo = localStorage.getItem(STORAGE_KEY_TURNO_ATUAL);
     return turnoSalvo || getTurnoAtual();
 }
 
-/**
- * Preenche automaticamente data e turno nos campos
- */
 function preencherDataTurnoAutomatico() {
     const agora = getHoraBrasilia();
     const dataStr = agora.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -316,31 +264,22 @@ function preencherDataTurnoAutomatico() {
     }
 }
 
-/* ======================================
-   SELEÇÃO E GESTÃO DE TURNOS
-====================================== */
 
-/**
- * Verifica se deve mostrar seleção de turno
- */
 function verificarSelecaoTurno() {
     const turnoSalvo = localStorage.getItem(STORAGE_KEY_TURNO_ATUAL);
     const modal = document.getElementById('selecao-turno-inicial');
     
     if (!turnoSalvo) {
-        // Primeiro acesso - mostrar seleção
+        // Primeiro acesso - mostrar seleÃ§Ã£o
         modal.style.display = 'flex';
         return false;
     } else {
-        // Turno já selecionado - atualizar interface
+        // Turno jÃ¡ selecionado - atualizar interface
         atualizarInterfaceTurno(turnoSalvo);
         return true;
     }
 }
 
-/**
- * Seleciona um turno
- */
 function selecionarTurno(turno) {
     // Salvar turno selecionado
     localStorage.setItem(STORAGE_KEY_TURNO_ATUAL, turno);
@@ -358,17 +297,11 @@ function selecionarTurno(turno) {
     iniciarSistemaAposSelecaoTurno();
 }
 
-/**
- * Mostra modal para alterar turno
- */
 function mostrarSelecaoTurno() {
     const modal = document.getElementById('selecao-turno-inicial');
     modal.style.display = 'flex';
 }
 
-/**
- * Atualiza interface com turno selecionado
- */
 function atualizarInterfaceTurno(turno) {
     const tituloTurno = document.getElementById('titulo-turno');
     const turnoAtual = document.getElementById('turno-atual');
@@ -381,15 +314,12 @@ function atualizarInterfaceTurno(turno) {
         turnoAtual.textContent = `Turno ${turno}`;
     }
     
-    // Atualizar título da página
+    // Atualizar tÃ­tulo da pÃ¡gina
     document.title = `Registro Operacional - Turno ${turno}`;
 }
 
-/**
- * Inicia sistema após seleção do turno
- */
 function iniciarSistemaAposSelecaoTurno() {
-    // Iniciar relógio
+    // Iniciar relÃ³gio
     setInterval(atualizarRelogio, 1000);
     setInterval(atualizarTurnoInfo, 60000);
     
@@ -403,12 +333,9 @@ function iniciarSistemaAposSelecaoTurno() {
     atualizarSeletorTabelas();
     atualizarListaFinalizadas();
     
-    console.log("Sistema iniciado após seleção de turno");
+    console.log("Sistema iniciado apÃ³s seleÃ§Ã£o de turno");
 }
 
-/**
- * Atualiza seletor de tabelas para assunção
- */
 async function atualizarSeletorTabelasAssuncao() {
     const select = document.getElementById("seletorTabelasAssuncao");
     const tabelas = await obterTabelasAndamentoServidor();
@@ -426,40 +353,34 @@ async function atualizarSeletorTabelasAssuncao() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        const produtoLabel = tabela.produto === "Carvão" ? "CARVAO" : "MINERIO";
+        const produtoLabel = tabela.produto === "CarvÃ£o" ? "CARVAO" : "MINERIO";
         option.textContent = `${produtoLabel} | ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
 }
 
-/**
- * Verifica se deve mostrar o select de tipo de operação baseado no horário
- */
 function verificarMostrarTipoOperacao() {
     const agora = new Date();
     const horaAtual = agora.getHours();
     const cardAssuncao = document.getElementById("cardAssuncao");
     
-    // Verificar se já foi selecionado hoje
+    // Verificar se jÃ¡ foi selecionado hoje
     const tipoOperacaoSalvo = localStorage.getItem(STORAGE_KEY_TIPO_OPERACAO);
     if (tipoOperacaoSalvo) {
         const dataSalva = JSON.parse(tipoOperacaoSalvo).data;
         const hoje = agora.toDateString();
         if (dataSalva === hoje) {
-            // Já foi selecionado hoje, ocultar o card
+            // JÃ¡ foi selecionado hoje, ocultar o card
             cardAssuncao.style.display = "none";
             return;
         }
     }
     
-    // Se não foi selecionado hoje, mostrar sempre o select independente do horário
-    // (para permitir que o usuário possa usar o sistema mesmo fora do horário "oficial")
+    // Se nÃ£o foi selecionado hoje, mostrar sempre o select independente do horÃ¡rio
+    // (para permitir que o usuÃ¡rio possa usar o sistema mesmo fora do horÃ¡rio "oficial")
     cardAssuncao.style.display = "block";
 }
 
-/**
- * Salva a seleção de tipo de operação
- */
 function salvarTipoOperacao(tipo) {
     const dados = {
         tipo: tipo,
@@ -469,9 +390,6 @@ function salvarTipoOperacao(tipo) {
     localStorage.setItem(STORAGE_KEY_TIPO_OPERACAO, JSON.stringify(dados));
 }
 
-/**
- * Verifica se turno e data já foram preenchidos hoje
- */
 function verificarTurnoDataSalvos() {
     const turnoDataSalvo = localStorage.getItem(STORAGE_KEY_TURNO_DATA);
     if (!turnoDataSalvo) return false;
@@ -479,15 +397,15 @@ function verificarTurnoDataSalvos() {
     const dados = JSON.parse(turnoDataSalvo);
     const hoje = new Date().toDateString();
     
-    // Verificar se é o mesmo dia
+    // Verificar se Ã© o mesmo dia
     if (dados.data !== hoje) return false;
     
-    // Verificar se ainda está no mesmo turno
+    // Verificar se ainda estÃ¡ no mesmo turno
     const agora = new Date();
     const horaAtual = agora.getHours();
     const turnoAtual = dados.turno;
     
-    // Lógica de turnos:
+    // LÃ³gica de turnos:
     // A: 6h-18h, B: 6h-18h (alternado)
     // C: 18h-6h, D: 18h-6h (alternado)
     
@@ -502,9 +420,6 @@ function verificarTurnoDataSalvos() {
     return false; // Mudou de turno
 }
 
-/**
- * Salva turno e data
- */
 function salvarTurnoData(turno, data) {
     const dados = {
         turno: turno,
@@ -521,30 +436,24 @@ function salvarTurnoData(turno, data) {
     if (campoData && data) campoData.value = data;
 }
 
-/**
- * Carrega turno e data salvos se ainda válidos
- */
 function carregarTurnoDataSalvos() {
     if (verificarTurnoDataSalvos()) {
         const dados = JSON.parse(localStorage.getItem(STORAGE_KEY_TURNO_DATA));
         salvarTurnoData(dados.turno, dados.data);
         
-        // Ocultar campos de turno e data se já preenchidos
+        // Ocultar campos de turno e data se jÃ¡ preenchidos
         const campoTurno = document.getElementById("turno");
         const campoData = document.getElementById("data");
         
         if (campoTurno) campoTurno.style.display = "none";
         if (campoData) campoData.style.display = "none";
         
-        // Ocultar labels também
+        // Ocultar labels tambÃ©m
         const labels = document.querySelectorAll('label[for="turno"], label[for="data"]');
         labels.forEach(label => label.style.display = "none");
     }
 }
 
-/**
- * Atualiza lista de equipamentos baseado no produto
- */
 function atualizarEquipamentos() {
     const produto = document.getElementById("produto").value;
     const selectEquip = document.getElementById("equipamento");
@@ -552,7 +461,7 @@ function atualizarEquipamentos() {
     
     selectEquip.innerHTML = "";
     
-    const equipamentos = produto === "Carvão" ? EQUIPAMENTOS_CARVAO : EQUIPAMENTOS_MINERIO;
+    const equipamentos = produto === "CarvÃ£o" ? EQUIPAMENTOS_CARVAO : EQUIPAMENTOS_MINERIO;
     
     equipamentos.forEach(eq => {
         const opt = document.createElement("option");
@@ -561,7 +470,7 @@ function atualizarEquipamentos() {
         selectEquip.appendChild(opt);
     });
     
-    // Restaurar valor selecionado se ainda for válido
+    // Restaurar valor selecionado se ainda for vÃ¡lido
     if (equipamentoAtual && equipamentos.includes(equipamentoAtual)) {
         selectEquip.value = equipamentoAtual;
     }
@@ -569,37 +478,25 @@ function atualizarEquipamentos() {
     controleEquipamento();
 }
 
-/**
- * Controla visibilidade do campo de sinal
- */
 function controleEquipamento() {
     const equipamento = document.getElementById("equipamento").value;
     const sinalContainer = document.getElementById("sinalContainer");
     
-    // ECV não tem passagem pelo sinal
+    // ECV nÃ£o tem passagem pelo sinal
     sinalContainer.style.display = equipamento === "ECV" ? "none" : "block";
 }
 
-/**
- * Atualiza placeholder do tipo de material com base na categoria
- */
 function atualizarTiposMaterial(selectCategoria) {
     const row = selectCategoria.closest('.material-carvao-row');
     const inputTipo = row.querySelector('.carvao-tipo-material');
     const categoria = selectCategoria.value;
     
     inputTipo.placeholder = categoria === "CARVAO" 
-        ? "Ex: MU, OG (carvão)"
+        ? "Ex: MU, OG (carvÃ£o)"
         : "Ex: CCM, KL, KIN (coque)";
 }
 
-/* ======================================
-   CONTROLES DE VISIBILIDADE
-====================================== */
 
-/**
- * Controla visibilidade baseado no destino selecionado
- */
 function controleDestino() {
     const destino = document.getElementById("destino").value;
     
@@ -608,21 +505,15 @@ function controleDestino() {
     document.getElementById("tabelaPartidaExtra").style.display = destino === "PARTIDA" ? "block" : "none";
 }
 
-/**
- * Controla visibilidade baseado no produto selecionado
- */
 function controleProduto() {
     const produto = document.getElementById("produto").value;
     
     atualizarEquipamentos();
     
-    document.getElementById("minerioExtra").style.display = produto === "Carvão" ? "none" : "block";
-    document.getElementById("carvaoExtra").style.display = produto === "Carvão" ? "block" : "none";
+    document.getElementById("minerioExtra").style.display = produto === "CarvÃ£o" ? "none" : "block";
+    document.getElementById("carvaoExtra").style.display = produto === "CarvÃ£o" ? "block" : "none";
 }
 
-/**
- * Controla visibilidade do tipo de divisão
- */
 function controleTipoDivisao() {
     const tipo = document.getElementById("tipo_divisao").value;
     
@@ -630,9 +521,6 @@ function controleTipoDivisao() {
     document.getElementById("secaoPatio2").style.display = tipo === "PATIO_PATIO" ? "block" : "none";
 }
 
-/**
- * Controla visibilidade da mudança de fluxo
- */
 function controleMudancaFluxo() {
     const houve = document.getElementById("houve_mudanca_fluxo").value;
     const container = document.getElementById("mudancaFluxoContainer");
@@ -650,15 +538,12 @@ function controleMudancaFluxo() {
     }
 }
 
-/**
- * Controla visibilidade da passagem de turno
- */
 function controlePassagem() {
     const houve = document.getElementById("houve_passagem").value;
     const passagemExtra = document.getElementById("passagemExtra");
     passagemExtra.style.display = houve === "SIM" ? "block" : "none";
     
-    // Campos obrigatórios quando houver passagem
+    // Campos obrigatÃ³rios quando houver passagem
     const camposPassagem = [
         "vagoes_meu_turno", "turno_assumiu", "operador_assumiu",
         "matricula_assumiu", "hora_rendicao", "vagoes_proximo_turno", "assumiu_em_falha"
@@ -676,7 +561,7 @@ function controlePassagem() {
         }
     });
     
-    // Limpar campos de falha se não houve passagem
+    // Limpar campos de falha se nÃ£o houve passagem
     if (houve !== "SIM") {
         document.getElementById("descricao_falha_assumida").value = "";
         document.getElementById("hora_falha_passagem").value = "";
@@ -684,9 +569,6 @@ function controlePassagem() {
     }
 }
 
-/**
- * Controla visibilidade da falha assumida
- */
 function controleFalhaAssumida() {
     const assumiu = document.getElementById("assumiu_em_falha").value;
     const falhaExtra = document.getElementById("falhaAssumidaExtra");
@@ -707,13 +589,7 @@ function controleFalhaAssumida() {
     });
 }
 
-/* ======================================
-   CONTROLE DE RECEBIMENTO DE TABELA
-====================================== */
 
-/**
- * Verifica se está finalizando tabela de outro turno
- */
 function verificarTabelaOutroTurno() {
     const secaoRecebeu = document.getElementById("secaoRecebeuTabela");
     if (!secaoRecebeu) return;
@@ -721,7 +597,7 @@ function verificarTabelaOutroTurno() {
     const turnoAtual = document.getElementById("turno").value;
     const operadorAtual = document.getElementById("operador").value.toUpperCase().trim();
     
-    // Se há tabela carregada do servidor
+    // Se hÃ¡ tabela carregada do servidor
     if (tabelaCarregadaInfo) {
         const turnoOriginal = tabelaCarregadaInfo.turno;
         const operadorOriginal = (tabelaCarregadaInfo.operador || "").toUpperCase().trim();
@@ -749,7 +625,7 @@ function verificarTabelaOutroTurno() {
                 if (dados.assumiu_em_falha === "SIM") {
                     document.getElementById("falha_recebida_desc").value = dados.descricao_falha_assumida || "";
                     document.getElementById("hora_inicio_falha_recebida").value = dados.hora_falha_passagem || "";
-                    // Preencher outros campos se necessário
+                    // Preencher outros campos se necessÃ¡rio
                 }
                 
                 controleRecebeuEmFalha();
@@ -759,14 +635,11 @@ function verificarTabelaOutroTurno() {
         }
     }
     
-    // Se não há diferença, esconder seção
+    // Se nÃ£o hÃ¡ diferenÃ§a, esconder seÃ§Ã£o
     secaoRecebeu.style.display = "none";
     tornarCamposRecebimentoObrigatorios(false);
 }
 
-/**
- * Torna campos de recebimento obrigatórios ou não
- */
 function tornarCamposRecebimentoObrigatorios(obrigatorio) {
     const camposRecebimento = [
         "turno_passou_tabela", "operador_passou_tabela", "matricula_passou_tabela",
@@ -785,9 +658,6 @@ function tornarCamposRecebimentoObrigatorios(obrigatorio) {
     });
 }
 
-/**
- * Controla visibilidade de falha recebida
- */
 function controleRecebeuEmFalha() {
     const recebeu = document.getElementById("recebeu_em_falha").value;
     const falhaExtra = document.getElementById("recebeuFalhaExtra");
@@ -813,17 +683,11 @@ function controleRecebeuEmFalha() {
     });
 }
 
-/* ======================================
-   CONTROLE DE ASSUNÇÃO DE TABELA
-====================================== */
 
-/**
- * Inicia o processo de finalizar turno (passagem de tabela)
- */
 function finalizarTurno() {
     // Verificar se tabela foi salva
     if (!tabelaSalva) {
-        alert("Você deve salvar a tabela antes de finalizar o turno.\n\nClique em 'Salvar Tabela' primeiro.");
+        alert("VocÃª deve salvar a tabela antes de finalizar o turno.\n\nClique em 'Salvar Tabela' primeiro.");
         return;
     }
     
@@ -831,20 +695,17 @@ function finalizarTurno() {
     document.getElementById("houve_passagem").value = "SIM";
     controlePassagem();
     
-    // Scroll para a seção de passagem
+    // Scroll para a seÃ§Ã£o de passagem
     document.getElementById("passagemExtra").scrollIntoView({ behavior: 'smooth' });
     
-    // Alterar o botão para confirmar passagem
+    // Alterar o botÃ£o para confirmar passagem
     const btnFinalizarTurno = document.getElementById("btnFinalizarTurno");
     btnFinalizarTurno.textContent = "Confirmar Passagem de Turno";
     btnFinalizarTurno.onclick = confirmarPassagemTurno;
 }
 
-/**
- * Confirma e salva a passagem de turno
- */
 async function confirmarPassagemTurno() {
-    // Validar campos obrigatórios de passagem
+    // Validar campos obrigatÃ³rios de passagem
     const vagoesMeuTurno = document.getElementById("vagoes_meu_turno").value;
     const turnoAssumiu = document.getElementById("turno_assumiu").value;
     const operadorAssumiu = document.getElementById("operador_assumiu").value;
@@ -854,7 +715,7 @@ async function confirmarPassagemTurno() {
     const assumiuEmFalha = document.getElementById("assumiu_em_falha").value;
     
     if (!vagoesMeuTurno || !turnoAssumiu || !operadorAssumiu || !matriculaAssumiu || !horaRendicao || !vagoesProximoTurno || !assumiuEmFalha) {
-        alert("Preencha todos os campos obrigatórios da passagem de turno.");
+        alert("Preencha todos os campos obrigatÃ³rios da passagem de turno.");
         return;
     }
     
@@ -904,9 +765,9 @@ async function confirmarPassagemTurno() {
         const resultado = await salvarTabelaServidor(dadosTabela);
         
         if (resultado.success) {
-            alert(`Passagem de turno registrada.\n\nA tabela "${dadosTabela.prefixo}" foi passada para o ${turnoAssumiu}.\n\nO próximo turno poderá assumir e finalizar esta tabela.`);
+            alert(`Passagem de turno registrada.\n\nA tabela "${dadosTabela.prefixo}" foi passada para o ${turnoAssumiu}.\n\nO prÃ³ximo turno poderÃ¡ assumir e finalizar esta tabela.`);
             
-            // Resetar botão
+            // Resetar botÃ£o
             btnConfirmar.disabled = false;
             btnConfirmar.textContent = textoOriginal;
             btnConfirmar.onclick = finalizarTurno;
@@ -919,15 +780,12 @@ async function confirmarPassagemTurno() {
             btnConfirmar.textContent = textoOriginal;
         }
     } catch (error) {
-        alert(`Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
+        alert(`Erro de conexÃ£o: ${error.message}\n\nVerifique sua internet.`);
         btnConfirmar.disabled = false;
         btnConfirmar.textContent = textoOriginal;
     }
 }
 
-/**
- * Controla visibilidade da seção de assunção
- */
 function controleAssuncao() {
     const assumindo = document.getElementById("assumindo_tabela").value;
     const assuncaoExtra = document.getElementById("assuncaoExtra");
@@ -936,57 +794,54 @@ function controleAssuncao() {
     const divSalvar = document.getElementById("divSalvar");
     
     if (assumindo === "NAO" || !assumindo) {
-        // Salvar seleção
+        // Salvar seleÃ§Ã£o
         if (assumindo === "NAO") {
             salvarTipoOperacao("NAO");
         }
         
-        // Iniciando nova tabela - mostrar fluxo normal mas sem botão salvar ainda
+        // Iniciando nova tabela - mostrar fluxo normal mas sem botÃ£o salvar ainda
         assuncaoExtra.style.display = "none";
         cardTabelasAndamento.style.display = "block";
         // Mostrar todos os outros cards
         cardsDados.forEach(card => card.style.display = "block");
-        // Esconder botão salvar até preencher dados
+        // Esconder botÃ£o salvar atÃ© preencher dados
         divSalvar.style.display = "none";
         
-        // Limpar dados de assunção
+        // Limpar dados de assunÃ§Ã£o
         document.getElementById("seletorTabelasAssuncao").value = "";
         document.getElementById("dadosAssuncao").style.display = "none";
         
         // Carregar turno e data salvos
         carregarTurnoDataSalvos();
         
-        // Verificar se deve mostrar botão salvar
+        // Verificar se deve mostrar botÃ£o salvar
         verificarMostrarBotaoSalvar();
         
     } else if (assumindo === "SIM") {
-        // Salvar seleção
+        // Salvar seleÃ§Ã£o
         salvarTipoOperacao("SIM");
         
-        // Assumindo tabela - mostrar seção de assunção
+        // Assumindo tabela - mostrar seÃ§Ã£o de assunÃ§Ã£o
         assuncaoExtra.style.display = "block";
         cardTabelasAndamento.style.display = "none";
-        // Manter cards de dados ocultos até selecionar tabela específica
+        // Manter cards de dados ocultos atÃ© selecionar tabela especÃ­fica
         cardsDados.forEach(card => card.style.display = "none");
-        // Esconder botão salvar até selecionar tabela e preencher dados
+        // Esconder botÃ£o salvar atÃ© selecionar tabela e preencher dados
         divSalvar.style.display = "none";
         
-        // Carregar tabelas disponíveis para assunção
+        // Carregar tabelas disponÃ­veis para assunÃ§Ã£o
         atualizarSeletorTabelasAssuncao();
     } else {
-        // Nada selecionado - mostrar cards para que usuário veja o que precisa preencher
+        // Nada selecionado - mostrar cards para que usuÃ¡rio veja o que precisa preencher
         assuncaoExtra.style.display = "none";
         cardTabelasAndamento.style.display = "block";
-        // Mostrar todos os outros cards para visualização
+        // Mostrar todos os outros cards para visualizaÃ§Ã£o
         cardsDados.forEach(card => card.style.display = "block");
-        // Esconder botão salvar até seleção ser feita
+        // Esconder botÃ£o salvar atÃ© seleÃ§Ã£o ser feita
         divSalvar.style.display = "none";
     }
 }
 
-/**
- * Controla visibilidade de falha recebida na assunção
- */
 function controleFalhaRecebida() {
     const recebeu = document.getElementById("recebeu_em_falha_assuncao").value;
     const falhaExtra = document.getElementById("falhaRecebidaExtra");
@@ -995,7 +850,7 @@ function controleFalhaRecebida() {
     
     // Se recebeu em falha, automaticamente adicionar impacto/falha
     if (recebeu === "SIM") {
-        // Verificar se já existe um impacto para "iniciou o turno com falha"
+        // Verificar se jÃ¡ existe um impacto para "iniciou o turno com falha"
         const impactosExistentes = document.querySelectorAll(".impacto-row");
         let jaExiste = false;
         let impactoExistente = null;
@@ -1019,7 +874,7 @@ function controleFalhaRecebida() {
                 }
             }
         } else if (impactoExistente) {
-            // Atualizar descrição existente
+            // Atualizar descriÃ§Ã£o existente
             const descField = impactoExistente.querySelector(".impacto-desc");
             const falhaDesc = document.getElementById("falha_recebida_desc_assuncao").value;
             if (descField) {
@@ -1029,9 +884,6 @@ function controleFalhaRecebida() {
     }
 }
 
-/**
- * Carrega tabela selecionada para assunção
- */
 async function carregarTabelaAssuncao() {
     const select = document.getElementById("seletorTabelasAssuncao");
     const tabelaId = select.value;
@@ -1046,7 +898,7 @@ async function carregarTabelaAssuncao() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("Tabela não encontrada.");
+        alert("Tabela nÃ£o encontrada.");
         return;
     }
     
@@ -1058,8 +910,8 @@ async function carregarTabelaAssuncao() {
             <p><strong>Turno Anterior:</strong> ${tabela.turno}</p>
             <p><strong>Operador Anterior:</strong> ${tabela.operador}</p>
             <p><strong>Produto:</strong> ${tabela.produto}</p>
-            <p><strong>Equipamento:</strong> ${tabela.dados.equipamento || 'Não informado'}</p>
-            <p><strong>Início:</strong> ${tabela.inicio}</p>
+            <p><strong>Equipamento:</strong> ${tabela.dados.equipamento || 'NÃ£o informado'}</p>
+            <p><strong>InÃ­cio:</strong> ${tabela.inicio}</p>
             <p><strong>Salvo em:</strong> ${tabela.salvoEm}</p>
         </div>
     `;
@@ -1070,7 +922,7 @@ async function carregarTabelaAssuncao() {
     // Preencher automaticamente dados do turno anterior
     document.getElementById("turno_passou_tabela").value = tabela.turno;
     document.getElementById("operador_passou_tabela").value = tabela.operador;
-    // Matrícula do anterior pode não estar disponível, deixar em branco
+    // MatrÃ­cula do anterior pode nÃ£o estar disponÃ­vel, deixar em branco
     
     // Preencher dados gerais da tabela
     document.getElementById("produto").value = tabela.produto;
@@ -1100,29 +952,26 @@ async function carregarTabelaAssuncao() {
     controlePassagem();
     controleFalhaAssumida();
     
-    // Mostrar cards de dados após carregar tabela
+    // Mostrar cards de dados apÃ³s carregar tabela
     const cardsDados = document.querySelectorAll('.card:not(#cardAssuncao):not(#cardTabelasAndamento):not(#cardTabelasFinalizadas)');
     cardsDados.forEach(card => card.style.display = "block");
     
-    // Verificar se deve mostrar botão salvar
+    // Verificar se deve mostrar botÃ£o salvar
     verificarMostrarBotaoSalvar();
     
-    alert(`Tabela "${tabela.prefixo}" carregada para assunção.\n\nAgora preencha seus dados pessoais obrigatórios e a situação atual da tabela.`);
+    alert(`Tabela "${tabela.prefixo}" carregada para assunÃ§Ã£o.\n\nAgora preencha seus dados pessoais obrigatÃ³rios e a situaÃ§Ã£o atual da tabela.`);
 }
 
-/**
- * Verifica se deve mostrar o botão de salvar baseado nos dados preenchidos
- */
 function verificarMostrarBotaoSalvar() {
     const assumindo = document.getElementById("assumindo_tabela").value;
     const divSalvar = document.getElementById("divSalvar");
     const btnFinalizarTurno = document.getElementById("btnFinalizarTurno");
     
     if (assumindo === "NAO" || !assumindo) {
-        // Para nova tabela, exigir dados iniciais completos antes de salvar início.
+        // Para nova tabela, exigir dados iniciais completos antes de salvar inÃ­cio.
         if (validarCamposIniciaisNovaTabela(false).valido) {
             divSalvar.style.display = "block";
-            // Mostrar finalizar turno apenas se tabela já foi salva
+            // Mostrar finalizar turno apenas se tabela jÃ¡ foi salva
             btnFinalizarTurno.style.display = tabelaSalva ? "inline-block" : "none";
         } else {
             divSalvar.style.display = "none";
@@ -1130,7 +979,7 @@ function verificarMostrarBotaoSalvar() {
         }
         
     } else if (assumindo === "SIM") {
-        // Para assunção, verificar campos obrigatórios de assunção
+        // Para assunÃ§Ã£o, verificar campos obrigatÃ³rios de assunÃ§Ã£o
         const operadorAssumiu = document.getElementById("operador_assumiu_assuncao").value;
         const matriculaAssumiu = document.getElementById("matricula_assumiu_assuncao").value;
         const turnoAssumiu = document.getElementById("turno_assumiu_assuncao").value;
@@ -1138,7 +987,7 @@ function verificarMostrarBotaoSalvar() {
         
         if (operadorAssumiu && matriculaAssumiu && turnoAssumiu && vagoesFaltavam) {
             divSalvar.style.display = "block";
-            // Mostrar finalizar turno apenas se tabela já foi salva
+            // Mostrar finalizar turno apenas se tabela jÃ¡ foi salva
             btnFinalizarTurno.style.display = tabelaSalva ? "inline-block" : "none";
         } else {
             divSalvar.style.display = "none";
@@ -1160,22 +1009,22 @@ function valorCampo(id) {
 function validarCamposIniciaisNovaTabela(mostrarMensagem = true) {
     const campos = [
         { id: "maquinista", nome: "Nome do Maquinista" },
-        { id: "loc1", nome: "Numeração da 1ª Locomotiva" },
+        { id: "loc1", nome: "NumeraÃ§Ã£o da 1Âª Locomotiva" },
         { id: "horas_maquinista", nome: "Hora de contato com Maquinista" },
         { id: "ponto_b", nome: "Passagem pelo Ponto B" },
         { id: "tabela_posicionada", nome: "Tabela Posicionada" },
         { id: "data", nome: "Data" },
         { id: "turno", nome: "Turno" },
         { id: "operador", nome: "Nome do Operador" },
-        { id: "matricula", nome: "Matrícula" },
+        { id: "matricula", nome: "MatrÃ­cula" },
         { id: "prefixo", nome: "Prefixo / Trem" },
-        { id: "inicio", nome: "Início" }
+        { id: "inicio", nome: "InÃ­cio" }
     ];
 
     for (const campo of campos) {
         if (!valorCampo(campo.id)) {
             if (mostrarMensagem) {
-                alert(`Preencha o campo obrigatório: ${campo.nome}.`);
+                alert(`Preencha o campo obrigatÃ³rio: ${campo.nome}.`);
                 const el = document.getElementById(campo.id);
                 if (el) el.focus();
             }
@@ -1186,7 +1035,7 @@ function validarCamposIniciaisNovaTabela(mostrarMensagem = true) {
     const sinalContainer = document.getElementById("sinalContainer");
     if (estaElementoVisivel(sinalContainer) && !valorCampo("sinal")) {
         if (mostrarMensagem) {
-            alert("Preencha o campo obrigatório: Passagem pelo Sinal.");
+            alert("Preencha o campo obrigatÃ³rio: Passagem pelo Sinal.");
             const el = document.getElementById("sinal");
             if (el) el.focus();
         }
@@ -1196,9 +1045,6 @@ function validarCamposIniciaisNovaTabela(mostrarMensagem = true) {
     return { valido: true };
 }
 
-/**
- * Valida campos de recebimento antes de gerar resultado
- */
 function validarCamposRecebimento() {
     const secaoRecebeu = document.getElementById("secaoRecebeuTabela");
     if (!secaoRecebeu || secaoRecebeu.style.display === "none") {
@@ -1208,9 +1054,9 @@ function validarCamposRecebimento() {
     const camposObrigatorios = [
         { id: "turno_passou_tabela", nome: "Turno que passou a tabela" },
         { id: "operador_passou_tabela", nome: "Operador que passou a tabela" },
-        { id: "matricula_passou_tabela", nome: "Matrícula do operador que passou" },
+        { id: "matricula_passou_tabela", nome: "MatrÃ­cula do operador que passou" },
         { id: "hora_assumiu_tabela", nome: "Hora que assumiu a tabela" },
-        { id: "vagoes_faltavam_assumir", nome: "Vagões que faltavam descarregar" },
+        { id: "vagoes_faltavam_assumir", nome: "VagÃµes que faltavam descarregar" },
         { id: "recebeu_em_falha", nome: "Se recebeu em falha" }
     ];
     
@@ -1219,7 +1065,7 @@ function validarCamposRecebimento() {
         if (!elemento || !elemento.value) {
             return { 
                 valido: false, 
-                mensagem: `Campo obrigatório: ${campo.nome}\n\nComo você está finalizando uma tabela de outro turno, é necessário preencher todos os dados de como recebeu a tabela.`
+                mensagem: `Campo obrigatÃ³rio: ${campo.nome}\n\nComo vocÃª estÃ¡ finalizando uma tabela de outro turno, Ã© necessÃ¡rio preencher todos os dados de como recebeu a tabela.`
             };
         }
     }
@@ -1227,8 +1073,8 @@ function validarCamposRecebimento() {
     // Se recebeu em falha, validar campos adicionais
     if (document.getElementById("recebeu_em_falha").value === "SIM") {
         const camposFalha = [
-            { id: "falha_recebida_desc", nome: "Descrição da falha recebida" },
-            { id: "hora_inicio_falha_recebida", nome: "Hora de início da falha" }
+            { id: "falha_recebida_desc", nome: "DescriÃ§Ã£o da falha recebida" },
+            { id: "hora_inicio_falha_recebida", nome: "Hora de inÃ­cio da falha" }
         ];
         
         for (const campo of camposFalha) {
@@ -1236,7 +1082,7 @@ function validarCamposRecebimento() {
             if (!elemento || !elemento.value) {
                 return { 
                     valido: false, 
-                    mensagem: `Campo obrigatório: ${campo.nome}\n\nComo você recebeu a tabela em falha, é necessário informar os detalhes.`
+                    mensagem: `Campo obrigatÃ³rio: ${campo.nome}\n\nComo vocÃª recebeu a tabela em falha, Ã© necessÃ¡rio informar os detalhes.`
                 };
             }
         }
@@ -1245,13 +1091,7 @@ function validarCamposRecebimento() {
     return { valido: true };
 }
 
-/* ======================================
-   API DO SERVIDOR
-====================================== */
 
-/**
- * Obter tabelas em andamento do servidor
- */
 async function obterTabelasAndamentoServidor() {
     try {
         const response = await fetch('/api/tabelas/andamento');
@@ -1264,9 +1104,6 @@ async function obterTabelasAndamentoServidor() {
     }
 }
 
-/**
- * Obter tabelas finalizadas do servidor
- */
 async function obterTabelasFinalizadasServidor() {
     try {
         const response = await fetch('/api/tabelas/finalizadas');
@@ -1279,9 +1116,6 @@ async function obterTabelasFinalizadasServidor() {
     }
 }
 
-/**
- * Salvar tabela no servidor
- */
 async function salvarTabelaServidor(dadosTabela) {
     try {
         const response = await fetch('/api/tabelas/andamento', {
@@ -1296,9 +1130,6 @@ async function salvarTabelaServidor(dadosTabela) {
     }
 }
 
-/**
- * Excluir tabela do servidor
- */
 async function excluirTabelaServidor(tabelaId) {
     try {
         const response = await fetch(`/api/tabelas/andamento/${tabelaId}`, {
@@ -1311,9 +1142,6 @@ async function excluirTabelaServidor(tabelaId) {
     }
 }
 
-/**
- * Finalizar tabela no servidor
- */
 async function finalizarTabelaServidor(tabelaId, dadosFinalizacao) {
     try {
         const response = await fetch(`/api/tabelas/finalizar/${tabelaId}`, {
@@ -1328,9 +1156,6 @@ async function finalizarTabelaServidor(tabelaId, dadosFinalizacao) {
     }
 }
 
-/**
- * Excluir tabela finalizada do servidor
- */
 async function excluirTabelaFinalizadaServidor(tabelaId) {
     try {
         const response = await fetch(`/api/tabelas/finalizadas/${tabelaId}`, {
@@ -1343,13 +1168,7 @@ async function excluirTabelaFinalizadaServidor(tabelaId) {
     }
 }
 
-/* ======================================
-   GERENCIAMENTO DE TABELAS
-====================================== */
 
-/**
- * Atualiza lista de tabelas (UI)
- */
 async function atualizarListaTabelas() {
     const btnAtualizar = document.getElementById("btnAtualizarTabelas");
     if (btnAtualizar) {
@@ -1370,21 +1189,15 @@ async function atualizarListaTabelas() {
     }
 }
 
-/**
- * Inicia atualização automática
- */
 function iniciarAtualizacaoAutomatica(intervaloSegundos = 30) {
     pararAtualizacaoAutomatica();
     atualizacaoAutomaticaInterval = setInterval(async () => {
         await atualizarListaTabelas();
         atualizarIndicadorSincronizacao();
     }, intervaloSegundos * 1000);
-    console.log(`Atualização automática iniciada (a cada ${intervaloSegundos}s)`);
+    console.log(`AtualizaÃ§Ã£o automÃ¡tica iniciada (a cada ${intervaloSegundos}s)`);
 }
 
-/**
- * Para atualização automática
- */
 function pararAtualizacaoAutomatica() {
     if (atualizacaoAutomaticaInterval) {
         clearInterval(atualizacaoAutomaticaInterval);
@@ -1392,27 +1205,18 @@ function pararAtualizacaoAutomatica() {
     }
 }
 
-/**
- * Atualiza indicador de sincronização
- */
 function atualizarIndicadorSincronizacao() {
     const indicador = document.getElementById("indicadorSincronizacao");
     if (indicador) {
         const agora = new Date().toLocaleTimeString('pt-BR');
-        indicador.textContent = `Última sincronização: ${agora}`;
+        indicador.textContent = `Ãšltima sincronizaÃ§Ã£o: ${agora}`;
     }
 }
 
-/**
- * Retorna tabelas em andamento do cache
- */
 function obterTabelasAndamento() {
     return tabelasAndamentoCache;
 }
 
-/**
- * Coleta dados atuais do formulário
- */
 function coletarDadosFormulario() {
     const dados = {};
     
@@ -1444,7 +1248,7 @@ function coletarDadosFormulario() {
         });
     });
     
-    // Salvar materiais carvão
+    // Salvar materiais carvÃ£o
     dados.materiais_carvao = [];
     document.querySelectorAll(".material-carvao-row").forEach(row => {
         dados.materiais_carvao.push({
@@ -1462,7 +1266,7 @@ function coletarDadosFormulario() {
         });
     });
     
-    // Salvar mudanças de fluxo
+    // Salvar mudanÃ§as de fluxo
     dados.mudancas_fluxo = [];
     document.querySelectorAll(".fluxo-row").forEach(row => {
         dados.mudancas_fluxo.push({
@@ -1482,13 +1286,10 @@ function coletarDadosFormulario() {
     return dados;
 }
 
-/**
- * Salvar tabela como início (em andamento)
- */
 async function salvarTabelaInicio() {
     let assumindo = document.getElementById("assumindo_tabela").value;
     
-    // Se não selecionou, assumir como nova tabela
+    // Se nÃ£o selecionou, assumir como nova tabela
     if (!assumindo) {
         assumindo = "NAO";
     }
@@ -1507,7 +1308,7 @@ async function salvarTabelaInicio() {
         }
     }
     
-    // Se está assumindo tabela, validar campos obrigatórios
+    // Se estÃ¡ assumindo tabela, validar campos obrigatÃ³rios
     if (assumindo === "SIM") {
         const operadorAssumiu = document.getElementById("operador_assumiu_assuncao").value;
         const matriculaAssumiu = document.getElementById("matricula_assumiu_assuncao").value;
@@ -1515,11 +1316,11 @@ async function salvarTabelaInicio() {
         const vagoesFaltavam = document.getElementById("vagoes_faltavam_assumir_assuncao").value;
         
         if (!operadorAssumiu || !matriculaAssumiu || !turnoAssumiu || !vagoesFaltavam) {
-            alert("Preencha todos os dados obrigatórios da assunção.");
+            alert("Preencha todos os dados obrigatÃ³rios da assunÃ§Ã£o.");
             return;
         }
         
-        // Preencher referência de recebimento automaticamente
+        // Preencher referÃªncia de recebimento automaticamente
         document.getElementById("hora_assumiu_tabela").value = new Date().toTimeString().slice(0, 5);
     }
     
@@ -1550,9 +1351,9 @@ async function salvarTabelaInicio() {
             tabelaSalva = true; // Marcar que tabela foi salva
             
             if (resultado.atualizado) {
-                alert(`Início da tabela "${prefixo}" atualizado no servidor.\n\nOutros usuários podem ver esta tabela.\n\nOs dados preenchidos continuam salvos localmente mesmo que você recarregue a página.`);
+                alert(`InÃ­cio da tabela "${prefixo}" atualizado no servidor.\n\nOutros usuÃ¡rios podem ver esta tabela.\n\nOs dados preenchidos continuam salvos localmente mesmo que vocÃª recarregue a pÃ¡gina.`);
             } else {
-                alert(`Início da tabela "${prefixo}" salvo no servidor.\n\nOutros usuários podem ver e finalizar esta tabela.\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".\n\nSeus dados ficam salvos localmente e persistem após recarregar a página.`);
+                alert(`InÃ­cio da tabela "${prefixo}" salvo no servidor.\n\nOutros usuÃ¡rios podem ver e finalizar esta tabela.\n\nQuando quiser finalizar, selecione-a na lista "Tabelas em Andamento".\n\nSeus dados ficam salvos localmente e persistem apÃ³s recarregar a pÃ¡gina.`);
             }
             
             await atualizarSeletorTabelas();
@@ -1566,7 +1367,7 @@ async function salvarTabelaInicio() {
             alert(`Erro ao salvar tabela: ${resultado.error || 'Erro desconhecido'}`);
         }
     } catch (error) {
-        alert(`Erro de conexão: ${error.message}\n\nVerifique sua internet.`);
+        alert(`Erro de conexÃ£o: ${error.message}\n\nVerifique sua internet.`);
     } finally {
         if (btnSalvar) {
             btnSalvar.disabled = false;
@@ -1575,9 +1376,6 @@ async function salvarTabelaInicio() {
     }
 }
 
-/**
- * Atualiza o seletor de tabelas em andamento
- */
 async function atualizarSeletorTabelas() {
     const select = document.getElementById("seletorTabelasAndamento");
     const tabelas = await obterTabelasAndamentoServidor();
@@ -1594,7 +1392,7 @@ async function atualizarSeletorTabelas() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        const produtoLabel = tabela.produto === "Carvão" ? "CARVAO" : "MINERIO";
+        const produtoLabel = tabela.produto === "CarvÃ£o" ? "CARVAO" : "MINERIO";
         option.textContent = `${produtoLabel} | ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
@@ -1605,9 +1403,6 @@ async function atualizarSeletorTabelas() {
     }
 }
 
-/**
- * Mostra informações da tabela selecionada
- */
 function mostrarInfoTabelaSelecionada(tabela) {
     const info = document.getElementById("infoTabelaSelecionada");
     
@@ -1627,16 +1422,13 @@ function mostrarInfoTabelaSelecionada(tabela) {
         Prefixo: ${tabela.prefixo}<br>
         Data: ${dataFormatada}<br>
         Turno: ${tabela.turno}<br>
-        Início: ${tabela.inicio}<br>
+        InÃ­cio: ${tabela.inicio}<br>
         Operador: ${tabela.operador || '-'}<br>
         <small>Salvo em: ${tabela.salvoEm}</small>
     `;
     info.style.display = "block";
 }
 
-/**
- * Carrega tabela selecionada do histórico
- */
 function carregarTabelaAndamento() {
     const select = document.getElementById("seletorTabelasAndamento");
     const tabelaId = select.value;
@@ -1650,16 +1442,16 @@ function carregarTabelaAndamento() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("Tabela não encontrada.");
+        alert("Tabela nÃ£o encontrada.");
         return;
     }
     
-    if (!confirm(`Carregar a tabela "${tabela.prefixo}"?\n\nOs dados atuais do formulário serão substituídos.`)) {
+    if (!confirm(`Carregar a tabela "${tabela.prefixo}"?\n\nOs dados atuais do formulÃ¡rio serÃ£o substituÃ­dos.`)) {
         select.value = "";
         return;
     }
     
-    // Limpar containers dinâmicos
+    // Limpar containers dinÃ¢micos
     document.getElementById("impactosContainer").innerHTML = "";
     document.getElementById("materiaisCarvaoContainer").innerHTML = "";
     document.getElementById("mudancaFluxoContainer").innerHTML = "";
@@ -1674,11 +1466,11 @@ function carregarTabelaAndamento() {
         }
     });
     
-    // Quando carrega uma tabela existente para finalizar, não está assumindo
+    // Quando carrega uma tabela existente para finalizar, nÃ£o estÃ¡ assumindo
     document.getElementById("assumindo_tabela").value = "NAO";
     controleAssuncao();
     
-    tabelaSalva = false; // Resetar flag pois tabela foi carregada mas não salva ainda
+    tabelaSalva = false; // Resetar flag pois tabela foi carregada mas nÃ£o salva ainda
     
     // Atualizar controles visuais
     atualizarEquipamentos();
@@ -1711,7 +1503,7 @@ function carregarTabelaAndamento() {
         });
     }
     
-    // Restaurar materiais carvão
+    // Restaurar materiais carvÃ£o
     if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
         dados.materiais_carvao.forEach(mat => {
             adicionarMaterialCarvao();
@@ -1733,7 +1525,7 @@ function carregarTabelaAndamento() {
         });
     }
     
-    // Restaurar mudanças de fluxo
+    // Restaurar mudanÃ§as de fluxo
     if (dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
         dados.mudancas_fluxo.forEach(fluxo => {
             adicionarMudancaFluxo();
@@ -1756,7 +1548,7 @@ function carregarTabelaAndamento() {
     
     mostrarInfoTabelaSelecionada(tabela);
     
-    // Guardar informações da tabela carregada
+    // Guardar informaÃ§Ãµes da tabela carregada
     tabelaCarregadaInfo = {
         turno: tabela.turno,
         operador: tabela.operador,
@@ -1764,21 +1556,18 @@ function carregarTabelaAndamento() {
         dados: dados
     };
     
-    // Verificar se está finalizando tabela de outro turno
+    // Verificar se estÃ¡ finalizando tabela de outro turno
     setTimeout(() => {
         verificarTabelaOutroTurno();
     }, 500);
     
-    // Rolar para o campo de término
+    // Rolar para o campo de tÃ©rmino
     document.getElementById("termino").scrollIntoView({ behavior: 'smooth', block: 'center' });
     document.getElementById("termino").focus();
     
-    alert(`Tabela "${tabela.prefixo}" carregada.\n\nAgora preencha o Término e gere o resultado.\n\nSe você é de outro turno/operador, preencha os dados de como recebeu a tabela.`);
+    alert(`Tabela "${tabela.prefixo}" carregada.\n\nAgora preencha o TÃ©rmino e gere o resultado.\n\nSe vocÃª Ã© de outro turno/operador, preencha os dados de como recebeu a tabela.`);
 }
 
-/**
- * Exclui tabela selecionada
- */
 async function excluirTabelaAndamento() {
     const select = document.getElementById("seletorTabelasAndamento");
     const tabelaId = select.value;
@@ -1792,11 +1581,11 @@ async function excluirTabelaAndamento() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("Tabela não encontrada.");
+        alert("Tabela nÃ£o encontrada.");
         return;
     }
     
-    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\nEsta ação não pode ser desfeita e afetará todos os usuários.`)) {
+    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\nEsta aÃ§Ã£o nÃ£o pode ser desfeita e afetarÃ¡ todos os usuÃ¡rios.`)) {
         return;
     }
     
@@ -1806,18 +1595,15 @@ async function excluirTabelaAndamento() {
         if (resultado.success) {
             await atualizarSeletorTabelas();
             document.getElementById("infoTabelaSelecionada").style.display = "none";
-            alert(`Tabela "${tabela.prefixo}" excluída do servidor.`);
+            alert(`Tabela "${tabela.prefixo}" excluÃ­da do servidor.`);
         } else {
             alert(`Erro ao excluir: ${resultado.error || 'Erro desconhecido'}`);
         }
     } catch (error) {
-        alert(`Erro de conexão: ${error.message}`);
+        alert(`Erro de conexÃ£o: ${error.message}`);
     }
 }
 
-/**
- * Atualiza lista de tabelas finalizadas na UI
- */
 async function atualizarListaFinalizadas() {
     const container = document.getElementById("listaFinalizadas");
     if (!container) return;
@@ -1838,19 +1624,19 @@ async function atualizarListaFinalizadas() {
             dataFormatada = `${dia}/${mes}/${ano}`;
         }
         
-        const produtoLabel = tabela.produto === "Carvão" ? "CARVAO" : "MINERIO";
+        const produtoLabel = tabela.produto === "CarvÃ£o" ? "CARVAO" : "MINERIO";
         
         html += `
             <div class="tabela-finalizada-item" data-id="${tabela.id}">
                 <div class="tabela-finalizada-info">
                     <strong>${produtoLabel} | ${tabela.prefixo}</strong>
                     <span>${dataFormatada} | ${tabela.turno}</span>
-                    <span>Início: ${tabela.inicio} → Término: ${tabela.termino || '-'}</span>
+                    <span>InÃ­cio: ${tabela.inicio} â†’ TÃ©rmino: ${tabela.termino || '-'}</span>
                     <span>Operador: ${tabela.operador || '-'}</span>
                     <span>Taxa: ${tabela.taxaEfetiva ? tabela.taxaEfetiva + ' t/h' : '-'}</span>
                 </div>
                 <div class="tabela-finalizada-acoes">
-                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">Ver</button>
+                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatÃ³rio">Ver</button>
                     <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" class="btn-limpar">Excluir</button>
                 </div>
             </div>
@@ -1866,20 +1652,17 @@ async function atualizarListaFinalizadas() {
     }
 }
 
-/**
- * Ver relatório de tabela finalizada
- */
 function verRelatorioFinalizado(tabelaId) {
     const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
     if (!tabela || !tabela.relatorio) {
-        alert("Relatório não disponível.");
+        alert("RelatÃ³rio nÃ£o disponÃ­vel.");
         return;
     }
     
     const resultadoDiv = document.getElementById("resultado");
     if (resultadoDiv) {
         resultadoDiv.innerHTML = `
-            <h3>Relatório - ${tabela.prefixo}</h3>
+            <h3>RelatÃ³rio - ${tabela.prefixo}</h3>
             <pre class="relatorio-pre">${tabela.relatorio}</pre>
         `;
         resultadoDiv.style.display = "block";
@@ -1887,17 +1670,14 @@ function verRelatorioFinalizado(tabelaId) {
     }
 }
 
-/**
- * Excluir tabela finalizada
- */
 async function excluirTabelaFinalizada(tabelaId) {
     const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
     if (!tabela) {
-        alert("Tabela não encontrada!");
+        alert("Tabela nÃ£o encontrada!");
         return;
     }
     
-    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\nEsta ação não pode ser desfeita.`)) {
+    if (!confirm(`Excluir a tabela finalizada "${tabela.prefixo}"?\n\nEsta aÃ§Ã£o nÃ£o pode ser desfeita.`)) {
         return;
     }
     
@@ -1905,22 +1685,16 @@ async function excluirTabelaFinalizada(tabelaId) {
         const resultado = await excluirTabelaFinalizadaServidor(tabelaId);
         if (resultado.success) {
             await atualizarListaFinalizadas();
-            alert(`Tabela "${tabela.prefixo}" excluída.`);
+            alert(`Tabela "${tabela.prefixo}" excluÃ­da.`);
         } else {
             alert(`Erro ao excluir: ${resultado.error}`);
         }
     } catch (error) {
-        alert(`Erro de conexão: ${error.message}`);
+        alert(`Erro de conexÃ£o: ${error.message}`);
     }
 }
 
-/* ======================================
-   PERSISTÊNCIA LOCAL
-====================================== */
 
-/**
- * Salva dados do formulário no localStorage
- */
 function salvarDadosFormulario() {
     const dados = coletarDadosFormulario();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
@@ -1938,7 +1712,7 @@ function agendarAutoSaveServidor() {
         const turno = document.getElementById("turno")?.value;
         const inicio = document.getElementById("inicio")?.value;
 
-        // Só auto-salva quando já existe identificação mínima da tabela.
+        // SÃ³ auto-salva quando jÃ¡ existe identificaÃ§Ã£o mÃ­nima da tabela.
         if (!prefixo || !data || !turno || !inicio) {
             return;
         }
@@ -1961,9 +1735,6 @@ function agendarAutoSaveServidor() {
     }, 1200);
 }
 
-/**
- * Restaura dados do formulário do localStorage
- */
 function restaurarDadosFormulario() {
     const dadosSalvos = localStorage.getItem(STORAGE_KEY);
     if (!dadosSalvos) return;
@@ -2009,7 +1780,7 @@ function restaurarDadosFormulario() {
         });
     }
     
-    // Restaurar materiais carvão
+    // Restaurar materiais carvÃ£o
     if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
         dados.materiais_carvao.forEach(mat => {
             adicionarMaterialCarvao();
@@ -2031,7 +1802,7 @@ function restaurarDadosFormulario() {
         });
     }
     
-    // Restaurar mudanças de fluxo
+    // Restaurar mudanÃ§as de fluxo
     if (dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
         dados.mudancas_fluxo.forEach(fluxo => {
             adicionarMudancaFluxo();
@@ -2053,22 +1824,13 @@ function restaurarDadosFormulario() {
     }
 }
 
-/**
- * Limpa dados salvos do localStorage
- */
 function limparDadosSalvos() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STORAGE_KEY_TURNO_DATA);
     localStorage.removeItem(STORAGE_KEY_TIPO_OPERACAO);
 }
 
-/* ======================================
-   ELEMENTOS DINÂMICOS
-====================================== */
 
-/**
- * Adiciona mudança de fluxo
- */
 function adicionarMudancaFluxo() {
     const container = document.getElementById("mudancaFluxoContainer");
     const index = container.children.length + 1;
@@ -2078,12 +1840,12 @@ function adicionarMudancaFluxo() {
     
     row.innerHTML = `
         <div class="fluxo-header">
-            <strong>Mudança #${index}</strong>
-            <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">✕</button>
+            <strong>MudanÃ§a #${index}</strong>
+            <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">âœ•</button>
         </div>
         
         <div class="fluxo-campos">
-            <input type="time" class="fluxo-hora" title="Horário da mudança">
+            <input type="time" class="fluxo-hora" title="HorÃ¡rio da mudanÃ§a">
             <input type="text" class="fluxo-anterior" placeholder="Fluxo anterior (Ex: 8000 t/h)">
             <input type="text" class="fluxo-novo" placeholder="Novo fluxo (Ex: 6000 t/h)">
         </div>
@@ -2092,23 +1854,20 @@ function adicionarMudancaFluxo() {
             <label class="solicitante-label">Quem solicitou?</label>
             <div class="solicitante-checkboxes">
                 <label><input type="checkbox" class="fluxo-cco" value="CCO"> CCO</label>
-                <label><input type="checkbox" class="fluxo-mecanica-corretiva" value="MECANICA_CORRETIVA"> Mecânica Corretiva</label>
-                <label><input type="checkbox" class="fluxo-mecanica-preventiva" value="MECANICA_PREVENTIVA"> Mecânica Preventiva</label>
-                <label><input type="checkbox" class="fluxo-eletrica-corretiva" value="ELETRICA_CORRETIVA"> Elétrica Corretiva</label>
-                <label><input type="checkbox" class="fluxo-eletrica-preventiva" value="ELETRICA_PREVENTIVA"> Elétrica Preventiva</label>
-                <label><input type="checkbox" class="fluxo-operacao" value="OPERACAO"> Operação</label>
+                <label><input type="checkbox" class="fluxo-mecanica-corretiva" value="MECANICA_CORRETIVA"> MecÃ¢nica Corretiva</label>
+                <label><input type="checkbox" class="fluxo-mecanica-preventiva" value="MECANICA_PREVENTIVA"> MecÃ¢nica Preventiva</label>
+                <label><input type="checkbox" class="fluxo-eletrica-corretiva" value="ELETRICA_CORRETIVA"> ElÃ©trica Corretiva</label>
+                <label><input type="checkbox" class="fluxo-eletrica-preventiva" value="ELETRICA_PREVENTIVA"> ElÃ©trica Preventiva</label>
+                <label><input type="checkbox" class="fluxo-operacao" value="OPERACAO"> OperaÃ§Ã£o</label>
             </div>
         </div>
         
-        <input type="text" class="fluxo-motivo" placeholder="Motivo da mudança">
+        <input type="text" class="fluxo-motivo" placeholder="Motivo da mudanÃ§a">
     `;
     
     container.appendChild(row);
 }
 
-/**
- * Adiciona material de carvão
- */
 function adicionarMaterialCarvao() {
     const container = document.getElementById("materiaisCarvaoContainer");
     const index = container.children.length + 1;
@@ -2119,24 +1878,24 @@ function adicionarMaterialCarvao() {
     row.innerHTML = `
         <div class="material-header">
             <strong>Material #${index}</strong>
-            <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">✕</button>
+            <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">âœ•</button>
         </div>
         
         <label>Categoria do Material</label>
         <select class="carvao-categoria" onchange="atualizarTiposMaterial(this)">
-            <option value="CARVAO">Carvão</option>
+            <option value="CARVAO">CarvÃ£o</option>
             <option value="COQUE">Coque</option>
         </select>
         
         <label>Tipo de Material (sigla)</label>
-        <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvão) ou CCM, KL (coque)">
+        <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvÃ£o) ou CCM, KL (coque)">
         
-        <label>Pátio de origem</label>
+        <label>PÃ¡tio de origem</label>
         <select class="carvao-patio" onchange="atualizarRecuperadora(this)">
             <option value="">Selecione</option>
-            <option value="PATIO 0">Pátio 0</option>
-            <option value="PATIO 1">Pátio 1</option>
-            <option value="PATIO 2">Pátio 2</option>
+            <option value="PATIO 0">PÃ¡tio 0</option>
+            <option value="PATIO 1">PÃ¡tio 1</option>
+            <option value="PATIO 2">PÃ¡tio 2</option>
         </select>
         
         <label>Baliza</label>
@@ -2148,16 +1907,16 @@ function adicionarMaterialCarvao() {
             <option value="R1A">R1A</option>
         </select>
         
-        <label>Ação (zerar/completar)</label>
+        <label>AÃ§Ã£o (zerar/completar)</label>
         <select class="carvao-acao">
             <option value="zerar">Zerar</option>
             <option value="completar">Completar</option>
         </select>
         
-        <label>Horário início deste material</label>
+        <label>HorÃ¡rio inÃ­cio deste material</label>
         <input type="time" class="carvao-hora-inicio">
         
-        <label>Horário fim deste material</label>
+        <label>HorÃ¡rio fim deste material</label>
         <input type="time" class="carvao-hora-fim">
         
         <div class="carvao-pesos">
@@ -2171,16 +1930,13 @@ function adicionarMaterialCarvao() {
             </div>
         </div>
         
-        <label>Vagões carregados</label>
-        <input type="number" class="carvao-vagoes" placeholder="Qtd vagões" min="0">
+        <label>VagÃµes carregados</label>
+        <input type="number" class="carvao-vagoes" placeholder="Qtd vagÃµes" min="0">
     `;
     
     container.appendChild(row);
 }
 
-/**
- * Adiciona impacto/falha
- */
 function adicionarImpacto() {
     const container = document.getElementById("impactosContainer");
 
@@ -2188,15 +1944,15 @@ function adicionarImpacto() {
     row.className = "impacto-row";
 
     row.innerHTML = `
-        <input type="text" class="impacto-desc" placeholder="Descrição do impacto/falha">
+        <input type="text" class="impacto-desc" placeholder="DescriÃ§Ã£o do impacto/falha">
         
         <div class="impacto-atendimento-grupo">
             <label class="atendimento-label">Quem atendeu a falha?</label>
             <div class="atendimento-checkboxes">
-                <label><input type="checkbox" class="impacto-atend-mecanica-prev" value="MECANICA_PREVENTIVA"> Mecânica Preventiva</label>
-                <label><input type="checkbox" class="impacto-atend-mecanica-corr" value="MECANICA_CORRETIVA"> Mecânica Corretiva</label>
-                <label><input type="checkbox" class="impacto-atend-eletrica-prev" value="ELETRICA_PREVENTIVA"> Elétrica Preventiva</label>
-                <label><input type="checkbox" class="impacto-atend-eletrica-corr" value="ELETRICA_CORRETIVA"> Elétrica Corretiva</label>
+                <label><input type="checkbox" class="impacto-atend-mecanica-prev" value="MECANICA_PREVENTIVA"> MecÃ¢nica Preventiva</label>
+                <label><input type="checkbox" class="impacto-atend-mecanica-corr" value="MECANICA_CORRETIVA"> MecÃ¢nica Corretiva</label>
+                <label><input type="checkbox" class="impacto-atend-eletrica-prev" value="ELETRICA_PREVENTIVA"> ElÃ©trica Preventiva</label>
+                <label><input type="checkbox" class="impacto-atend-eletrica-corr" value="ELETRICA_CORRETIVA"> ElÃ©trica Corretiva</label>
                 <label><input type="checkbox" class="impacto-atend-operacional" value="OPERACIONAL"> Operacional</label>
             </div>
         </div>
@@ -2211,7 +1967,7 @@ function adicionarImpacto() {
         </div>
     `;
 
-    // Calcular hora de liberação automaticamente
+    // Calcular hora de liberaÃ§Ã£o automaticamente
     const horaInicio = row.querySelector(".impacto-hora-inicio");
     const horasParado = row.querySelector(".impacto-h");
     const minutosParado = row.querySelector(".impacto-m");
@@ -2237,24 +1993,18 @@ function adicionarImpacto() {
     horasParado.addEventListener("input", calcularHoraFim);
     minutosParado.addEventListener("input", calcularHoraFim);
 
-    // Aplicar capitalização inteligente
+    // Aplicar capitalizaÃ§Ã£o inteligente
     aplicarCapitalizacaoImpacto(row.querySelector(".impacto-desc"));
     aplicarCapitalizacaoImpacto(row.querySelector(".impacto-acao"));
 
     container.appendChild(row);
 }
 
-/* ======================================
-   CÁLCULO E RESULTADO
-====================================== */
 
-/**
- * Função principal de cálculo
- */
 function calcular() {
     // Verificar se tabela foi salva
     if (!tabelaSalva) {
-        alert("Você deve salvar a tabela antes de gerar o resultado.\n\nClique em 'Salvar Início' primeiro.");
+        alert("VocÃª deve salvar a tabela antes de gerar o resultado.\n\nClique em 'Salvar InÃ­cio' primeiro.");
         return;
     }
     
@@ -2291,7 +2041,7 @@ function calcular() {
         impactosAcao.push(capitalizarFrases(row.querySelector(".impacto-acao")?.value || ""));
     });
 
-    // Coletar mudanças de fluxo
+    // Coletar mudanÃ§as de fluxo
     const mudancasFluxo = [];
     document.querySelectorAll(".fluxo-row").forEach(row => {
         const solicitantes = [];
@@ -2311,7 +2061,7 @@ function calcular() {
         });
     });
 
-    // Coletar materiais de carvão
+    // Coletar materiais de carvÃ£o
     const materiaisCarvao = [];
     document.querySelectorAll(".material-carvao-row").forEach(row => {
         materiaisCarvao.push({
@@ -2390,11 +2140,11 @@ function calcular() {
         falha_recebida_operacional: document.getElementById("falha_recebida_operacional")?.checked || false,
         falha_recebida_outro: document.getElementById("falha_recebida_outro")?.checked || false,
 
-        // Mudança de fluxo
+        // MudanÃ§a de fluxo
         houve_mudanca_fluxo: document.getElementById("houve_mudanca_fluxo")?.value || "NAO",
         mudancas_fluxo: mudancasFluxo,
 
-        // Minério
+        // MinÃ©rio
         equipamento: document.getElementById("equipamento")?.value || "",
         tipo_material: toUpperSafe(document.getElementById("tipo_material")?.value) || "",
         destino: document.getElementById("destino")?.value || "",
@@ -2421,7 +2171,7 @@ function calcular() {
         hora_inicio_patio2: document.getElementById("hora_inicio_patio2")?.value || "",
         hora_fim_patio2: document.getElementById("hora_fim_patio2")?.value || "",
 
-        // Carvão
+        // CarvÃ£o
         primeiro_vagao: toUpperSafe(document.getElementById("primeiro_vagao")?.value) || "",
         materiais_carvao: materiaisCarvao
     };
@@ -2436,13 +2186,13 @@ function calcular() {
         const resultado = document.getElementById("resultado");
         resultado.style.display = "block";
         
-        if (dados.produto === "Carvão") {
+        if (dados.produto === "CarvÃ£o") {
             resultado.innerHTML = gerarResultadoCarvao(dados, data);
         } else {
             resultado.innerHTML = gerarResultadoMinerio(dados, data);
         }
         
-        // Se tem término, finalizar a tabela
+        // Se tem tÃ©rmino, finalizar a tabela
         if (dados.termino) {
             let tabelaSelecionadaId = document.getElementById("seletorTabelasAndamento").value;
 
@@ -2470,11 +2220,11 @@ function calcular() {
                             mostrarInfoTabelaSelecionada(tabela);
                         }
                     } else {
-                        console.warn("Não foi possível salvar tabela automaticamente antes da finalização.");
+                        console.warn("NÃ£o foi possÃ­vel salvar tabela automaticamente antes da finalizaÃ§Ã£o.");
                     }
                 }
 
-                // Se conseguimos um ID (selecionado ou recém-criado), finalizar no servidor
+                // Se conseguimos um ID (selecionado ou recÃ©m-criado), finalizar no servidor
                 if (tabelaSelecionadaId) {
                     const dadosFinalizacao = {
                         termino: dados.termino,
@@ -2488,7 +2238,7 @@ function calcular() {
                     const resultadoFinalizar = await finalizarTabelaServidor(tabelaSelecionadaId, dadosFinalizacao);
 
                     if (resultadoFinalizar.success) {
-                        // Limpa seleção e atualiza listas para exibir em "Finalizadas" imediatamente
+                        // Limpa seleÃ§Ã£o e atualiza listas para exibir em "Finalizadas" imediatamente
                         document.getElementById("seletorTabelasAndamento").value = "";
                         document.getElementById("infoTabelaSelecionada").style.display = "none";
                         await atualizarListaTabelas();
@@ -2502,17 +2252,11 @@ function calcular() {
     });
 }
 
-/* ======================================
-   GERAÇÃO DE RESULTADO HTML
-====================================== */
 
-/**
- * Gera resultado para minério
- */
 function gerarResultadoMinerio(dados, data) {
     let destinoTexto = "";
     if (dados.destino === "PATIO") {
-        destinoTexto = `Pátio ${dados.patio} | Baliza ${dados.baliza} | ${dados.maquina_patio || "—"}`;
+        destinoTexto = `PÃ¡tio ${dados.patio} | Baliza ${dados.baliza} | ${dados.maquina_patio || "â€”"}`;
     }
     if (dados.destino === "BORDO") {
         destinoTexto = dados.passando_por ? `Bordo (passando por ${dados.passando_por})` : "Trem de Bordo";
@@ -2523,7 +2267,7 @@ function gerarResultadoMinerio(dados, data) {
     let passagemHTML = gerarPassagemHTML(dados);
     let mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
 
-    let dataFormatada = "—";
+    let dataFormatada = "â€”";
     if (dados.data) {
         const [ano, mes, dia] = dados.data.split("-");
         dataFormatada = `${dia}/${mes}/${ano}`;
@@ -2533,26 +2277,26 @@ function gerarResultadoMinerio(dados, data) {
     if (dados.destino === "PARTIDA") {
         if (dados.tipo_divisao === "PATIO_PATIO") {
             tabelaPartidaHTML = `
-<strong>TABELA DIVIDIDA (PÁTIO + PÁTIO):</strong><br>
-<strong>1º Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
-Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br><br>
-<strong>2º Pátio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "—"}<br>
-Vagões: ${dados.vagoes_patio2 || "—"} (${dados.hora_inicio_patio2 || "—"} → ${dados.hora_fim_patio2 || "—"})<br>
+<strong>TABELA DIVIDIDA (PÃTIO + PÃTIO):</strong><br>
+<strong>1Âº PÃ¡tio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "â€”"}<br>
+VagÃµes: ${dados.vagoes_patio || "â€”"} (${dados.hora_inicio_patio || "â€”"} â†’ ${dados.hora_fim_patio || "â€”"})<br><br>
+<strong>2Âº PÃ¡tio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "â€”"}<br>
+VagÃµes: ${dados.vagoes_patio2 || "â€”"} (${dados.hora_inicio_patio2 || "â€”"} â†’ ${dados.hora_fim_patio2 || "â€”"})<br>
 <br>`;
         } else {
             tabelaPartidaHTML = `
-<strong>TABELA DIVIDIDA (PÁTIO + BORDO):</strong><br>
-<strong>Pátio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "—"}<br>
-Vagões: ${dados.vagoes_patio || "—"} (${dados.hora_inicio_patio || "—"} → ${dados.hora_fim_patio || "—"})<br><br>
+<strong>TABELA DIVIDIDA (PÃTIO + BORDO):</strong><br>
+<strong>PÃ¡tio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "â€”"}<br>
+VagÃµes: ${dados.vagoes_patio || "â€”"} (${dados.hora_inicio_patio || "â€”"} â†’ ${dados.hora_fim_patio || "â€”"})<br><br>
 <strong>Bordo:</strong><br>
-Vagões: ${dados.vagoes_bordo || "—"} (${dados.hora_inicio_bordo || "—"} → ${dados.hora_fim_bordo || "—"})<br>
+VagÃµes: ${dados.vagoes_bordo || "â€”"} (${dados.hora_inicio_bordo || "â€”"} â†’ ${dados.hora_fim_bordo || "â€”"})<br>
 <br>`;
         }
     }
 
     return `
-<strong>Data da Operação:</strong> ${dataFormatada}<br>
-<strong>Turno:</strong> ${dados.turno || "—"}<br>
+<strong>Data da OperaÃ§Ã£o:</strong> ${dataFormatada}<br>
+<strong>Turno:</strong> ${dados.turno || "â€”"}<br>
 <hr>
 
 <strong>${dados.prefixo}</strong><br>
@@ -2572,31 +2316,28 @@ Destino: ${destinoTexto}<br><br>
 
 ${tabelaPartidaHTML}
 <br>
-<strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
-<strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
-<strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
+<strong>INÃCIO:</strong> ${dados.inicio || "â€”"}h<br>
+<strong>TÃ‰RMINO:</strong> ${dados.termino || "â€”"}h<br>
+<strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "â€”"}<br>
 Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
-Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
+Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "â€”"}<br><br>
 
 Peso Total: ${dados.peso} t<br>
-<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
+<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "â€”"}<br><br>
 
 ${mudancaFluxoHTML}
 ${passagemHTML}
 <strong>Impactos/Falhas:</strong><br>${impactosHTML}<br>
-<strong>Observações:</strong><br>${dados.observacoes}
+<strong>ObservaÃ§Ãµes:</strong><br>${dados.observacoes}
     `;
 }
 
-/**
- * Gera resultado para carvão
- */
 function gerarResultadoCarvao(dados, data) {
     let impactosHTML = gerarImpactosHTML(dados);
     let passagemHTML = gerarPassagemHTML(dados);
     let mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
 
-    let dataFormatada = "—";
+    let dataFormatada = "â€”";
     if (dados.data) {
         const [ano, mes, dia] = dados.data.split("-");
         dataFormatada = `${dia}/${mes}/${ano}`;
@@ -2606,7 +2347,7 @@ function gerarResultadoCarvao(dados, data) {
     if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
         dados.materiais_carvao.forEach((mat, i) => {
             if (mat.tipo_material) {
-                const categoriaNome = mat.categoria === "COQUE" ? "Coque" : "Carvão";
+                const categoriaNome = mat.categoria === "COQUE" ? "Coque" : "CarvÃ£o";
                 materiaisHTML += `
 <div style="border-left: 3px solid #ffa500; padding-left: 10px; margin: 15px 0;">
 ${mat.patio} - ${mat.baliza}<br>
@@ -2614,18 +2355,18 @@ ${mat.recuperadora}<br><br>
 
 ${categoriaNome}: ${mat.tipo_material} (${mat.acao})<br><br>
 
-<strong>Peso ECV:</strong> ${mat.peso_ecv || "—"} t<br>
-<strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "—"} t<br>
-Vagões: ${mat.vagoes || "—"}<br>
-${mat.hora_inicio ? `${mat.hora_inicio} → ${mat.hora_fim || "—"}<br><br>` : ""}
+<strong>Peso ECV:</strong> ${mat.peso_ecv || "â€”"} t<br>
+<strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "â€”"} t<br>
+VagÃµes: ${mat.vagoes || "â€”"}<br>
+${mat.hora_inicio ? `${mat.hora_inicio} â†’ ${mat.hora_fim || "â€”"}<br><br>` : ""}
 </div>`;
             }
         });
     }
 
     return `
-<strong>Data da Operação:</strong> ${dataFormatada}<br>
-<strong>Turno:</strong> ${dados.turno || "—"}<br>
+<strong>Data da OperaÃ§Ã£o:</strong> ${dataFormatada}<br>
+<strong>Turno:</strong> ${dados.turno || "â€”"}<br>
 <hr>
 
 <strong>ECV</strong><br><br>
@@ -2640,29 +2381,26 @@ Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 Contato com Maquinista: ${dados.horas_maquinista}<br>
 Passagem Ponto B: ${dados.ponto_b}<br>
 Tabela Posicionada: ${dados.tabela_posicionada}<br>
-1º Vagão: ${dados.primeiro_vagao || "—"}<br><br>
+1Âº VagÃ£o: ${dados.primeiro_vagao || "â€”"}<br><br>
 
 ${materiaisHTML}
 <br>
-<strong>INÍCIO:</strong> ${dados.inicio || "—"}h<br>
-<strong>TÉRMINO:</strong> ${dados.termino || "—"}h<br>
-<strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "—"}<br>
+<strong>INÃCIO:</strong> ${dados.inicio || "â€”"}h<br>
+<strong>TÃ‰RMINO:</strong> ${dados.termino || "â€”"}h<br>
+<strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "â€”"}<br>
 Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
-Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "—"}<br><br>
+Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "â€”"}<br><br>
 
 Peso Total: ${dados.peso} t<br>
-<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "—"}<br><br>
+<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "â€”"}<br><br>
 
 ${mudancaFluxoHTML}
 ${passagemHTML}
 <strong>Impactos/Falhas:</strong><br>${impactosHTML}<br>
-<strong>Observações:</strong><br>${dados.observacoes}
+<strong>ObservaÃ§Ãµes:</strong><br>${dados.observacoes}
     `;
 }
 
-/**
- * Gera HTML dos impactos
- */
 function gerarImpactosHTML(dados) {
     let html = "";
     dados.impactos.forEach((min, i) => {
@@ -2671,47 +2409,41 @@ function gerarImpactosHTML(dados) {
             const horaFim = dados.impactos_hora_fim[i] || "";
             const tipoAtend = dados.impactos_tipo_atendimento[i] || "";
             const acao = dados.impactos_acao[i] || "";
-            const horarios = horaInicio ? ` (${horaInicio} → ${horaFim})` : "";
+            const horarios = horaInicio ? ` (${horaInicio} â†’ ${horaFim})` : "";
             const tipoTexto = tipoAtend ? ` [${tipoAtend}]` : "";
-            const acaoTexto = acao ? ` - Ação: ${acao}` : "";
-            html += `• ${dados.impactos_desc[i]}${tipoTexto} – ${formatarTempo(min)}${horarios}${acaoTexto}<br>`;
+            const acaoTexto = acao ? ` - AÃ§Ã£o: ${acao}` : "";
+            html += `â€¢ ${dados.impactos_desc[i]}${tipoTexto} â€“ ${formatarTempo(min)}${horarios}${acaoTexto}<br>`;
         }
     });
     return html || "Nenhum impacto registrado<br>";
 }
 
-/**
- * Gera HTML da passagem de turno
- */
 function gerarPassagemHTML(dados) {
     if (dados.houve_passagem === "SIM") {
         let falhaTexto = "";
         if (dados.assumiu_em_falha === "SIM") {
-            falhaTexto = `Passou em FALHA: ${dados.descricao_falha_assumida} (às ${dados.hora_falha_passagem || "—"})<br>`;
+            falhaTexto = `Passou em FALHA: ${dados.descricao_falha_assumida} (Ã s ${dados.hora_falha_passagem || "â€”"})<br>`;
         }
         
         return `
 <strong>PASSAGEM DE TURNO:</strong><br>
-Hora da rendição: ${dados.hora_rendicao || "—"}<br>
-Vagões descarregados no meu turno: ${dados.vagoes_meu_turno || "—"}<br>
-Vagões restantes p/ próximo turno: ${dados.vagoes_proximo_turno || "—"}<br>
-Turno que assumiu: ${dados.turno_assumiu || "—"}<br>
-Operador que assumiu: ${dados.operador_assumiu || "—"} | Mat: ${dados.matricula_assumiu || "—"}<br>
+Hora da rendiÃ§Ã£o: ${dados.hora_rendicao || "â€”"}<br>
+VagÃµes descarregados no meu turno: ${dados.vagoes_meu_turno || "â€”"}<br>
+VagÃµes restantes p/ prÃ³ximo turno: ${dados.vagoes_proximo_turno || "â€”"}<br>
+Turno que assumiu: ${dados.turno_assumiu || "â€”"}<br>
+Operador que assumiu: ${dados.operador_assumiu || "â€”"} | Mat: ${dados.matricula_assumiu || "â€”"}<br>
 ${falhaTexto}
 <br>`;
     }
     return "";
 }
 
-/**
- * Gera HTML da mudança de fluxo
- */
 function gerarMudancaFluxoHTML(dados) {
     if (dados.houve_mudanca_fluxo === "SIM" && dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
-        let html = "<strong>MUDANÇAS DE FLUXO:</strong><br>";
+        let html = "<strong>MUDANÃ‡AS DE FLUXO:</strong><br>";
         dados.mudancas_fluxo.forEach((fluxo, i) => {
             if (fluxo.hora || fluxo.fluxo_anterior || fluxo.fluxo_novo) {
-                html += `• ${fluxo.hora || "—"}: ${fluxo.fluxo_anterior} → ${fluxo.fluxo_novo}`;
+                html += `â€¢ ${fluxo.hora || "â€”"}: ${fluxo.fluxo_anterior} â†’ ${fluxo.fluxo_novo}`;
                 if (fluxo.solicitante) html += ` [${fluxo.solicitante}]`;
                 if (fluxo.motivo) html += ` - ${fluxo.motivo}`;
                 html += "<br>";
@@ -2722,13 +2454,7 @@ function gerarMudancaFluxoHTML(dados) {
     return "";
 }
 
-/* ======================================
-   EXPORTAÇÃO (PDF, WHATSAPP, EMAIL)
-====================================== */
 
-/**
- * Gera PDF do relatório
- */
 function gerarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -2741,9 +2467,9 @@ function gerarPDF() {
         .replace(/\[TURNO\]\s*/g, "")
         .replace(/\[TREM\]\s*/g, "")
         .replace(/\p{Extended_Pictographic}/gu, "")
-        .replace(/•/g, "-")
-        .replace(/→/g, "->")
-        .replace(/—/g, "-")
+        .replace(/â€¢/g, "-")
+        .replace(/â†’/g, "->")
+        .replace(/â€”/g, "-")
         .replace(/[^\x00-\x7F\u00C0-\u00FF\n]/g, "");
 
     const linhas = texto.split("\n");
@@ -2863,9 +2589,6 @@ function gerarPDF() {
     doc.save("relatorio_operacional.pdf");
 }
 
-/**
- * Copia texto para WhatsApp
- */
 function copiarWhatsApp() {
     const texto = document.getElementById("resultado").innerText;
 
@@ -2883,9 +2606,6 @@ function copiarWhatsApp() {
     }
 }
 
-/**
- * Envia relatório por email
- */
 function enviarEmail() {
     const resultado = document.getElementById("resultado");
     
@@ -2912,31 +2632,25 @@ function enviarEmail() {
         dataFormatada = `${dia}/${mes}/${ano}`;
     }
     
-    const assunto = `Relatório Operacional - ${prefixo} - ${produto} - ${turno} - ${dataFormatada}`;
+    const assunto = `RelatÃ³rio Operacional - ${prefixo} - ${produto} - ${turno} - ${dataFormatada}`;
     let corpo = resultado.innerText;
     
     const mailtoLink = `mailto:${encodeURIComponent(emailDestino)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
     window.location.href = mailtoLink;
 }
 
-/* ======================================
-    UTILITÁRIOS
-====================================== */
 
-/**
- * Inicia processo de finalização do turno
- */
 function iniciarFinalizacaoTurno() {
     // Primeiro validar se passagem de turno foi preenchida
     if (!validarPassagemTurno()) {
         return;
     }
     
-    const resposta = confirm("Você está finalizando o turno?\n\nSelecione OK para continuar ou Cancelar para voltar.");
+    const resposta = confirm("VocÃª estÃ¡ finalizando o turno?\n\nSelecione OK para continuar ou Cancelar para voltar.");
     
     if (!resposta) return;
     
-    const emFalha = confirm("Está finalizando em falha?\n\nSelecione OK se SIM (será obrigatório preencher os dados da falha) ou Cancelar se NÃO.");
+    const emFalha = confirm("EstÃ¡ finalizando em falha?\n\nSelecione OK se SIM (serÃ¡ obrigatÃ³rio preencher os dados da falha) ou Cancelar se NÃƒO.");
     
     if (emFalha) {
         // Mostrar modal ou campos para preencher falha
@@ -2947,9 +2661,6 @@ function iniciarFinalizacaoTurno() {
     }
 }
 
-/**
- * Mostra campos para preencher falha na finalização
- */
 function mostrarCamposFalhaFinalizacao() {
     // Criar modal ou usar campos existentes
     const modal = document.createElement('div');
@@ -2958,24 +2669,24 @@ function mostrarCamposFalhaFinalizacao() {
         <div class="modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center;">
             <div class="modal-content" style="background: white; color: black; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%;">
                 <h3>Preencher Dados da Falha</h3>
-                <p><strong>Obrigatório preencher para finalizar o turno:</strong></p>
+                <p><strong>ObrigatÃ³rio preencher para finalizar o turno:</strong></p>
                 
-                <label>Horário da Falha:</label>
+                <label>HorÃ¡rio da Falha:</label>
                 <input type="time" id="horarioFalhaFinalizacao" required>
                 
                 <label>Tipo de Falha:</label>
                 <select id="tipoFalhaFinalizacao" required>
                     <option value="">-- Selecione --</option>
-                    <option value="MECANICA_CORRETIVA">Mecânica Corretiva</option>
-                    <option value="MECANICA_PREVENTIVA">Mecânica Preventiva</option>
-                    <option value="ELETRICA_CORRETIVA">Elétrica Corretiva</option>
-                    <option value="ELETRICA_PREVENTIVA">Elétrica Preventiva</option>
-                    <option value="OPERACAO">Operação</option>
+                    <option value="MECANICA_CORRETIVA">MecÃ¢nica Corretiva</option>
+                    <option value="MECANICA_PREVENTIVA">MecÃ¢nica Preventiva</option>
+                    <option value="ELETRICA_CORRETIVA">ElÃ©trica Corretiva</option>
+                    <option value="ELETRICA_PREVENTIVA">ElÃ©trica Preventiva</option>
+                    <option value="OPERACAO">OperaÃ§Ã£o</option>
                     <option value="CCO">CCO</option>
                     <option value="OUTROS">Outros</option>
                 </select>
                 
-                <label>Descrição da Falha:</label>
+                <label>DescriÃ§Ã£o da Falha:</label>
                 <textarea id="descricaoFalhaFinalizacao" placeholder="Descreva a falha..." required></textarea>
                 
                 <div style="margin-top: 20px; text-align: right;">
@@ -2988,28 +2699,22 @@ function mostrarCamposFalhaFinalizacao() {
     document.body.appendChild(modal);
 }
 
-/**
- * Cancela preenchimento da falha
- */
 function cancelarFalhaFinalizacao() {
     const modal = document.getElementById('modalFalhaFinalizacao');
     if (modal) modal.remove();
 }
 
-/**
- * Confirma falha e finaliza turno
- */
 function confirmarFalhaFinalizacao() {
     const horario = document.getElementById('horarioFalhaFinalizacao').value;
     const tipo = document.getElementById('tipoFalhaFinalizacao').value;
     const descricao = document.getElementById('descricaoFalhaFinalizacao').value;
     
     if (!horario || !tipo || !descricao.trim()) {
-        alert('Todos os campos são obrigatórios.');
+        alert('Todos os campos sÃ£o obrigatÃ³rios.');
         return;
     }
     
-    // Salvar dados da falha para o próximo turno
+    // Salvar dados da falha para o prÃ³ximo turno
     const dadosFalha = {
         horario: horario,
         tipo: tipo,
@@ -3026,9 +2731,6 @@ function confirmarFalhaFinalizacao() {
     finalizarTurnoComFalha(dadosFalha);
 }
 
-/**
- * Verifica se passagem de turno foi preenchida
- */
 function validarPassagemTurno() {
     const turnoPassou = document.getElementById('turno_passou_tabela').value;
     const operadorPassou = document.getElementById('operador_passou_tabela').value;
@@ -3036,16 +2738,13 @@ function validarPassagemTurno() {
     const horaAssumiu = document.getElementById('hora_assumiu_tabela').value;
     
     if (!turnoPassou || !operadorPassou || !matriculaPassou || !horaAssumiu) {
-        alert('Para finalizar o turno, é obrigatório preencher a passagem de turno.\n\nPreencha: Turno que passou, Operador, Matrícula e Hora de assunção.');
+        alert('Para finalizar o turno, Ã© obrigatÃ³rio preencher a passagem de turno.\n\nPreencha: Turno que passou, Operador, MatrÃ­cula e Hora de assunÃ§Ã£o.');
         return false;
     }
     
     return true;
 }
 
-/**
- * Salva tabela finalizada no banco de dados
- */
 async function salvarTabelaFinalizada() {
     try {
         const tabelaId = document.getElementById("seletorTabelasAndamento")?.value;
@@ -3060,14 +2759,14 @@ async function salvarTabelaFinalizada() {
             dados: dadosFormulario
         };
 
-        // Sem término, apenas manter em andamento para compartilhar com outros usuários.
+        // Sem tÃ©rmino, apenas manter em andamento para compartilhar com outros usuÃ¡rios.
         const termino = document.getElementById("termino")?.value || "";
         if (!termino) {
             const resultadoAndamento = await salvarTabelaServidor(dadosTabela);
             return !!resultadoAndamento.success;
         }
 
-        // Com término, finalizar no banco de dados.
+        // Com tÃ©rmino, finalizar no banco de dados.
         if (!tabelaId) {
             const resultadoAndamento = await salvarTabelaServidor(dadosTabela);
             if (!resultadoAndamento.success) {
@@ -3116,9 +2815,6 @@ async function salvarTabelaFinalizada() {
     }
 }
 
-/**
- * Finaliza turno normalmente
- */
 async function finalizarTurnoNormal() {
     // Validar passagem de turno
     if (!validarPassagemTurno()) {
@@ -3137,9 +2833,6 @@ async function finalizarTurnoNormal() {
     limparFormulario();
 }
 
-/**
- * Finaliza turno com falha
- */
 async function finalizarTurnoComFalha(dadosFalha) {
     // Validar passagem de turno
     if (!validarPassagemTurno()) {
@@ -3150,7 +2843,7 @@ async function finalizarTurnoComFalha(dadosFalha) {
     const salvo = await salvarTabelaFinalizada();
     
     if (salvo) {
-        alert('Turno finalizado com falha registrada.\n\nPróximo turno poderá assumir com os dados preenchidos.\n\nTabela salva no banco de dados.');
+        alert('Turno finalizado com falha registrada.\n\nPrÃ³ximo turno poderÃ¡ assumir com os dados preenchidos.\n\nTabela salva no banco de dados.');
     } else {
         alert('Turno finalizado com falha, mas houve problema ao salvar no banco.\n\nDados mantidos localmente.');
     }
@@ -3158,9 +2851,6 @@ async function finalizarTurnoComFalha(dadosFalha) {
     limparFormulario();
 }
 
-/**
- * Carrega falha do turno anterior se existir
- */
 function carregarFalhaTurnoAnterior() {
     const dadosFalha = localStorage.getItem('falha_turno_anterior');
     if (dadosFalha) {
@@ -3169,17 +2859,14 @@ function carregarFalhaTurnoAnterior() {
         // Preencher campos de impacto automaticamente
         // Isso seria feito quando carregar uma tabela ou iniciar nova
         
-        // Mostrar notificação
+        // Mostrar notificaÃ§Ã£o
         console.log('Falha do turno anterior carregada:', falha);
         
-        // Remover após carregar (ou manter para histórico)
+        // Remover apÃ³s carregar (ou manter para histÃ³rico)
         // localStorage.removeItem('falha_turno_anterior');
     }
 }
 
-/**
- * Limpa formulário
- */
 function limparFormulario() {
     if (!confirm("Tem certeza que deseja limpar todos os dados?")) {
         return;
@@ -3190,21 +2877,18 @@ function limparFormulario() {
     window.location.reload();
 }
 
-/* ======================================
-   INICIALIZAÇÃO
-====================================== */
 
 document.addEventListener("DOMContentLoaded", async function() {
     document.documentElement.classList.add("dark-mode");
 
-    // Verificar se turno já foi selecionado
+    // Verificar se turno jÃ¡ foi selecionado
     const turnoSelecionado = verificarSelecaoTurno();
     
     if (turnoSelecionado) {
-        // Turno já selecionado - iniciar sistema normalmente
+        // Turno jÃ¡ selecionado - iniciar sistema normalmente
         iniciarSistemaAposSelecaoTurno();
     }
-    // Se turno não foi selecionado, o modal ficará visível até seleção
+    // Se turno nÃ£o foi selecionado, o modal ficarÃ¡ visÃ­vel atÃ© seleÃ§Ã£o
     
     // Listeners para controles de falha
     
@@ -3219,7 +2903,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         recebeuEmFalha.addEventListener("change", controleRecebeuEmFalha);
     }
     
-    // Listener para assunção de tabela
+    // Listener para assunÃ§Ã£o de tabela
     const assumindoTabela = document.getElementById("assumindo_tabela");
     if (assumindoTabela) {
         assumindoTabela.addEventListener("change", controleAssuncao);
@@ -3242,13 +2926,13 @@ document.addEventListener("DOMContentLoaded", async function() {
         destinoField.addEventListener("change", controleDestino);
     }
     
-    // Listener para mudança de fluxo
+    // Listener para mudanÃ§a de fluxo
     const mudancaFluxoField = document.getElementById("houve_mudanca_fluxo");
     if (mudancaFluxoField) {
         mudancaFluxoField.addEventListener("change", controleMudancaFluxo);
     }
     
-    // Listeners para mostrar/esconder botão salvar
+    // Listeners para mostrar/esconder botÃ£o salvar
     const camposSalvar = [
         "maquinista",
         "loc1",
@@ -3308,7 +2992,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     atualizarEquipamentos();
     controleProduto();
     
-    // Verificar se deve mostrar select de tipo de operação
+    // Verificar se deve mostrar select de tipo de operaÃ§Ã£o
     verificarMostrarTipoOperacao();
     
     // Carregar turno e data salvos
@@ -3318,10 +3002,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     await atualizarSeletorTabelas();
     await atualizarListaFinalizadas();
     
-    // Atualizar indicador de sincronização
+    // Atualizar indicador de sincronizaÃ§Ã£o
     atualizarIndicadorSincronizacao();
     
-    // Iniciar atualização automática (30 segundos)
+    // Iniciar atualizaÃ§Ã£o automÃ¡tica (30 segundos)
     iniciarAtualizacaoAutomatica(30);
     
     // Restaurar dados salvos localmente
@@ -3339,3 +3023,4 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     console.log("Sistema de tabelas compartilhadas inicializado.");
 });
+
