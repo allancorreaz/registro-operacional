@@ -24,7 +24,8 @@ const STORAGE_KEY_TURNO_ATUAL = "registro_operacional_turno_atual";
 const CAMPOS_FORMULARIO = [
     "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
     "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
-    "tipo_material", "destino", "patio_nome", "baliza", "maquina_patio", "passando_por",
+    "tipo_material", "destino", "patio_nome", "baliza", "maquina_patio", "passando_por", "passando_por_partida",
+    "empilhando", "empilhando_para",
     "tipo_divisao", "primeiro_vagao",
     "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
     "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
@@ -72,7 +73,7 @@ function sanitizarTextoUI() {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let current;
     while ((current = walker.nextNode())) {
-        const limpo = removerEmojis(current.nodeValue || "");
+        const limpo = limparTextoCorrompido(removerEmojis(current.nodeValue || ""));
         if (limpo !== current.nodeValue) {
             current.nodeValue = limpo;
         }
@@ -84,11 +85,11 @@ function instalarSanitizadorMensagens() {
     const nativeConfirm = window.confirm.bind(window);
 
     window.alert = function(message) {
-        nativeAlert(removerEmojis(String(message ?? "")));
+        nativeAlert(limparTextoCorrompido(removerEmojis(String(message ?? ""))));
     };
 
     window.confirm = function(message) {
-        return nativeConfirm(removerEmojis(String(message ?? "")));
+        return nativeConfirm(limparTextoCorrompido(removerEmojis(String(message ?? ""))));
     };
 }
 
@@ -97,7 +98,7 @@ function capitalizarFrases(texto) {
     if (!texto) return texto;
     return texto
         .toLowerCase()
-        .replace(/(^|[.!?]\s*)([a-zÃ¡Ã Ã¢Ã£Ã©Ã¨ÃªÃ­Ã¯Ã³Ã´ÃµÃ¶ÃºÃ§Ã±])/gi, (match, p1, p2) => p1 + p2.toUpperCase());
+    .replace(/(^|[.!?]\s*)([a-z\u00c0-\u00ff])/giu, (match, p1, p2) => p1 + p2.toUpperCase());
 }
 
 function aplicarCapitalizacaoImpacto(input) {
@@ -108,6 +109,52 @@ function aplicarCapitalizacaoImpacto(input) {
 
 function toUpperSafe(valor) {
     return valor ? valor.toUpperCase() : valor;
+}
+
+function normalizarTexto(valor) {
+    if (!valor) return "";
+    return String(valor)
+        .replace(/Ã£/g, "a")
+        .replace(/Ã¡|Ã¢|Ã |Ã¤/g, "a")
+        .replace(/Ã©|Ãª|Ã¨|Ã«/g, "e")
+        .replace(/Ã­|Ã¯|Ã¬/g, "i")
+        .replace(/Ã³|Ã´|Ã¶|Ã²/g, "o")
+        .replace(/Ãº|Ã¼|Ã¹/g, "u")
+        .replace(/Ã§/g, "c")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function isProdutoCarvao(produto) {
+    return normalizarTexto(produto).includes("carvao");
+}
+
+function limparTextoCorrompido(texto) {
+    if (typeof texto !== "string") return texto;
+    return texto
+        .replace(/Ã§/g, "ç")
+        .replace(/Ã£/g, "ã")
+        .replace(/Ã¡/g, "á")
+        .replace(/Ã©/g, "é")
+        .replace(/Ã­/g, "í")
+        .replace(/Ã³/g, "ó")
+        .replace(/Ãº/g, "ú")
+        .replace(/Ãª/g, "ê")
+        .replace(/Ã´/g, "ô")
+        .replace(/Ã‰/g, "É")
+        .replace(/Ã“/g, "Ó")
+        .replace(/Ãš/g, "Ú")
+        .replace(/Ã€/g, "À")
+        .replace(/Ã‡/g, "Ç")
+        .replace(/â†’/g, "→")
+        .replace(/â€”/g, "—")
+        .replace(/â€“/g, "–")
+        .replace(/â€¢/g, "•")
+        .replace(/Âº/g, "º")
+        .replace(/Âª/g, "ª")
+        .replace(/Â/g, "");
 }
 
 function formatarTempo(minutos) {
@@ -353,7 +400,7 @@ async function atualizarSeletorTabelasAssuncao() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        const produtoLabel = tabela.produto === "CarvÃ£o" ? "CARVAO" : "MINERIO";
+        const produtoLabel = isProdutoCarvao(tabela.produto) ? "CARVAO" : "MINERIO";
         option.textContent = `${produtoLabel} | ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
@@ -461,7 +508,7 @@ function atualizarEquipamentos() {
     
     selectEquip.innerHTML = "";
     
-    const equipamentos = produto === "CarvÃ£o" ? EQUIPAMENTOS_CARVAO : EQUIPAMENTOS_MINERIO;
+    const equipamentos = isProdutoCarvao(produto) ? EQUIPAMENTOS_CARVAO : EQUIPAMENTOS_MINERIO;
     
     equipamentos.forEach(eq => {
         const opt = document.createElement("option");
@@ -491,34 +538,82 @@ function atualizarTiposMaterial(selectCategoria) {
     const inputTipo = row.querySelector('.carvao-tipo-material');
     const categoria = selectCategoria.value;
     
-    inputTipo.placeholder = categoria === "CARVAO" 
-        ? "Ex: MU, OG (carvÃ£o)"
+    inputTipo.placeholder = categoria === "CARVAO"
+        ? "Ex: MU, OG (carvão)"
         : "Ex: CCM, KL, KIN (coque)";
+}
+
+function atualizarRecuperadora(selectPatio) {
+    const row = selectPatio.closest(".material-carvao-row");
+    const recup = row?.querySelector(".carvao-recuperadora");
+    if (!recup) return;
+
+    const patio = normalizarTexto(selectPatio.value);
+    if (patio.includes("patio 0")) {
+        recup.value = "R5";
+    } else if (patio.includes("patio 1") || patio.includes("patio 2")) {
+        recup.value = "R1A";
+    }
 }
 
 
 function controleDestino() {
     const destino = document.getElementById("destino").value;
+    const empilhando = document.getElementById("empilhando")?.value || "NAO";
     
-    document.getElementById("patioExtra").style.display = destino === "PATIO" ? "block" : "none";
+    document.getElementById("patioExtra").style.display = (destino === "PATIO" || empilhando === "SIM") ? "block" : "none";
     document.getElementById("bordoExtra").style.display = destino === "BORDO" ? "block" : "none";
     document.getElementById("tabelaPartidaExtra").style.display = destino === "PARTIDA" ? "block" : "none";
 }
 
 function controleProduto() {
     const produto = document.getElementById("produto").value;
+    const isCarvao = isProdutoCarvao(produto);
     
     atualizarEquipamentos();
     
-    document.getElementById("minerioExtra").style.display = produto === "CarvÃ£o" ? "none" : "block";
-    document.getElementById("carvaoExtra").style.display = produto === "CarvÃ£o" ? "block" : "none";
+    document.getElementById("minerioExtra").style.display = isCarvao ? "none" : "block";
+    document.getElementById("carvaoExtra").style.display = isCarvao ? "block" : "none";
+    controleEmpilhamento();
 }
 
 function controleTipoDivisao() {
     const tipo = document.getElementById("tipo_divisao").value;
-    
-    document.getElementById("secaoBordo").style.display = tipo === "PATIO_PATIO" ? "none" : "block";
-    document.getElementById("secaoPatio2").style.display = tipo === "PATIO_PATIO" ? "block" : "none";
+    const secaoPatio1 = document.getElementById("secaoPatio1");
+    const secaoBordo = document.getElementById("secaoBordo");
+    const secaoPatio2 = document.getElementById("secaoPatio2");
+    const tituloPatio1 = document.getElementById("tituloPatio1");
+    const tituloBordo = document.getElementById("tituloBordo");
+    const tituloPatio2 = document.getElementById("tituloPatio2");
+
+    if (tipo === "PATIO_PATIO") {
+        if (secaoPatio1) secaoPatio1.style.display = "block";
+        if (secaoBordo) secaoBordo.style.display = "none";
+        if (secaoPatio2) secaoPatio2.style.display = "block";
+        if (tituloPatio1) tituloPatio1.textContent = "1a Parte - Patio";
+        if (tituloPatio2) tituloPatio2.textContent = "2a Parte - Patio";
+    } else if (tipo === "BORDO_PATIO") {
+        if (secaoPatio1) secaoPatio1.style.display = "none";
+        if (secaoBordo) secaoBordo.style.display = "block";
+        if (secaoPatio2) secaoPatio2.style.display = "block";
+        if (tituloBordo) tituloBordo.textContent = "1a Parte - Bordo";
+        if (tituloPatio2) tituloPatio2.textContent = "2a Parte - Patio";
+    } else {
+        if (secaoPatio1) secaoPatio1.style.display = "block";
+        if (secaoBordo) secaoBordo.style.display = "block";
+        if (secaoPatio2) secaoPatio2.style.display = "none";
+        if (tituloPatio1) tituloPatio1.textContent = "1a Parte - Patio";
+        if (tituloBordo) tituloBordo.textContent = "2a Parte - Bordo";
+    }
+}
+
+function controleEmpilhamento() {
+    const empilhando = document.getElementById("empilhando")?.value || "NAO";
+    const extra = document.getElementById("empilhamentoExtra");
+    if (extra) {
+        extra.style.display = empilhando === "SIM" ? "block" : "none";
+    }
+    controleDestino();
 }
 
 function controleMudancaFluxo() {
@@ -1006,6 +1101,134 @@ function valorCampo(id) {
     return (el.value || "").trim();
 }
 
+function validarCamposObrigatorios(campos, mostrarMensagem = true) {
+    for (const campo of campos) {
+        if (!valorCampo(campo.id)) {
+            if (mostrarMensagem) {
+                alert(`Preencha o campo obrigatório: ${campo.nome}.`);
+                const el = document.getElementById(campo.id);
+                if (el) el.focus();
+            }
+            return { valido: false, campo: campo.id };
+        }
+    }
+    return { valido: true };
+}
+
+function validarDestinoBordo(mostrarMensagem = true) {
+    const destino = valorCampo("destino");
+    if (destino !== "BORDO") return { valido: true };
+
+    const validacao = validarCamposObrigatorios([
+        { id: "passando_por", nome: "TM de passagem (TM107/TM108)" }
+    ], mostrarMensagem);
+    return validacao;
+}
+
+function validarEmpilhamento(mostrarMensagem = true) {
+    const empilhando = valorCampo("empilhando") || "NAO";
+    if (empilhando !== "SIM") return { valido: true };
+
+    return validarCamposObrigatorios([
+        { id: "empilhando_para", nome: "Empilhando para onde" },
+        { id: "patio_nome", nome: "Pátio (origem/empilhamento)" },
+        { id: "baliza", nome: "Baliza (origem/empilhamento)" },
+        { id: "maquina_patio", nome: "Máquina (ER2, ER1A, E3 ou E4)" }
+    ], mostrarMensagem);
+}
+
+function validarTabelaFracionada(mostrarMensagem = true) {
+    const destino = valorCampo("destino");
+    if (destino !== "PARTIDA") return { valido: true };
+
+    const tipo = valorCampo("tipo_divisao") || "PATIO_BORDO";
+    const comuns = [
+        { id: "tipo_divisao", nome: "Tipo de divisão" }
+    ];
+
+    const vComuns = validarCamposObrigatorios(comuns, mostrarMensagem);
+    if (!vComuns.valido) return vComuns;
+
+    if (tipo === "PATIO_PATIO") {
+        return validarCamposObrigatorios([
+            { id: "vagoes_patio", nome: "Vagões da 1ª parte (pátio)" },
+            { id: "patio_partida", nome: "Pátio da 1ª parte" },
+            { id: "baliza_partida", nome: "Baliza da 1ª parte" },
+            { id: "maquina_patio1", nome: "Máquina da 1ª parte" },
+            { id: "hora_inicio_patio", nome: "Hora início da 1ª parte" },
+            { id: "hora_fim_patio", nome: "Hora fim da 1ª parte" },
+            { id: "vagoes_patio2", nome: "Vagões da 2ª parte (pátio)" },
+            { id: "patio_partida2", nome: "Pátio da 2ª parte" },
+            { id: "baliza_partida2", nome: "Baliza da 2ª parte" },
+            { id: "maquina_patio2", nome: "Máquina da 2ª parte" },
+            { id: "hora_inicio_patio2", nome: "Hora início da 2ª parte" },
+            { id: "hora_fim_patio2", nome: "Hora fim da 2ª parte" }
+        ], mostrarMensagem);
+    }
+
+    if (tipo === "BORDO_PATIO") {
+        return validarCamposObrigatorios([
+            { id: "passando_por_partida", nome: "TM da parte de bordo" },
+            { id: "vagoes_bordo", nome: "Vagões da 1ª parte (bordo)" },
+            { id: "hora_inicio_bordo", nome: "Hora início da parte bordo" },
+            { id: "hora_fim_bordo", nome: "Hora fim da parte bordo" },
+            { id: "vagoes_patio2", nome: "Vagões da 2ª parte (pátio)" },
+            { id: "patio_partida2", nome: "Pátio da 2ª parte" },
+            { id: "baliza_partida2", nome: "Baliza da 2ª parte" },
+            { id: "maquina_patio2", nome: "Máquina da 2ª parte" },
+            { id: "hora_inicio_patio2", nome: "Hora início da 2ª parte" },
+            { id: "hora_fim_patio2", nome: "Hora fim da 2ª parte" }
+        ], mostrarMensagem);
+    }
+
+    return validarCamposObrigatorios([
+        { id: "vagoes_patio", nome: "Vagões da 1ª parte (pátio)" },
+        { id: "patio_partida", nome: "Pátio da 1ª parte" },
+        { id: "baliza_partida", nome: "Baliza da 1ª parte" },
+        { id: "maquina_patio1", nome: "Máquina da 1ª parte" },
+        { id: "hora_inicio_patio", nome: "Hora início da 1ª parte" },
+        { id: "hora_fim_patio", nome: "Hora fim da 1ª parte" },
+        { id: "passando_por_partida", nome: "TM da 2ª parte (bordo)" },
+        { id: "vagoes_bordo", nome: "Vagões da 2ª parte (bordo)" },
+        { id: "hora_inicio_bordo", nome: "Hora início da 2ª parte" },
+        { id: "hora_fim_bordo", nome: "Hora fim da 2ª parte" }
+    ], mostrarMensagem);
+}
+
+function validarMateriaisCarvao(mostrarMensagem = true) {
+    const produto = document.getElementById("produto")?.value || "";
+    if (!isProdutoCarvao(produto)) return { valido: true };
+
+    const linhas = document.querySelectorAll(".material-carvao-row");
+    if (linhas.length === 0) {
+        if (mostrarMensagem) alert("Adicione ao menos um material na ECV (carvão/coque).");
+        return { valido: false };
+    }
+
+    for (const row of linhas) {
+        const checks = [
+            [".carvao-categoria", "Categoria do material"],
+            [".carvao-tipo-material", "Tipo de material"],
+            [".carvao-patio", "Pátio de origem"],
+            [".carvao-baliza", "Baliza de origem"],
+            [".carvao-recuperadora", "Máquina de origem (R5/R1A)"]
+        ];
+
+        for (const [selector, nome] of checks) {
+            const campo = row.querySelector(selector);
+            if (!campo || !String(campo.value || "").trim()) {
+                if (mostrarMensagem) {
+                    alert(`Preencha ${nome} em todos os materiais da ECV.`);
+                    campo?.focus();
+                }
+                return { valido: false };
+            }
+        }
+    }
+
+    return { valido: true };
+}
+
 function validarCamposIniciaisNovaTabela(mostrarMensagem = true) {
     const campos = [
         { id: "maquinista", nome: "Nome do Maquinista" },
@@ -1041,6 +1264,18 @@ function validarCamposIniciaisNovaTabela(mostrarMensagem = true) {
         }
         return { valido: false, campo: "sinal" };
     }
+
+    const vBordo = validarDestinoBordo(mostrarMensagem);
+    if (!vBordo.valido) return vBordo;
+
+    const vEmp = validarEmpilhamento(mostrarMensagem);
+    if (!vEmp.valido) return vEmp;
+
+    const vFracionada = validarTabelaFracionada(mostrarMensagem);
+    if (!vFracionada.valido) return vFracionada;
+
+    const vCarvao = validarMateriaisCarvao(mostrarMensagem);
+    if (!vCarvao.valido) return vCarvao;
 
     return { valido: true };
 }
@@ -1392,7 +1627,7 @@ async function atualizarSeletorTabelas() {
             dataFormatada = `${dia}/${mes}`;
         }
         
-        const produtoLabel = tabela.produto === "CarvÃ£o" ? "CARVAO" : "MINERIO";
+        const produtoLabel = isProdutoCarvao(tabela.produto) ? "CARVAO" : "MINERIO";
         option.textContent = `${produtoLabel} | ${tabela.prefixo} | ${dataFormatada} | ${tabela.turno} | ${tabela.inicio} | ${tabela.operador || '-'}`;
         select.appendChild(option);
     });
@@ -1624,7 +1859,7 @@ async function atualizarListaFinalizadas() {
             dataFormatada = `${dia}/${mes}/${ano}`;
         }
         
-        const produtoLabel = tabela.produto === "CarvÃ£o" ? "CARVAO" : "MINERIO";
+        const produtoLabel = isProdutoCarvao(tabela.produto) ? "CARVAO" : "MINERIO";
         
         html += `
             <div class="tabela-finalizada-item" data-id="${tabela.id}">
@@ -1644,7 +1879,7 @@ async function atualizarListaFinalizadas() {
     });
     
     html += '</div>';
-    container.innerHTML = html;
+    container.innerHTML = limparTextoCorrompido(html);
     
     const contador = document.getElementById("contadorFinalizadas");
     if (contador) {
@@ -1661,10 +1896,10 @@ function verRelatorioFinalizado(tabelaId) {
     
     const resultadoDiv = document.getElementById("resultado");
     if (resultadoDiv) {
-        resultadoDiv.innerHTML = `
+        resultadoDiv.innerHTML = limparTextoCorrompido(`
             <h3>RelatÃ³rio - ${tabela.prefixo}</h3>
             <pre class="relatorio-pre">${tabela.relatorio}</pre>
-        `;
+        `);
         resultadoDiv.style.display = "block";
         resultadoDiv.scrollIntoView({ behavior: 'smooth' });
     }
@@ -1883,12 +2118,12 @@ function adicionarMaterialCarvao() {
         
         <label>Categoria do Material</label>
         <select class="carvao-categoria" onchange="atualizarTiposMaterial(this)">
-            <option value="CARVAO">CarvÃ£o</option>
+            <option value="CARVAO">Carvão</option>
             <option value="COQUE">Coque</option>
         </select>
         
         <label>Tipo de Material (sigla)</label>
-        <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvÃ£o) ou CCM, KL (coque)">
+        <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvão) ou CCM, KL (coque)">
         
         <label>PÃ¡tio de origem</label>
         <select class="carvao-patio" onchange="atualizarRecuperadora(this)">
@@ -2012,6 +2247,11 @@ function calcular() {
     const validacaoRecebimento = validarCamposRecebimento();
     if (!validacaoRecebimento.valido) {
         alert(validacaoRecebimento.mensagem);
+        return;
+    }
+
+    const validacaoInicial = validarCamposIniciaisNovaTabela(true);
+    if (!validacaoInicial.valido) {
         return;
     }
 
@@ -2148,10 +2388,13 @@ function calcular() {
         equipamento: document.getElementById("equipamento")?.value || "",
         tipo_material: toUpperSafe(document.getElementById("tipo_material")?.value) || "",
         destino: document.getElementById("destino")?.value || "",
+        empilhando: document.getElementById("empilhando")?.value || "NAO",
+        empilhando_para: toUpperSafe(document.getElementById("empilhando_para")?.value) || "",
         patio: toUpperSafe(document.getElementById("patio_nome")?.value) || "",
         baliza: toUpperSafe(document.getElementById("baliza")?.value) || "",
         maquina_patio: document.getElementById("maquina_patio")?.value || "",
         passando_por: toUpperSafe(document.getElementById("passando_por")?.value) || "",
+        passando_por_partida: toUpperSafe(document.getElementById("passando_por_partida")?.value) || "",
 
         // Tabela partida
         tipo_divisao: document.getElementById("tipo_divisao")?.value || "PATIO_BORDO",
@@ -2186,10 +2429,10 @@ function calcular() {
         const resultado = document.getElementById("resultado");
         resultado.style.display = "block";
         
-        if (dados.produto === "CarvÃ£o") {
-            resultado.innerHTML = gerarResultadoCarvao(dados, data);
+        if (isProdutoCarvao(dados.produto)) {
+            resultado.innerHTML = limparTextoCorrompido(gerarResultadoCarvao(dados, data));
         } else {
-            resultado.innerHTML = gerarResultadoMinerio(dados, data);
+            resultado.innerHTML = limparTextoCorrompido(gerarResultadoMinerio(dados, data));
         }
         
         // Se tem tÃ©rmino, finalizar a tabela
@@ -2256,18 +2499,18 @@ function calcular() {
 function gerarResultadoMinerio(dados, data) {
     let destinoTexto = "";
     if (dados.destino === "PATIO") {
-        destinoTexto = `PÃ¡tio ${dados.patio} | Baliza ${dados.baliza} | ${dados.maquina_patio || "â€”"}`;
+        destinoTexto = `Patio ${dados.patio} | Baliza ${dados.baliza} | ${dados.maquina_patio || "-"}`;
     }
     if (dados.destino === "BORDO") {
-        destinoTexto = dados.passando_por ? `Bordo (passando por ${dados.passando_por})` : "Trem de Bordo";
+        destinoTexto = dados.passando_por ? `Trem de Bordo (TM ${dados.passando_por.replace("TM", "")})` : "Trem de Bordo";
     }
-    if (dados.destino === "PARTIDA") destinoTexto = "Tabela Dividida/Fracionada";
+    if (dados.destino === "PARTIDA") destinoTexto = "Tabela dividida/fracionada";
 
-    let impactosHTML = gerarImpactosHTML(dados);
-    let passagemHTML = gerarPassagemHTML(dados);
-    let mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
+    const impactosHTML = gerarImpactosHTML(dados);
+    const passagemHTML = gerarPassagemHTML(dados);
+    const mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
 
-    let dataFormatada = "â€”";
+    let dataFormatada = "-";
     if (dados.data) {
         const [ano, mes, dia] = dados.data.split("-");
         dataFormatada = `${dia}/${mes}/${ano}`;
@@ -2277,26 +2520,35 @@ function gerarResultadoMinerio(dados, data) {
     if (dados.destino === "PARTIDA") {
         if (dados.tipo_divisao === "PATIO_PATIO") {
             tabelaPartidaHTML = `
-<strong>TABELA DIVIDIDA (PÃTIO + PÃTIO):</strong><br>
-<strong>1Âº PÃ¡tio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "â€”"}<br>
-VagÃµes: ${dados.vagoes_patio || "â€”"} (${dados.hora_inicio_patio || "â€”"} â†’ ${dados.hora_fim_patio || "â€”"})<br><br>
-<strong>2Âº PÃ¡tio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "â€”"}<br>
-VagÃµes: ${dados.vagoes_patio2 || "â€”"} (${dados.hora_inicio_patio2 || "â€”"} â†’ ${dados.hora_fim_patio2 || "â€”"})<br>
-<br>`;
+<strong>TABELA DIVIDIDA (PATIO + PATIO):</strong><br>
+<strong>1o Patio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "-"}<br>
+Vagoes: ${dados.vagoes_patio || "-"} (${dados.hora_inicio_patio || "-"} -> ${dados.hora_fim_patio || "-"})<br><br>
+<strong>2o Patio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "-"}<br>
+Vagoes: ${dados.vagoes_patio2 || "-"} (${dados.hora_inicio_patio2 || "-"} -> ${dados.hora_fim_patio2 || "-"})<br><br>`;
+        } else if (dados.tipo_divisao === "BORDO_PATIO") {
+            tabelaPartidaHTML = `
+<strong>TABELA DIVIDIDA (BORDO + PATIO):</strong><br>
+<strong>1a Parte Bordo:</strong> ${dados.passando_por_partida || "-"}<br>
+Vagoes: ${dados.vagoes_bordo || "-"} (${dados.hora_inicio_bordo || "-"} -> ${dados.hora_fim_bordo || "-"})<br><br>
+<strong>2a Parte Patio:</strong> ${dados.patio_partida2} | Baliza: ${dados.baliza_partida2} | ${dados.maquina_patio2 || "-"}<br>
+Vagoes: ${dados.vagoes_patio2 || "-"} (${dados.hora_inicio_patio2 || "-"} -> ${dados.hora_fim_patio2 || "-"})<br><br>`;
         } else {
             tabelaPartidaHTML = `
-<strong>TABELA DIVIDIDA (PÃTIO + BORDO):</strong><br>
-<strong>PÃ¡tio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "â€”"}<br>
-VagÃµes: ${dados.vagoes_patio || "â€”"} (${dados.hora_inicio_patio || "â€”"} â†’ ${dados.hora_fim_patio || "â€”"})<br><br>
-<strong>Bordo:</strong><br>
-VagÃµes: ${dados.vagoes_bordo || "â€”"} (${dados.hora_inicio_bordo || "â€”"} â†’ ${dados.hora_fim_bordo || "â€”"})<br>
-<br>`;
+<strong>TABELA DIVIDIDA (PATIO + BORDO):</strong><br>
+<strong>1a Parte Patio:</strong> ${dados.patio_partida} | Baliza: ${dados.baliza_partida} | ${dados.maquina_patio1 || "-"}<br>
+Vagoes: ${dados.vagoes_patio || "-"} (${dados.hora_inicio_patio || "-"} -> ${dados.hora_fim_patio || "-"})<br><br>
+<strong>2a Parte Bordo:</strong> ${dados.passando_por_partida || "-"}<br>
+Vagoes: ${dados.vagoes_bordo || "-"} (${dados.hora_inicio_bordo || "-"} -> ${dados.hora_fim_bordo || "-"})<br><br>`;
         }
     }
 
+    const empilhamentoTexto = dados.empilhando === "SIM"
+        ? `Sim (${dados.empilhando_para || "-"}) - Origem: ${dados.maquina_patio || "-"} | ${dados.patio || "-"} | Baliza ${dados.baliza || "-"}`
+        : "Nao";
+
     return `
-<strong>Data da OperaÃ§Ã£o:</strong> ${dataFormatada}<br>
-<strong>Turno:</strong> ${dados.turno || "â€”"}<br>
+<strong>Data da Operacao:</strong> ${dataFormatada}<br>
+<strong>Turno:</strong> ${dados.turno || "-"}<br>
 <hr>
 
 <strong>${dados.prefixo}</strong><br>
@@ -2312,23 +2564,23 @@ Tabela Posicionada: ${dados.tabela_posicionada}<br><br>
 
 Equipamento: ${dados.equipamento}<br>
 Produto: ${dados.produto} (${dados.tipo_material})<br>
-Destino: ${destinoTexto}<br><br>
+Destino: ${destinoTexto}<br>
+Empilhando: ${empilhamentoTexto}<br><br>
 
 ${tabelaPartidaHTML}
-<br>
-<strong>INÃCIO:</strong> ${dados.inicio || "â€”"}h<br>
-<strong>TÃ‰RMINO:</strong> ${dados.termino || "â€”"}h<br>
-<strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "â€”"}<br>
+<strong>INICIO:</strong> ${dados.inicio || "-"}h<br>
+<strong>TERMINO:</strong> ${dados.termino || "-"}h<br>
+<strong>${dados.equipamento.startsWith("VV") ? "TMD" : "TMC"}:</strong> ${dados.termino ? formatarTempo(data.tmd) : "-"}<br>
 Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
-Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "â€”"}<br><br>
+Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "-"}<br><br>
 
 Peso Total: ${dados.peso} t<br>
-<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "â€”"}<br><br>
+<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "-"}<br><br>
 
 ${mudancaFluxoHTML}
 ${passagemHTML}
 <strong>Impactos/Falhas:</strong><br>${impactosHTML}<br>
-<strong>ObservaÃ§Ãµes:</strong><br>${dados.observacoes}
+<strong>Observacoes:</strong><br>${dados.observacoes}
     `;
 }
 
@@ -2347,7 +2599,7 @@ function gerarResultadoCarvao(dados, data) {
     if (dados.materiais_carvao && dados.materiais_carvao.length > 0) {
         dados.materiais_carvao.forEach((mat, i) => {
             if (mat.tipo_material) {
-                const categoriaNome = mat.categoria === "COQUE" ? "Coque" : "CarvÃ£o";
+                const categoriaNome = mat.categoria === "COQUE" ? "Coque" : "Carvão";
                 materiaisHTML += `
 <div style="border-left: 3px solid #ffa500; padding-left: 10px; margin: 15px 0;">
 ${mat.patio} - ${mat.baliza}<br>
@@ -2991,6 +3243,9 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Inicializar equipamentos e controles
     atualizarEquipamentos();
     controleProduto();
+    controleDestino();
+    controleTipoDivisao();
+    controleEmpilhamento();
     
     // Verificar se deve mostrar select de tipo de operaÃ§Ã£o
     verificarMostrarTipoOperacao();

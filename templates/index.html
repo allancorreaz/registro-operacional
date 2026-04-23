@@ -284,6 +284,23 @@
                 <option value="PARTIDA">Tabela Dividida/Fracionada</option>
             </select>
 
+            <label>Está empilhando?</label>
+            <select id="empilhando" onchange="controleEmpilhamento()">
+                <option value="NAO" selected>Não</option>
+                <option value="SIM">Sim</option>
+            </select>
+
+            <div id="empilhamentoExtra" style="display:none;">
+                <label>Empilhando para onde?</label>
+                <select id="empilhando_para">
+                    <option value="">Selecione</option>
+                    <option value="PATIO 3">Pátio 3</option>
+                    <option value="PATIO 4">Pátio 4</option>
+                    <option value="PATIO 5">Pátio 5</option>
+                    <option value="BORDO">Bordo</option>
+                </select>
+            </div>
+
             <div id="patioExtra" style="display:none;">
                 <label>Qual pátio?</label>
                 <select id="patio_nome">
@@ -308,8 +325,12 @@
 
             <!-- DESTINO BORDO -->
             <div id="bordoExtra" style="display:none;">
-                <label>Passando por (opcional)</label>
-                <input type="text" id="passando_por" placeholder="Ex: Pátio 3 (opcional)">
+                <label>Trem de bordo: passando por qual TM?</label>
+                <select id="passando_por">
+                    <option value="">Selecione</option>
+                    <option value="TM107">TM107</option>
+                    <option value="TM108">TM108</option>
+                </select>
             </div>
 
             <!-- TABELA DIVIDIDA/FRACIONADA -->
@@ -319,11 +340,12 @@
                 <label>Tipo de Divisão</label>
                 <select id="tipo_divisao" onchange="controleTipoDivisao()">
                     <option value="PATIO_BORDO">Pátio + Bordo</option>
+                    <option value="BORDO_PATIO">Bordo + Pátio</option>
                     <option value="PATIO_PATIO">Pátio + Pátio</option>
                 </select>
                 
-                <div class="partida-secao">
-                    <label><strong>1ª Parte - Pátio</strong></label>
+                <div class="partida-secao" id="secaoPatio1">
+                    <label><strong id="tituloPatio1">1ª Parte - Pátio</strong></label>
                     <input type="number" id="vagoes_patio" min="0" placeholder="Qtd vagões">
                     <select id="patio_partida">
                         <option value="">Qual pátio?</option>
@@ -344,14 +366,20 @@
                 </div>
 
                 <div class="partida-secao" id="secaoBordo">
-                    <label><strong>2ª Parte - Bordo</strong></label>
+                    <label><strong id="tituloBordo">2ª Parte - Bordo</strong></label>
+                    <label>Passando por qual TM?</label>
+                    <select id="passando_por_partida">
+                        <option value="">Selecione</option>
+                        <option value="TM107">TM107</option>
+                        <option value="TM108">TM108</option>
+                    </select>
                     <input type="number" id="vagoes_bordo" min="0" placeholder="Qtd vagões p/ bordo">
                     <input type="time" id="hora_inicio_bordo" title="Hora início bordo">
                     <input type="time" id="hora_fim_bordo" title="Hora fim bordo">
                 </div>
 
                 <div class="partida-secao" id="secaoPatio2" style="display:none;">
-                    <label><strong>2ª Parte - Pátio</strong></label>
+                    <label><strong id="tituloPatio2">2ª Parte - Pátio</strong></label>
                     <input type="number" id="vagoes_patio2" min="0" placeholder="Qtd vagões">
                     <select id="patio_partida2">
                         <option value="">Qual pátio?</option>
@@ -376,6 +404,7 @@
         <!-- CAMPOS ESPECÍFICOS PARA CARVÃO -->
         <div id="carvaoExtra" style="display:none;">
             <h3>Carregamento de Carvão/Coque</h3>
+            <p class="msg-selecione">Origem obrigatória por material: máquina (R5/R1A), pátio e baliza.</p>
 
             <label>Número do 1º Vagão da Tabela</label>
             <input type="text" id="primeiro_vagao" placeholder="Ex: GDT 123456-7">
@@ -592,6 +621,6 @@
 
 </div>
 
-<script src="static/script.js?v=20260419a"></script>
+<script src="static/script.js?v=20260423b"></script>
 </body>
 </html>

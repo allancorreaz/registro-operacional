@@ -477,6 +477,11 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
         linhas.append(f"PRODUTO: {d.get('produto', '')}")
         linhas.append(f"TIPO DE MATERIAL: {d.get('tipo_material', '')}")
         linhas.append(f"DESTINO: {d.get('destino', '')}")
+        empilhando = d.get('empilhando', 'NAO')
+        if empilhando == 'SIM':
+            linhas.append(f"EMPILHANDO: SIM ({d.get('empilhando_para', '')})")
+        else:
+            linhas.append("EMPILHANDO: NAO")
         
         # Tabela partida
         if d.get('destino') == 'PARTIDA':
@@ -487,6 +492,11 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
                 linhas.append(f"    1o Patio: {d.get('patio_partida', '')} | Baliza: {d.get('baliza_partida', '')} | {d.get('maquina_patio1', '')}")
                 linhas.append(f"    Vagoes: {d.get('vagoes_patio', '')} ({d.get('hora_inicio_patio', '')} -> {d.get('hora_fim_patio', '')})")
                 linhas.append(f"    2o Patio: {d.get('patio_partida2', '')} | Baliza: {d.get('baliza_partida2', '')} | {d.get('maquina_patio2', '')}")
+                linhas.append(f"    Vagoes: {d.get('vagoes_patio2', '')} ({d.get('hora_inicio_patio2', '')} -> {d.get('hora_fim_patio2', '')})")
+            elif tipo_div == 'BORDO_PATIO':
+                linhas.append("  TABELA DIVIDIDA (BORDO + PATIO):")
+                linhas.append(f"    1a Parte Bordo: Vagoes {d.get('vagoes_bordo', '')} ({d.get('hora_inicio_bordo', '')} -> {d.get('hora_fim_bordo', '')})")
+                linhas.append(f"    2a Parte Patio: {d.get('patio_partida2', '')} | Baliza: {d.get('baliza_partida2', '')} | {d.get('maquina_patio2', '')}")
                 linhas.append(f"    Vagoes: {d.get('vagoes_patio2', '')} ({d.get('hora_inicio_patio2', '')} -> {d.get('hora_fim_patio2', '')})")
             else:
                 linhas.append("  TABELA DIVIDIDA (PATIO + BORDO):")
