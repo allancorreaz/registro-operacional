@@ -479,7 +479,10 @@ def montar_relatorio_texto(d, tmd, impactos, efetiva, taxa):
         linhas.append(f"DESTINO: {d.get('destino', '')}")
         empilhando = d.get('empilhando', 'NAO')
         if empilhando == 'SIM':
-            linhas.append(f"EMPILHANDO: SIM ({d.get('empilhando_para', '')})")
+            linhas.append(
+                f"EMPILHANDO: SIM | ORIGEM: {d.get('maquina_patio', '')} | "
+                f"{d.get('patio', '')} | BALIZA {d.get('baliza', '')}"
+            )
         else:
             linhas.append("EMPILHANDO: NAO")
         

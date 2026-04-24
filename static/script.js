@@ -25,7 +25,7 @@ const CAMPOS_FORMULARIO = [
     "produto", "equipamento", "maquinista", "loc1", "loc2", "horas_maquinista",
     "ponto_b", "sinal", "tabela_posicionada", "data", "turno", "operador", "matricula",
     "tipo_material", "destino", "patio_nome", "baliza", "maquina_patio", "passando_por", "passando_por_partida",
-    "empilhando", "empilhando_para",
+    "empilhando",
     "tipo_divisao", "primeiro_vagao",
     "vagoes_patio", "patio_partida", "baliza_partida", "maquina_patio1",
     "hora_inicio_patio", "hora_fim_patio", "vagoes_bordo", "hora_inicio_bordo",
@@ -78,6 +78,21 @@ function sanitizarTextoUI() {
             current.nodeValue = limpo;
         }
     }
+
+    sanitizarAtributosUI(root);
+}
+
+function sanitizarAtributosUI(root) {
+    root.querySelectorAll("[placeholder], [title], [aria-label]").forEach((el) => {
+        ["placeholder", "title", "aria-label"].forEach((attr) => {
+            const valor = el.getAttribute(attr);
+            if (!valor) return;
+            const limpo = limparTextoCorrompido(removerEmojis(valor));
+            if (limpo !== valor) {
+                el.setAttribute(attr, limpo);
+            }
+        });
+    });
 }
 
 function instalarSanitizadorMensagens() {
@@ -608,11 +623,6 @@ function controleTipoDivisao() {
 }
 
 function controleEmpilhamento() {
-    const empilhando = document.getElementById("empilhando")?.value || "NAO";
-    const extra = document.getElementById("empilhamentoExtra");
-    if (extra) {
-        extra.style.display = empilhando === "SIM" ? "block" : "none";
-    }
     controleDestino();
 }
 
@@ -1130,7 +1140,6 @@ function validarEmpilhamento(mostrarMensagem = true) {
     if (empilhando !== "SIM") return { valido: true };
 
     return validarCamposObrigatorios([
-        { id: "empilhando_para", nome: "Empilhando para onde" },
         { id: "patio_nome", nome: "Pátio (origem/empilhamento)" },
         { id: "baliza", nome: "Baliza (origem/empilhamento)" },
         { id: "maquina_patio", nome: "Máquina (ER2, ER1A, E3 ou E4)" }
@@ -1445,6 +1454,7 @@ function atualizarIndicadorSincronizacao() {
     if (indicador) {
         const agora = new Date().toLocaleTimeString('pt-BR');
         indicador.textContent = `Ãšltima sincronizaÃ§Ã£o: ${agora}`;
+        indicador.textContent = limparTextoCorrompido(indicador.textContent);
     }
 }
 
@@ -1760,7 +1770,7 @@ function carregarTabelaAndamento() {
         });
     }
     
-    // Restaurar mudanÃ§as de fluxo
+    // Restaurar mudanças de fluxo
     if (dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
         dados.mudancas_fluxo.forEach(fluxo => {
             adicionarMudancaFluxo();
@@ -1783,7 +1793,7 @@ function carregarTabelaAndamento() {
     
     mostrarInfoTabelaSelecionada(tabela);
     
-    // Guardar informaÃ§Ãµes da tabela carregada
+    // Guardar informações da tabela carregada
     tabelaCarregadaInfo = {
         turno: tabela.turno,
         operador: tabela.operador,
@@ -1791,16 +1801,16 @@ function carregarTabelaAndamento() {
         dados: dados
     };
     
-    // Verificar se estÃ¡ finalizando tabela de outro turno
+    // Verificar se está finalizando tabela de outro turno
     setTimeout(() => {
         verificarTabelaOutroTurno();
     }, 500);
     
-    // Rolar para o campo de tÃ©rmino
+    // Rolar para o campo de término
     document.getElementById("termino").scrollIntoView({ behavior: 'smooth', block: 'center' });
     document.getElementById("termino").focus();
     
-    alert(`Tabela "${tabela.prefixo}" carregada.\n\nAgora preencha o TÃ©rmino e gere o resultado.\n\nSe vocÃª Ã© de outro turno/operador, preencha os dados de como recebeu a tabela.`);
+    alert(`Tabela "${tabela.prefixo}" carregada.\n\nAgora preencha o Término e gere o resultado.\n\nSe você é de outro turno/operador, preencha os dados de como recebeu a tabela.`);
 }
 
 async function excluirTabelaAndamento() {
@@ -1816,11 +1826,11 @@ async function excluirTabelaAndamento() {
     const tabela = tabelas.find(t => t.id == tabelaId);
     
     if (!tabela) {
-        alert("Tabela nÃ£o encontrada.");
+        alert("Tabela não encontrada.");
         return;
     }
     
-    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\nEsta aÃ§Ã£o nÃ£o pode ser desfeita e afetarÃ¡ todos os usuÃ¡rios.`)) {
+    if (!confirm(`Excluir a tabela "${tabela.prefixo}" do servidor?\n\nEsta ação não pode ser desfeita e afetará todos os usuários.`)) {
         return;
     }
     
@@ -1830,12 +1840,12 @@ async function excluirTabelaAndamento() {
         if (resultado.success) {
             await atualizarSeletorTabelas();
             document.getElementById("infoTabelaSelecionada").style.display = "none";
-            alert(`Tabela "${tabela.prefixo}" excluÃ­da do servidor.`);
+            alert(`Tabela "${tabela.prefixo}" excluída do servidor.`);
         } else {
             alert(`Erro ao excluir: ${resultado.error || 'Erro desconhecido'}`);
         }
     } catch (error) {
-        alert(`Erro de conexÃ£o: ${error.message}`);
+        alert(`Erro de conexão: ${error.message}`);
     }
 }
 
@@ -1866,12 +1876,12 @@ async function atualizarListaFinalizadas() {
                 <div class="tabela-finalizada-info">
                     <strong>${produtoLabel} | ${tabela.prefixo}</strong>
                     <span>${dataFormatada} | ${tabela.turno}</span>
-                    <span>InÃ­cio: ${tabela.inicio} â†’ TÃ©rmino: ${tabela.termino || '-'}</span>
+                    <span>Início: ${tabela.inicio} → Término: ${tabela.termino || '-'}</span>
                     <span>Operador: ${tabela.operador || '-'}</span>
                     <span>Taxa: ${tabela.taxaEfetiva ? tabela.taxaEfetiva + ' t/h' : '-'}</span>
                 </div>
                 <div class="tabela-finalizada-acoes">
-                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatÃ³rio">Ver</button>
+                    <button onclick="verRelatorioFinalizado(${tabela.id})" title="Ver relatório">Ver</button>
                     <button onclick="excluirTabelaFinalizada(${tabela.id})" title="Excluir" class="btn-limpar">Excluir</button>
                 </div>
             </div>
@@ -1890,14 +1900,14 @@ async function atualizarListaFinalizadas() {
 function verRelatorioFinalizado(tabelaId) {
     const tabela = tabelasFinalizadasCache.find(t => t.id === tabelaId);
     if (!tabela || !tabela.relatorio) {
-        alert("RelatÃ³rio nÃ£o disponÃ­vel.");
+        alert("Relatório não disponível.");
         return;
     }
     
     const resultadoDiv = document.getElementById("resultado");
     if (resultadoDiv) {
         resultadoDiv.innerHTML = limparTextoCorrompido(`
-            <h3>RelatÃ³rio - ${tabela.prefixo}</h3>
+            <h3>Relatório - ${tabela.prefixo}</h3>
             <pre class="relatorio-pre">${tabela.relatorio}</pre>
         `);
         resultadoDiv.style.display = "block";
@@ -1947,8 +1957,8 @@ function agendarAutoSaveServidor() {
         const turno = document.getElementById("turno")?.value;
         const inicio = document.getElementById("inicio")?.value;
 
-        // SÃ³ auto-salva quando jÃ¡ existe identificaÃ§Ã£o mÃ­nima da tabela.
-        if (!prefixo || !data || !turno || !inicio) {
+        // Auto-salva assim que houver identificacao minima para compartilhar em tempo real.
+        if (!prefixo || !data || !turno) {
             return;
         }
 
@@ -1958,7 +1968,7 @@ function agendarAutoSaveServidor() {
             turno: turno,
             produto: document.getElementById("produto")?.value || "",
             operador: document.getElementById("operador")?.value || "",
-            inicio: inicio,
+            inicio: inicio || "",
             dados: coletarDadosFormulario()
         };
 
@@ -2075,12 +2085,12 @@ function adicionarMudancaFluxo() {
     
     row.innerHTML = `
         <div class="fluxo-header">
-            <strong>MudanÃ§a #${index}</strong>
-            <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">âœ•</button>
+            <strong>Mudança #${index}</strong>
+            <button type="button" class="btn-remover" onclick="this.parentElement.parentElement.remove()">✕</button>
         </div>
         
         <div class="fluxo-campos">
-            <input type="time" class="fluxo-hora" title="HorÃ¡rio da mudanÃ§a">
+            <input type="time" class="fluxo-hora" title="Horário da mudança">
             <input type="text" class="fluxo-anterior" placeholder="Fluxo anterior (Ex: 8000 t/h)">
             <input type="text" class="fluxo-novo" placeholder="Novo fluxo (Ex: 6000 t/h)">
         </div>
@@ -2089,11 +2099,11 @@ function adicionarMudancaFluxo() {
             <label class="solicitante-label">Quem solicitou?</label>
             <div class="solicitante-checkboxes">
                 <label><input type="checkbox" class="fluxo-cco" value="CCO"> CCO</label>
-                <label><input type="checkbox" class="fluxo-mecanica-corretiva" value="MECANICA_CORRETIVA"> MecÃ¢nica Corretiva</label>
-                <label><input type="checkbox" class="fluxo-mecanica-preventiva" value="MECANICA_PREVENTIVA"> MecÃ¢nica Preventiva</label>
-                <label><input type="checkbox" class="fluxo-eletrica-corretiva" value="ELETRICA_CORRETIVA"> ElÃ©trica Corretiva</label>
-                <label><input type="checkbox" class="fluxo-eletrica-preventiva" value="ELETRICA_PREVENTIVA"> ElÃ©trica Preventiva</label>
-                <label><input type="checkbox" class="fluxo-operacao" value="OPERACAO"> OperaÃ§Ã£o</label>
+                <label><input type="checkbox" class="fluxo-mecanica-corretiva" value="MECANICA_CORRETIVA"> Mecânica Corretiva</label>
+                <label><input type="checkbox" class="fluxo-mecanica-preventiva" value="MECANICA_PREVENTIVA"> Mecânica Preventiva</label>
+                <label><input type="checkbox" class="fluxo-eletrica-corretiva" value="ELETRICA_CORRETIVA"> Elétrica Corretiva</label>
+                <label><input type="checkbox" class="fluxo-eletrica-preventiva" value="ELETRICA_PREVENTIVA"> Elétrica Preventiva</label>
+                <label><input type="checkbox" class="fluxo-operacao" value="OPERACAO"> Operação</label>
             </div>
         </div>
         
@@ -2125,12 +2135,12 @@ function adicionarMaterialCarvao() {
         <label>Tipo de Material (sigla)</label>
         <input type="text" class="carvao-tipo-material" placeholder="Ex: MU, OG (carvão) ou CCM, KL (coque)">
         
-        <label>PÃ¡tio de origem</label>
+        <label>Pátio de origem</label>
         <select class="carvao-patio" onchange="atualizarRecuperadora(this)">
             <option value="">Selecione</option>
-            <option value="PATIO 0">PÃ¡tio 0</option>
-            <option value="PATIO 1">PÃ¡tio 1</option>
-            <option value="PATIO 2">PÃ¡tio 2</option>
+            <option value="PATIO 0">Pátio 0</option>
+            <option value="PATIO 1">Pátio 1</option>
+            <option value="PATIO 2">Pátio 2</option>
         </select>
         
         <label>Baliza</label>
@@ -2142,16 +2152,16 @@ function adicionarMaterialCarvao() {
             <option value="R1A">R1A</option>
         </select>
         
-        <label>AÃ§Ã£o (zerar/completar)</label>
+        <label>Ação (zerar/completar)</label>
         <select class="carvao-acao">
             <option value="zerar">Zerar</option>
             <option value="completar">Completar</option>
         </select>
         
-        <label>HorÃ¡rio inÃ­cio deste material</label>
+        <label>Horário início deste material</label>
         <input type="time" class="carvao-hora-inicio">
         
-        <label>HorÃ¡rio fim deste material</label>
+        <label>Horário fim deste material</label>
         <input type="time" class="carvao-hora-fim">
         
         <div class="carvao-pesos">
@@ -2165,8 +2175,8 @@ function adicionarMaterialCarvao() {
             </div>
         </div>
         
-        <label>VagÃµes carregados</label>
-        <input type="number" class="carvao-vagoes" placeholder="Qtd vagÃµes" min="0">
+        <label>Vagões carregados</label>
+        <input type="number" class="carvao-vagoes" placeholder="Qtd vagões" min="0">
     `;
     
     container.appendChild(row);
@@ -2179,15 +2189,15 @@ function adicionarImpacto() {
     row.className = "impacto-row";
 
     row.innerHTML = `
-        <input type="text" class="impacto-desc" placeholder="DescriÃ§Ã£o do impacto/falha">
+        <input type="text" class="impacto-desc" placeholder="Descrição do impacto/falha">
         
         <div class="impacto-atendimento-grupo">
             <label class="atendimento-label">Quem atendeu a falha?</label>
             <div class="atendimento-checkboxes">
-                <label><input type="checkbox" class="impacto-atend-mecanica-prev" value="MECANICA_PREVENTIVA"> MecÃ¢nica Preventiva</label>
-                <label><input type="checkbox" class="impacto-atend-mecanica-corr" value="MECANICA_CORRETIVA"> MecÃ¢nica Corretiva</label>
-                <label><input type="checkbox" class="impacto-atend-eletrica-prev" value="ELETRICA_PREVENTIVA"> ElÃ©trica Preventiva</label>
-                <label><input type="checkbox" class="impacto-atend-eletrica-corr" value="ELETRICA_CORRETIVA"> ElÃ©trica Corretiva</label>
+                <label><input type="checkbox" class="impacto-atend-mecanica-prev" value="MECANICA_PREVENTIVA"> Mecânica Preventiva</label>
+                <label><input type="checkbox" class="impacto-atend-mecanica-corr" value="MECANICA_CORRETIVA"> Mecânica Corretiva</label>
+                <label><input type="checkbox" class="impacto-atend-eletrica-prev" value="ELETRICA_PREVENTIVA"> Elétrica Preventiva</label>
+                <label><input type="checkbox" class="impacto-atend-eletrica-corr" value="ELETRICA_CORRETIVA"> Elétrica Corretiva</label>
                 <label><input type="checkbox" class="impacto-atend-operacional" value="OPERACIONAL"> Operacional</label>
             </div>
         </div>
@@ -2202,7 +2212,7 @@ function adicionarImpacto() {
         </div>
     `;
 
-    // Calcular hora de liberaÃ§Ã£o automaticamente
+    // Calcular hora de liberação automaticamente
     const horaInicio = row.querySelector(".impacto-hora-inicio");
     const horasParado = row.querySelector(".impacto-h");
     const minutosParado = row.querySelector(".impacto-m");
@@ -2228,7 +2238,7 @@ function adicionarImpacto() {
     horasParado.addEventListener("input", calcularHoraFim);
     minutosParado.addEventListener("input", calcularHoraFim);
 
-    // Aplicar capitalizaÃ§Ã£o inteligente
+    // Aplicar capitalização inteligente
     aplicarCapitalizacaoImpacto(row.querySelector(".impacto-desc"));
     aplicarCapitalizacaoImpacto(row.querySelector(".impacto-acao"));
 
@@ -2389,7 +2399,6 @@ function calcular() {
         tipo_material: toUpperSafe(document.getElementById("tipo_material")?.value) || "",
         destino: document.getElementById("destino")?.value || "",
         empilhando: document.getElementById("empilhando")?.value || "NAO",
-        empilhando_para: toUpperSafe(document.getElementById("empilhando_para")?.value) || "",
         patio: toUpperSafe(document.getElementById("patio_nome")?.value) || "",
         baliza: toUpperSafe(document.getElementById("baliza")?.value) || "",
         maquina_patio: document.getElementById("maquina_patio")?.value || "",
@@ -2543,7 +2552,7 @@ Vagoes: ${dados.vagoes_bordo || "-"} (${dados.hora_inicio_bordo || "-"} -> ${dad
     }
 
     const empilhamentoTexto = dados.empilhando === "SIM"
-        ? `Sim (${dados.empilhando_para || "-"}) - Origem: ${dados.maquina_patio || "-"} | ${dados.patio || "-"} | Baliza ${dados.baliza || "-"}`
+        ? `Sim - Origem: ${dados.maquina_patio || "-"} | ${dados.patio || "-"} | Baliza ${dados.baliza || "-"}`
         : "Nao";
 
     return `
@@ -2589,7 +2598,7 @@ function gerarResultadoCarvao(dados, data) {
     let passagemHTML = gerarPassagemHTML(dados);
     let mudancaFluxoHTML = gerarMudancaFluxoHTML(dados);
 
-    let dataFormatada = "â€”";
+    let dataFormatada = "-";
     if (dados.data) {
         const [ano, mes, dia] = dados.data.split("-");
         dataFormatada = `${dia}/${mes}/${ano}`;
@@ -2607,18 +2616,18 @@ ${mat.recuperadora}<br><br>
 
 ${categoriaNome}: ${mat.tipo_material} (${mat.acao})<br><br>
 
-<strong>Peso ECV:</strong> ${mat.peso_ecv || "â€”"} t<br>
-<strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "â€”"} t<br>
-VagÃµes: ${mat.vagoes || "â€”"}<br>
-${mat.hora_inicio ? `${mat.hora_inicio} â†’ ${mat.hora_fim || "â€”"}<br><br>` : ""}
+<strong>Peso ECV:</strong> ${mat.peso_ecv || "-"} t<br>
+<strong>Peso ${mat.recuperadora}:</strong> ${mat.peso_recup || "-"} t<br>
+Vagões: ${mat.vagoes || "-"}<br>
+${mat.hora_inicio ? `${mat.hora_inicio} -> ${mat.hora_fim || "-"}<br><br>` : ""}
 </div>`;
             }
         });
     }
 
     return `
-<strong>Data da OperaÃ§Ã£o:</strong> ${dataFormatada}<br>
-<strong>Turno:</strong> ${dados.turno || "â€”"}<br>
+<strong>Data da Operacao:</strong> ${dataFormatada}<br>
+<strong>Turno:</strong> ${dados.turno || "-"}<br>
 <hr>
 
 <strong>ECV</strong><br><br>
@@ -2633,23 +2642,23 @@ Locomotivas: ${dados.loc1} / ${dados.loc2}<br>
 Contato com Maquinista: ${dados.horas_maquinista}<br>
 Passagem Ponto B: ${dados.ponto_b}<br>
 Tabela Posicionada: ${dados.tabela_posicionada}<br>
-1Âº VagÃ£o: ${dados.primeiro_vagao || "â€”"}<br><br>
+1o Vagao: ${dados.primeiro_vagao || "-"}<br><br>
 
 ${materiaisHTML}
 <br>
-<strong>INÃCIO:</strong> ${dados.inicio || "â€”"}h<br>
-<strong>TÃ‰RMINO:</strong> ${dados.termino || "â€”"}h<br>
-<strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "â€”"}<br>
+<strong>INICIO:</strong> ${dados.inicio || "-"}h<br>
+<strong>TERMINO:</strong> ${dados.termino || "-"}h<br>
+<strong>TMC:</strong> ${dados.termino ? formatarTempo(data.tmd) : "-"}<br>
 Tempo Total Parado: ${formatarTempo(data.impactos_total)}<br>
-Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "â€”"}<br><br>
+Hora Efetiva: ${dados.termino ? formatarTempo(data.hora_efetiva) : "-"}<br><br>
 
 Peso Total: ${dados.peso} t<br>
-<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "â€”"}<br><br>
+<strong>Taxa Efetiva:</strong> ${dados.termino && data.taxa_efetiva > 0 ? data.taxa_efetiva + " t/h" : "-"}<br><br>
 
 ${mudancaFluxoHTML}
 ${passagemHTML}
 <strong>Impactos/Falhas:</strong><br>${impactosHTML}<br>
-<strong>ObservaÃ§Ãµes:</strong><br>${dados.observacoes}
+<strong>Observacoes:</strong><br>${dados.observacoes}
     `;
 }
 
@@ -2661,10 +2670,10 @@ function gerarImpactosHTML(dados) {
             const horaFim = dados.impactos_hora_fim[i] || "";
             const tipoAtend = dados.impactos_tipo_atendimento[i] || "";
             const acao = dados.impactos_acao[i] || "";
-            const horarios = horaInicio ? ` (${horaInicio} â†’ ${horaFim})` : "";
+            const horarios = horaInicio ? ` (${horaInicio} -> ${horaFim})` : "";
             const tipoTexto = tipoAtend ? ` [${tipoAtend}]` : "";
-            const acaoTexto = acao ? ` - AÃ§Ã£o: ${acao}` : "";
-            html += `â€¢ ${dados.impactos_desc[i]}${tipoTexto} â€“ ${formatarTempo(min)}${horarios}${acaoTexto}<br>`;
+            const acaoTexto = acao ? ` - Acao: ${acao}` : "";
+            html += `- ${dados.impactos_desc[i]}${tipoTexto} - ${formatarTempo(min)}${horarios}${acaoTexto}<br>`;
         }
     });
     return html || "Nenhum impacto registrado<br>";
@@ -2674,16 +2683,16 @@ function gerarPassagemHTML(dados) {
     if (dados.houve_passagem === "SIM") {
         let falhaTexto = "";
         if (dados.assumiu_em_falha === "SIM") {
-            falhaTexto = `Passou em FALHA: ${dados.descricao_falha_assumida} (Ã s ${dados.hora_falha_passagem || "â€”"})<br>`;
+            falhaTexto = `Passou em FALHA: ${dados.descricao_falha_assumida} (as ${dados.hora_falha_passagem || "-"})<br>`;
         }
         
         return `
 <strong>PASSAGEM DE TURNO:</strong><br>
-Hora da rendiÃ§Ã£o: ${dados.hora_rendicao || "â€”"}<br>
-VagÃµes descarregados no meu turno: ${dados.vagoes_meu_turno || "â€”"}<br>
-VagÃµes restantes p/ prÃ³ximo turno: ${dados.vagoes_proximo_turno || "â€”"}<br>
-Turno que assumiu: ${dados.turno_assumiu || "â€”"}<br>
-Operador que assumiu: ${dados.operador_assumiu || "â€”"} | Mat: ${dados.matricula_assumiu || "â€”"}<br>
+Hora da rendicao: ${dados.hora_rendicao || "-"}<br>
+Vagoes descarregados no meu turno: ${dados.vagoes_meu_turno || "-"}<br>
+Vagoes restantes p/ proximo turno: ${dados.vagoes_proximo_turno || "-"}<br>
+Turno que assumiu: ${dados.turno_assumiu || "-"}<br>
+Operador que assumiu: ${dados.operador_assumiu || "-"} | Mat: ${dados.matricula_assumiu || "-"}<br>
 ${falhaTexto}
 <br>`;
     }
@@ -2692,10 +2701,10 @@ ${falhaTexto}
 
 function gerarMudancaFluxoHTML(dados) {
     if (dados.houve_mudanca_fluxo === "SIM" && dados.mudancas_fluxo && dados.mudancas_fluxo.length > 0) {
-        let html = "<strong>MUDANÃ‡AS DE FLUXO:</strong><br>";
+        let html = "<strong>MUDANCAS DE FLUXO:</strong><br>";
         dados.mudancas_fluxo.forEach((fluxo, i) => {
             if (fluxo.hora || fluxo.fluxo_anterior || fluxo.fluxo_novo) {
-                html += `â€¢ ${fluxo.hora || "â€”"}: ${fluxo.fluxo_anterior} â†’ ${fluxo.fluxo_novo}`;
+            html += `- ${fluxo.hora || "-"}: ${fluxo.fluxo_anterior} -> ${fluxo.fluxo_novo}`;
                 if (fluxo.solicitante) html += ` [${fluxo.solicitante}]`;
                 if (fluxo.motivo) html += ` - ${fluxo.motivo}`;
                 html += "<br>";
@@ -3260,8 +3269,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Atualizar indicador de sincronizaÃ§Ã£o
     atualizarIndicadorSincronizacao();
     
-    // Iniciar atualizaÃ§Ã£o automÃ¡tica (30 segundos)
-    iniciarAtualizacaoAutomatica(30);
+    // Iniciar atualizacao automatica (10 segundos) para maior tempo real
+    iniciarAtualizacaoAutomatica(10);
     
     // Restaurar dados salvos localmente
     restaurarDadosFormulario();
@@ -3274,7 +3283,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     sanitizarTextoUI();
 
     const observer = new MutationObserver(() => sanitizarTextoUI());
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
     console.log("Sistema de tabelas compartilhadas inicializado.");
 });
